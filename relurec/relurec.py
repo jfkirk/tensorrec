@@ -41,18 +41,14 @@ class ReLURec(object):
         self.tf_projected_item_biases = None
         self.tf_prediction = None
 
-        # TF variable placeholders
-        self.tf_user_feature_biases = None
-        self.tf_item_feature_biases = None
-
         # TF feed placeholders
         self.tf_nn_dropout_keep_proba = None
         self.tf_x_user = None
         self.tf_x_item = None
-        self.tf_x_user_indices = None
-        self.tf_x_item_indices = None
-        self.tf_x_user_values = None
-        self.tf_x_item_values = None
+        self.tf_user_feature_indices = None
+        self.tf_item_feature_indices = None
+        self.tf_user_feature_values = None
+        self.tf_item_feature_values = None
         self.tf_n_examples = None
         self.tf_y = None
 
@@ -67,16 +63,16 @@ class ReLURec(object):
         # Initialize placeholder values for inputs
         self.tf_nn_dropout_keep_proba = tf.placeholder("float")
         self.tf_n_examples = tf.placeholder("int64")
-        self.tf_x_user_indices = tf.placeholder("int64", [None, 2])
-        self.tf_x_user_values = tf.placeholder("float", None)
-        self.tf_x_item_indices = tf.placeholder("int64", [None, 2])
-        self.tf_x_item_values = tf.placeholder("float", None)
+        self.tf_user_feature_indices = tf.placeholder("int64", [None, 2])
+        self.tf_user_feature_values = tf.placeholder("float", None)
+        self.tf_item_feature_indices = tf.placeholder("int64", [None, 2])
+        self.tf_item_feature_values = tf.placeholder("float", None)
         self.tf_y = tf.placeholder("float", None, name='y')
 
         # Construct the features as sparse matrices
-        self.tf_x_user = tf.SparseTensor(self.tf_x_user_indices, self.tf_x_user_values,
+        self.tf_x_user = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
                                          [self.tf_n_examples, n_user_features])
-        self.tf_x_item = tf.SparseTensor(self.tf_x_item_indices, self.tf_x_item_values,
+        self.tf_x_item = tf.SparseTensor(self.tf_item_feature_indices, self.tf_item_feature_values,
                                          [self.tf_n_examples, n_item_features])
 
         # Build the representations
@@ -93,6 +89,24 @@ class ReLURec(object):
                                         n_features=n_item_features,
                                         node_name_ending='item')
 
+        # Calculate the user and item biases
+        tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
+        tf_item_feature_biases = tf.Variable(tf.zeros([n_item_features, 1]))
+        self.tf_projected_user_biases = tf.reduce_sum(
+            tf.sparse_tensor_dense_matmul(self.tf_x_user, tf_user_feature_biases),
+            axis=1
+        )
+        self.tf_projected_item_biases = tf.reduce_sum(
+            tf.sparse_tensor_dense_matmul(self.tf_x_item, tf_item_feature_biases),
+            axis=1
+        )
+
+        # Prediction = user_repr * item_repr + user_bias + item_bias
+        # The reduce sum is to perform a rank reduction
+        self.tf_prediction = (tf.reduce_sum(tf.multiply(self.tf_user_representation,
+                                                        self.tf_item_representation), axis=1)
+                              + self.tf_projected_user_biases + self.tf_projected_item_biases)
+
         self.tf_weights = []
         self.tf_weights.extend(user_weights)
         self.tf_weights.extend(item_weights)
@@ -100,18 +114,8 @@ class ReLURec(object):
         self.tf_biases = []
         self.tf_biases.extend(user_biases)
         self.tf_biases.extend(item_biases)
-
-        # Calculate the user and item biases
-        self.tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
-        self.tf_item_feature_biases = tf.Variable(tf.zeros([n_item_features, 1]))
-        self.tf_projected_user_biases = tf.reduce_sum(tf.sparse_tensor_dense_matmul(self.tf_x_user, self.tf_user_feature_biases), axis=1)
-        self.tf_projected_item_biases = tf.reduce_sum(tf.sparse_tensor_dense_matmul(self.tf_x_item, self.tf_item_feature_biases), axis=1)
-
-        # Prediction = user_repr * item_repr + user_bias + item_bias
-        # The reduce sum is to perform a rank reduction
-        self.tf_prediction = (tf.reduce_sum(tf.multiply(self.tf_user_representation,
-                                                        self.tf_item_representation), axis=1)
-                              + self.tf_projected_user_biases + self.tf_projected_item_biases)
+        self.tf_biases.append(tf_user_feature_biases)
+        self.tf_biases.append(tf_item_feature_biases)
 
     def fit(self, interactions_matrix, user_features, item_features, epochs=100, learning_rate=0.01, alpha=0.00001,
             beta=0.00001, end_on_loss_increase=False, verbose=True):
@@ -132,10 +136,10 @@ class ReLURec(object):
                                                                           user_features,
                                                                           item_features)
         feed_dict = {self.tf_n_examples: len(sparse_y),
-                     self.tf_x_user_indices: zip(sparse_x_user.row, sparse_x_user.col),
-                     self.tf_x_user_values: sparse_x_user.data,
-                     self.tf_x_item_indices: zip(sparse_x_item.row, sparse_x_item.col),
-                     self.tf_x_item_values: sparse_x_item.data,
+                     self.tf_user_feature_indices: zip(sparse_x_user.row, sparse_x_user.col),
+                     self.tf_user_feature_values: sparse_x_user.data,
+                     self.tf_item_feature_indices: zip(sparse_x_item.row, sparse_x_item.col),
+                     self.tf_item_feature_values: sparse_x_item.data,
                      self.tf_y: sparse_y,
                      self.tf_nn_dropout_keep_proba: .9}
 
@@ -182,10 +186,10 @@ class ReLURec(object):
                                                                                        item_features)
 
         feed_dict = {self.tf_n_examples: len(sparse_y),
-                     self.tf_x_user_indices: zip(sparse_x_user.row, sparse_x_user.col),
-                     self.tf_x_user_values: sparse_x_user.data,
-                     self.tf_x_item_indices: zip(sparse_x_item.row, sparse_x_item.col),
-                     self.tf_x_item_values: sparse_x_item.data,
+                     self.tf_user_feature_indices: zip(sparse_x_user.row, sparse_x_user.col),
+                     self.tf_user_feature_values: sparse_x_user.data,
+                     self.tf_item_feature_indices: zip(sparse_x_item.row, sparse_x_item.col),
+                     self.tf_item_feature_values: sparse_x_item.data,
                      self.tf_nn_dropout_keep_proba: 1.0}
         predictions = self.tf_prediction.eval(session=self.session, feed_dict=feed_dict)
 
