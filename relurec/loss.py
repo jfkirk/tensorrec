@@ -1,4 +1,4 @@
-import tesorflow as tf
+import tensorflow as tf
 
 
 def build_separation_loss(tf_prediction, tf_y):
@@ -17,6 +17,7 @@ def build_separation_loss(tf_prediction, tf_y):
 
     loss = 1.0 - tf_overlap_gaussian.cdf(0.0)
     return loss
+
 
 def build_rmse_loss(tf_prediction, tf_y):
     return tf.sqrt(tf.reduce_mean(tf.square(tf_y - tf_prediction)))
