@@ -73,9 +73,9 @@ def generate_movielens_data(min_positive_rating=4.0):
     test_interactions = data['test']
     item_features = data['item_features']
 
-    train_interactions.data = np.array([1 if value > min_positive_rating else -1
+    train_interactions.data = np.array([1 if value >= min_positive_rating else -1
                                         for value in train_interactions.data])
-    test_interactions.data = np.array([1 if value > min_positive_rating else -1
+    test_interactions.data = np.array([1 if value >= min_positive_rating else -1
                                        for value in test_interactions.data])
 
     num_users = train_interactions.shape[0]
