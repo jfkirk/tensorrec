@@ -7,9 +7,10 @@ from .util import generate_sparse_input
 __all__ = ['ReLURec']
 
 
-def build_representation_graph(tf_x, tf_nn_dropout_keep_proba, n_components, n_features, node_name_ending):
+def _build_representation_graph(tf_x, tf_nn_dropout_keep_proba, n_components, n_features, node_name_ending):
     relu_size = 4 * n_components
 
+    # Create variable nodes
     tf_relu_weights = tf.Variable(tf.random_normal([n_features, relu_size]),
                                   name='relu_weights_%s' % node_name_ending)
     tf_relu_biases = tf.Variable(tf.zeros([1, relu_size]),
@@ -17,10 +18,13 @@ def build_representation_graph(tf_x, tf_nn_dropout_keep_proba, n_components, n_f
     tf_tanh_weights = tf.Variable(tf.random_normal([relu_size, n_components]),
                                   name='tanh_weights_%s' % node_name_ending)
 
+    # Create ReLU layer and TanH layer
     tf_relu = tf.nn.dropout(tf.nn.relu(tf.add(tf.sparse_tensor_dense_matmul(tf_x, tf_relu_weights), tf_relu_biases)),
                             keep_prob=tf_nn_dropout_keep_proba)
+    tf_tanh = tf.tanh(tf.matmul(tf_relu, tf_tanh_weights))
 
-    return tf.tanh(tf.matmul(tf_relu, tf_tanh_weights)), tf_relu_weights, tf_relu_biases, tf_tanh_weights
+    # Return TanH layer and variables
+    return tf_tanh, [tf_relu_weights, tf_tanh_weights], [tf_relu_biases]
 
 
 class ReLURec(object):
@@ -40,12 +44,6 @@ class ReLURec(object):
         # TF variable placeholders
         self.tf_user_feature_biases = None
         self.tf_item_feature_biases = None
-        self.tf_relu_weights_user = None
-        self.tf_relu_weights_item = None
-        self.tf_relu_biases_user = None
-        self.tf_relu_biases_item = None
-        self.tf_tanh_weights_user = None
-        self.tf_tanh_weights_item = None
 
         # TF feed placeholders
         self.tf_nn_dropout_keep_proba = None
@@ -57,6 +55,10 @@ class ReLURec(object):
         self.tf_x_item_values = None
         self.tf_n_examples = None
         self.tf_y = None
+
+        # For l2 normalization
+        self.tf_weights = []
+        self.tf_biases = []
 
         self.session = session or tf.Session()
 
@@ -77,19 +79,27 @@ class ReLURec(object):
         self.tf_x_item = tf.SparseTensor(self.tf_x_item_indices, self.tf_x_item_values,
                                          [self.tf_n_examples, n_item_features])
 
-        # Fire the TanH layer
-        self.tf_user_representation, self.tf_relu_weights_user, self.tf_relu_biases_user, self.tf_tanh_weights_user = \
-            build_representation_graph(tf_x=self.tf_x_user,
-                                       tf_nn_dropout_keep_proba=self.tf_nn_dropout_keep_proba,
-                                       n_components=self.n_components,
-                                       n_features=n_user_features,
-                                       node_name_ending='user')
-        self.tf_item_representation, self.tf_relu_weights_item, self.tf_relu_biases_item, self.tf_tanh_weights_item = \
-            build_representation_graph(tf_x=self.tf_x_item,
-                                       tf_nn_dropout_keep_proba=self.tf_nn_dropout_keep_proba,
-                                       n_components=self.n_components,
-                                       n_features=n_item_features,
-                                       node_name_ending='item')
+        # Build the representations
+        self.tf_user_representation, user_weights, user_biases = \
+            _build_representation_graph(tf_x=self.tf_x_user,
+                                        tf_nn_dropout_keep_proba=self.tf_nn_dropout_keep_proba,
+                                        n_components=self.n_components,
+                                        n_features=n_user_features,
+                                        node_name_ending='user')
+        self.tf_item_representation, item_weights, item_biases = \
+            _build_representation_graph(tf_x=self.tf_x_item,
+                                        tf_nn_dropout_keep_proba=self.tf_nn_dropout_keep_proba,
+                                        n_components=self.n_components,
+                                        n_features=n_item_features,
+                                        node_name_ending='item')
+
+        self.tf_weights = []
+        self.tf_weights.extend(user_weights)
+        self.tf_weights.extend(item_weights)
+
+        self.tf_biases = []
+        self.tf_biases.extend(user_biases)
+        self.tf_biases.extend(item_biases)
 
         # Calculate the user and item biases
         self.tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
@@ -109,10 +119,8 @@ class ReLURec(object):
         self.build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
 
         basic_loss = tf.sqrt(tf.reduce_mean(tf.square(self.tf_y - self.tf_prediction)))
-        weight_reg_loss = (tf.nn.l2_loss(self.tf_relu_weights_user) + tf.nn.l2_loss(self.tf_relu_weights_item)
-                           + tf.nn.l2_loss(self.tf_tanh_weights_user) + tf.nn.l2_loss(self.tf_tanh_weights_item))
-        bias_reg_loss = (tf.nn.l2_loss(self.tf_user_feature_biases) + tf.nn.l2_loss(self.tf_item_feature_biases)
-                         + tf.nn.l2_loss(self.tf_relu_biases_user) + tf.nn.l2_loss(self.tf_relu_biases_item))
+        weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
+        bias_reg_loss = sum(tf.nn.l2_loss(biases) for biases in self.tf_biases)
 
         tf_loss = basic_loss + alpha * weight_reg_loss + beta * bias_reg_loss
         tf_optimizer = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
