@@ -39,6 +39,8 @@ class ReLURec(object):
         self.tf_user_representation = None
         self.tf_item_representation = None
         self.tf_affinity = None
+        self.tf_user_feature_biases = None
+        self.tf_item_feature_biases = None
         self.tf_projected_user_biases = None
         self.tf_projected_item_biases = None
         self.tf_prediction_sparse = None
@@ -128,41 +130,44 @@ class ReLURec(object):
                                         n_features=n_item_features,
                                         node_name_ending='item')
 
-        gathered_user_reprs = tf.gather(self.tf_user_representation, self.tf_x_user)
-        gathered_item_reprs = tf.gather(self.tf_item_representation, self.tf_x_item)
-
         # Calculate the user and item biases
-        tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
-        tf_item_feature_biases = tf.Variable(tf.zeros([n_item_features, 1]))
+        self.tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
+        self.tf_item_feature_biases = tf.Variable(tf.zeros([n_item_features, 1]))
 
         self.tf_projected_user_biases = tf.reduce_sum(
-            tf.sparse_tensor_dense_matmul(self.tf_user_features, tf_user_feature_biases),
+            tf.sparse_tensor_dense_matmul(self.tf_user_features, self.tf_user_feature_biases),
             axis=1
         )
         self.tf_projected_item_biases = tf.reduce_sum(
-            tf.sparse_tensor_dense_matmul(self.tf_item_features, tf_item_feature_biases),
+            tf.sparse_tensor_dense_matmul(self.tf_item_features, self.tf_item_feature_biases),
             axis=1
         )
 
-        gathered_user_biases = tf.gather(self.tf_projected_user_biases, self.tf_x_user)
-        gathered_item_biases = tf.gather(self.tf_projected_item_biases, self.tf_x_item)
-
         # Prediction = user_repr * item_repr + user_bias + item_bias
         # The reduce sum is to perform a rank reduction
+
+        # For the sparse prediction case, reprs and biases are gathered based on user and item ids
+        gathered_user_reprs = tf.gather(self.tf_user_representation, self.tf_x_user)
+        gathered_item_reprs = tf.gather(self.tf_item_representation, self.tf_x_item)
+        gathered_user_biases = tf.gather(self.tf_projected_user_biases, self.tf_x_user)
+        gathered_item_biases = tf.gather(self.tf_projected_item_biases, self.tf_x_item)
         self.tf_prediction_sparse = (tf.reduce_sum(tf.multiply(gathered_user_reprs,
                                                                gathered_item_reprs), axis=1)
                                      + gathered_user_biases + gathered_item_biases)
 
-        self.tf_prediction_dense = (tf.reduce_sum(tf.matmul(self.tf_user_representation,
-                                                            self.tf_item_representation,
-                                                            transpose_b=True), axis=1)
-                                    + self.tf_projected_user_biases + self.tf_projected_item_biases)
+        # For the dense prediction case, repr matrices can be multiplied together and the projected biases can be
+        # broadcast across the resultant matrix
+        self.tf_prediction_dense = tf.matmul(self.tf_user_representation,
+                                             self.tf_item_representation,
+                                             transpose_b=True) \
+                                   + tf.expand_dims(self.tf_projected_user_biases, 1) \
+                                   + tf.expand_dims(self.tf_projected_item_biases, 0)
 
         self.tf_weights = []
         self.tf_weights.extend(user_weights)
         self.tf_weights.extend(item_weights)
-        self.tf_weights.append(tf_user_feature_biases)
-        self.tf_weights.append(tf_item_feature_biases)
+        self.tf_weights.append(self.tf_user_feature_biases)
+        self.tf_weights.append(self.tf_item_feature_biases)
 
     def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.01, alpha=0.001,
             end_on_loss_increase=False, verbose=True, out_sample_interactions=None):
