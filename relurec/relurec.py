@@ -1,9 +1,9 @@
+import itertools
 import numpy as np
 from scipy import sparse as sp
 import tensorflow as tf
 
 from .loss import build_separation_loss
-from .util import generate_sparse_input
 
 __all__ = ['ReLURec']
 
@@ -23,10 +23,10 @@ def _build_representation_graph(tf_features, tf_nn_dropout_keep_proba, n_compone
     tf_relu = tf.nn.relu(tf.add(tf.sparse_tensor_dense_matmul(tf_features, tf_relu_weights),
                                 tf_relu_biases))
     tf_relu_with_dropout = tf.nn.dropout(tf_relu, keep_prob=tf_nn_dropout_keep_proba)
-    tf_tanh = tf.tanh(tf.matmul(tf_relu_with_dropout, tf_tanh_weights))
+    tf_repr = tf.matmul(tf_relu_with_dropout, tf_tanh_weights)
 
     # Return TanH layer and variables
-    return tf_tanh, [tf_relu_weights, tf_tanh_weights], [tf_relu_biases]
+    return tf_repr, [tf_relu_weights, tf_tanh_weights, tf_relu_biases]
 
 
 class ReLURec(object):
@@ -41,9 +41,12 @@ class ReLURec(object):
         self.tf_affinity = None
         self.tf_projected_user_biases = None
         self.tf_projected_item_biases = None
-        self.tf_prediction = None
+        self.tf_prediction_sparse = None
+        self.tf_prediction_dense = None
 
         # TF feed placeholders
+        self.tf_n_users = None
+        self.tf_n_items = None
         self.tf_nn_dropout_keep_proba = None
         self.tf_user_features = None
         self.tf_item_features = None
@@ -51,45 +54,82 @@ class ReLURec(object):
         self.tf_item_feature_indices = None
         self.tf_user_feature_values = None
         self.tf_item_feature_values = None
-        self.tf_n_examples = None
         self.tf_y = None
+        self.tf_x_user = None
+        self.tf_x_item = None
 
         # For l2 normalization
         self.tf_weights = []
-        self.tf_biases = []
 
         self.session = session or tf.Session()
+
+    def create_feed_dict(self, interactions_matrix, user_features_matrix, item_features_matrix, dropout_keep_proba):
+
+        # Check that input data is of a sparse type
+        if not sp.issparse(interactions_matrix):
+            raise Exception('Interactions must be a scipy sparse matrix')
+        if not sp.issparse(user_features_matrix):
+            raise Exception('User features must be a scipy sparse matrix')
+        if not sp.issparse(item_features_matrix):
+            raise Exception('Item features must be a scipy sparse matrix')
+
+        # Coerce input data to zippable sparse types
+        if not isinstance(interactions_matrix, sp.coo_matrix):
+            interactions_matrix = sp.coo_matrix(interactions_matrix)
+        if not isinstance(user_features_matrix, sp.coo_matrix):
+            user_features_matrix = sp.coo_matrix(user_features_matrix)
+        if not isinstance(item_features_matrix, sp.coo_matrix):
+            item_features_matrix = sp.coo_matrix(item_features_matrix)
+
+        feed_dict = {self.tf_n_users: user_features_matrix.shape[0],
+                     self.tf_n_items: item_features_matrix.shape[0],
+                     self.tf_user_feature_indices: zip(user_features_matrix.row, user_features_matrix.col),
+                     self.tf_user_feature_values: user_features_matrix.data,
+                     self.tf_item_feature_indices: zip(item_features_matrix.row, item_features_matrix.col),
+                     self.tf_item_feature_values: item_features_matrix.data,
+                     self.tf_x_user: interactions_matrix.row,
+                     self.tf_x_item: interactions_matrix.col,
+                     self.tf_y: interactions_matrix.data,
+                     self.tf_nn_dropout_keep_proba: dropout_keep_proba}
+
+        return feed_dict
 
     def build_tf_graph(self, n_user_features, n_item_features):
 
         # Initialize placeholder values for inputs
+        self.tf_n_users = tf.placeholder('int64')
+        self.tf_n_items = tf.placeholder('int64')
         self.tf_nn_dropout_keep_proba = tf.placeholder('float')
-        self.tf_n_examples = tf.placeholder('int64')
         self.tf_user_feature_indices = tf.placeholder('int64', [None, 2])
         self.tf_user_feature_values = tf.placeholder('float', None)
         self.tf_item_feature_indices = tf.placeholder('int64', [None, 2])
         self.tf_item_feature_values = tf.placeholder('float', None)
         self.tf_y = tf.placeholder('float', [None], name='y')
+        self.tf_x_user = tf.placeholder('int64', None, name='x_user')
+        self.tf_x_item = tf.placeholder('int64', None, name='x_item')
 
         # Construct the features as sparse matrices
         self.tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
-                                         [self.tf_n_examples, n_user_features])
+                                         [self.tf_n_users, n_user_features])
         self.tf_item_features = tf.SparseTensor(self.tf_item_feature_indices, self.tf_item_feature_values,
-                                         [self.tf_n_examples, n_item_features])
+                                         [self.tf_n_items, n_item_features])
 
         # Build the representations
-        self.tf_user_representation, user_weights, user_biases = \
+        self.tf_user_representation, user_weights = \
             _build_representation_graph(tf_features=self.tf_user_features,
                                         tf_nn_dropout_keep_proba=self.tf_nn_dropout_keep_proba,
                                         n_components=self.n_components,
                                         n_features=n_user_features,
                                         node_name_ending='user')
-        self.tf_item_representation, item_weights, item_biases = \
+        self.tf_item_representation, item_weights = \
             _build_representation_graph(tf_features=self.tf_item_features,
                                         tf_nn_dropout_keep_proba=self.tf_nn_dropout_keep_proba,
                                         n_components=self.n_components,
                                         n_features=n_item_features,
                                         node_name_ending='item')
+
+        gathered_user_reprs = tf.gather(self.tf_user_representation, self.tf_x_user)
+        gathered_item_reprs = tf.gather(self.tf_item_representation, self.tf_x_item)
 
         # Calculate the user and item biases
         tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
@@ -104,59 +144,47 @@ class ReLURec(object):
             axis=1
         )
 
+        gathered_user_biases = tf.gather(self.tf_projected_user_biases, self.tf_x_user)
+        gathered_item_biases = tf.gather(self.tf_projected_item_biases, self.tf_x_item)
+
         # Prediction = user_repr * item_repr + user_bias + item_bias
         # The reduce sum is to perform a rank reduction
-        self.tf_prediction = (tf.reduce_sum(tf.multiply(self.tf_user_representation,
-                                                        self.tf_item_representation), axis=1)
-                              + self.tf_projected_user_biases + self.tf_projected_item_biases)
+        self.tf_prediction_sparse = (tf.reduce_sum(tf.multiply(gathered_user_reprs,
+                                                               gathered_item_reprs), axis=1)
+                                     + gathered_user_biases + gathered_item_biases)
+
+        self.tf_prediction_dense = (tf.reduce_sum(tf.matmul(self.tf_user_representation,
+                                                            self.tf_item_representation,
+                                                            transpose_b=True), axis=1)
+                                    + self.tf_projected_user_biases + self.tf_projected_item_biases)
 
         self.tf_weights = []
         self.tf_weights.extend(user_weights)
         self.tf_weights.extend(item_weights)
+        self.tf_weights.append(tf_user_feature_biases)
+        self.tf_weights.append(tf_item_feature_biases)
 
-        self.tf_biases = []
-        self.tf_biases.extend(user_biases)
-        self.tf_biases.extend(item_biases)
-        self.tf_biases.append(tf_user_feature_biases)
-        self.tf_biases.append(tf_item_feature_biases)
+    def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.01, alpha=0.001,
+            end_on_loss_increase=False, verbose=True, out_sample_interactions=None):
 
-    def fit(self, interactions_matrix, user_features, item_features, epochs=100, learning_rate=0.01, alpha=0.00001,
-            beta=0.00001, end_on_loss_increase=False, verbose=True, out_sample_interactions=None):
-
+        # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed without
+        # refitting
         self.build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
 
         if verbose:
             print 'Processing interaction and feature data'
 
-        coo_user_features, coo_item_features, y_values, _ = \
-            generate_sparse_input(interactions_matrix, user_features, item_features)
-
-        feed_dict = {self.tf_n_examples: len(y_values),
-                     self.tf_user_feature_indices: zip(coo_user_features.row, coo_user_features.col),
-                     self.tf_user_feature_values: coo_user_features.data,
-                     self.tf_item_feature_indices: zip(coo_item_features.row, coo_item_features.col),
-                     self.tf_item_feature_values: coo_item_features.data,
-                     self.tf_y: y_values,
-                     self.tf_nn_dropout_keep_proba: .9}
+        feed_dict = self.create_feed_dict(interactions, user_features, item_features, dropout_keep_proba=.5)
 
         if out_sample_interactions is not None:
-            os_coo_user_features, os_coo_item_features, os_y_values, _ = \
-                generate_sparse_input(out_sample_interactions, user_features, item_features)
+            os_feed_dict = self.create_feed_dict(out_sample_interactions, user_features, item_features,
+                                                 dropout_keep_proba=1.0)
 
-            os_feed_dict = {self.tf_n_examples: len(os_y_values),
-                            self.tf_user_feature_indices: zip(os_coo_user_features.row, os_coo_user_features.col),
-                            self.tf_user_feature_values: os_coo_user_features.data,
-                            self.tf_item_feature_indices: zip(os_coo_item_features.row, os_coo_item_features.col),
-                            self.tf_item_feature_values: os_coo_item_features.data,
-                            self.tf_y: os_y_values,
-                            self.tf_nn_dropout_keep_proba: 1.0}
-
-        basic_loss = build_separation_loss(tf_prediction=self.tf_prediction,
+        basic_loss = build_separation_loss(tf_prediction=self.tf_prediction_sparse,
                                            tf_y=self.tf_y)
         weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
-        bias_reg_loss = sum(tf.nn.l2_loss(biases) for biases in self.tf_biases)
 
-        tf_loss = basic_loss + alpha * weight_reg_loss + beta * bias_reg_loss
+        tf_loss = basic_loss + alpha * weight_reg_loss
         tf_optimizer = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
 
         if verbose:
@@ -169,15 +197,15 @@ class ReLURec(object):
 
             self.session.run(tf_optimizer, feed_dict=feed_dict)
 
+            # TODO JK: These if statements are ugly as hell
             if verbose or end_on_loss_increase:
                 lst_loss = avg_loss
                 avg_loss = basic_loss.eval(session=self.session, feed_dict=feed_dict)
                 smooth_delta_loss = smooth_delta_loss * .95 + (lst_loss - avg_loss) * .05
 
             if verbose:
-                avg_pred = np.mean(self.tf_prediction.eval(session=self.session, feed_dict=feed_dict))
-                l2_loss = (alpha * weight_reg_loss + beta * bias_reg_loss).eval(session=self.session,
-                                                                                feed_dict=feed_dict)
+                avg_pred = np.mean(self.tf_prediction_sparse.eval(session=self.session, feed_dict=feed_dict))
+                l2_loss = (alpha * weight_reg_loss).eval(session=self.session, feed_dict=feed_dict)
                 print 'EPOCH %s loss = %s, l2 = %s, smooth_delta_loss = %s, mean_pred = %s' % (epoch, avg_loss,
                                                                                                l2_loss,
                                                                                                smooth_delta_loss,
@@ -201,18 +229,14 @@ class ReLURec(object):
             for item in item_ids:
                 dummy_interactions[user, item] = 1
 
-        coo_user_features, coo_item_features, y_values, id_tuples = \
-            generate_sparse_input(dummy_interactions, user_features, item_features)
+        feed_dict = self.create_feed_dict(dummy_interactions, user_features, item_features, dropout_keep_proba=1.0)
 
-        feed_dict = {self.tf_n_examples: len(y_values),
-                     self.tf_user_feature_indices: zip(coo_user_features.row, coo_user_features.col),
-                     self.tf_user_feature_values: coo_user_features.data,
-                     self.tf_item_feature_indices: zip(coo_item_features.row, coo_item_features.col),
-                     self.tf_item_feature_values: coo_item_features.data,
-                     self.tf_nn_dropout_keep_proba: 1}
+        predictions = self.tf_prediction_sparse.eval(session=self.session, feed_dict=feed_dict)
 
-        print self.tf_user_representation.eval(session=self.session, feed_dict=feed_dict)
+        return predictions
 
-        predictions = self.tf_prediction.eval(session=self.session, feed_dict=feed_dict)
+    def predict_rank(self, test_interactions, user_features, item_features, train_interactions=None):
 
-        return zip(id_tuples, predictions)
+        feed_dict = self.create_feed_dict(test_interactions, user_features, item_features, dropout_keep_proba=1.0)
+
+        predictions = self.tf_prediction_dense.eval(session=self.session, feed_dict=feed_dict)
