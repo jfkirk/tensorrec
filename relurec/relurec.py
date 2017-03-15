@@ -8,15 +8,15 @@ from .loss import build_separation_loss
 __all__ = ['ReLURec']
 
 
-def _build_representation_graph(tf_features, tf_nn_dropout_keep_proba, n_components, n_features, node_name_ending):
-    relu_size = 4 * n_components
+def _build_representation_graph(tf_features, tf_nn_dropout_keep_proba, no_components, n_features, node_name_ending):
+    relu_size = 4 * no_components
 
     # Create variable nodes
-    tf_relu_weights = tf.Variable(tf.random_normal([n_features, relu_size]),
+    tf_relu_weights = tf.Variable(tf.random_normal([n_features, relu_size], stddev=.5),
                                   name='relu_weights_%s' % node_name_ending)
     tf_relu_biases = tf.Variable(tf.zeros([1, relu_size]),
                                  name='relu_biases_%s' % node_name_ending)
-    tf_tanh_weights = tf.Variable(tf.random_normal([relu_size, n_components]),
+    tf_tanh_weights = tf.Variable(tf.random_normal([relu_size, no_components], stddev=.5),
                                   name='tanh_weights_%s' % node_name_ending)
 
     # Create ReLU layer and TanH layer
@@ -31,9 +31,9 @@ def _build_representation_graph(tf_features, tf_nn_dropout_keep_proba, n_compone
 
 class ReLURec(object):
 
-    def __init__(self, n_components=100, num_threads=4, session=None):
+    def __init__(self, no_components=100, num_threads=4, session=None):
 
-        self.n_components = n_components
+        self.no_components = no_components
         self.num_threads = num_threads
 
         self.tf_user_representation = None
@@ -45,6 +45,7 @@ class ReLURec(object):
         self.tf_projected_item_biases = None
         self.tf_prediction_sparse = None
         self.tf_prediction_dense = None
+        self.tf_rankings = None
 
         # TF feed placeholders
         self.tf_n_users = None
@@ -120,13 +121,13 @@ class ReLURec(object):
         self.tf_user_representation, user_weights = \
             _build_representation_graph(tf_features=self.tf_user_features,
                                         tf_nn_dropout_keep_proba=self.tf_nn_dropout_keep_proba,
-                                        n_components=self.n_components,
+                                        no_components=self.no_components,
                                         n_features=n_user_features,
                                         node_name_ending='user')
         self.tf_item_representation, item_weights = \
             _build_representation_graph(tf_features=self.tf_item_features,
                                         tf_nn_dropout_keep_proba=self.tf_nn_dropout_keep_proba,
-                                        n_components=self.n_components,
+                                        no_components=self.no_components,
                                         n_features=n_item_features,
                                         node_name_ending='item')
 
@@ -163,14 +164,21 @@ class ReLURec(object):
                                    + tf.expand_dims(self.tf_projected_user_biases, 1) \
                                    + tf.expand_dims(self.tf_projected_item_biases, 0)
 
+
+
+        # Double-sortation serves as a ranking process
+        tf_prediction_item_size = tf.shape(self.tf_prediction_dense)[1]
+        tf_indices_of_ranks = tf.nn.top_k(self.tf_prediction_dense, k=tf_prediction_item_size)[1]
+        self.tf_rankings = tf.nn.top_k(-tf_indices_of_ranks, k=tf_prediction_item_size)[1]
+
         self.tf_weights = []
         self.tf_weights.extend(user_weights)
         self.tf_weights.extend(item_weights)
         self.tf_weights.append(self.tf_user_feature_biases)
         self.tf_weights.append(self.tf_item_feature_biases)
 
-    def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.01, alpha=0.001,
-            end_on_loss_increase=False, verbose=True, out_sample_interactions=None):
+    def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
+            end_on_loss_increase=False, verbose=False, out_sample_interactions=None):
 
         # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed without
         # refitting
@@ -240,8 +248,18 @@ class ReLURec(object):
 
         return predictions
 
-    def predict_rank(self, test_interactions, user_features, item_features, train_interactions=None):
+    def predict_rank(self, test_interactions, user_features, item_features, train_interactions=None, num_threads=1):
 
         feed_dict = self.create_feed_dict(test_interactions, user_features, item_features, dropout_keep_proba=1.0)
 
-        predictions = self.tf_prediction_dense.eval(session=self.session, feed_dict=feed_dict)
+        # TODO JK - I'm commenting this out for now, but this does the ranking using numpy ops instead of tf ops
+        # predictions = self.tf_prediction_dense.eval(session=self.session, feed_dict=feed_dict)
+        # rankings = (-predictions).argsort().argsort()
+
+        rankings = self.tf_rankings.eval(session=self.session, feed_dict=feed_dict)
+
+        result_dok = sp.dok_matrix(rankings.shape)
+        for user_id, item_id in itertools.izip(feed_dict[self.tf_x_user], feed_dict[self.tf_x_item]):
+            result_dok[user_id, item_id] = rankings[user_id, item_id]
+
+        return sp.csr_matrix(result_dok, dtype=np.float32)
