@@ -3,7 +3,7 @@ import numpy as np
 from scipy import sparse as sp
 import tensorflow as tf
 
-from .loss import build_separation_loss
+from loss import build_separation_loss
 
 __all__ = ['ReLURec']
 
