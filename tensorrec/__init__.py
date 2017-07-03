@@ -1,6 +1,6 @@
-from tensorrec import TensorRec
-import eval
-import loss
+from .tensorrec import TensorRec
+from . import eval
+from . import loss
 
 __version__ = '0.1'
 

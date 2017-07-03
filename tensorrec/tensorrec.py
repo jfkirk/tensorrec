@@ -3,41 +3,23 @@ import numpy as np
 from scipy import sparse as sp
 import tensorflow as tf
 
-from loss import build_separation_loss
-
-__all__ = ['TensorRec']
-
-
-def _build_representation_graph(tf_features, no_components, n_features, node_name_ending):
-    relu_size = 4 * no_components
-
-    # Create variable nodes
-    tf_relu_weights = tf.Variable(tf.random_normal([n_features, relu_size], stddev=.5),
-                                  name='relu_weights_%s' % node_name_ending)
-    tf_relu_biases = tf.Variable(tf.zeros([1, relu_size]),
-                                 name='relu_biases_%s' % node_name_ending)
-    tf_linear_weights = tf.Variable(tf.random_normal([relu_size, no_components], stddev=.5),
-                                    name='linear_weights_%s' % node_name_ending)
-
-    # Create ReLU layer
-    tf_relu = tf.nn.relu(tf.add(tf.sparse_tensor_dense_matmul(tf_features, tf_relu_weights),
-                                tf_relu_biases))
-    tf_repr = tf.matmul(tf_relu, tf_linear_weights)
-
-    # Return repr layer and variables
-    return tf_repr, [tf_relu_weights, tf_linear_weights, tf_relu_biases]
+from .loss import build_separation_loss
+from .representation_graphs import build_linear_representation_graph
 
 
 class TensorRec(object):
 
-    def __init__(self, no_components=100, num_threads=4):
+    def __init__(self, no_components=100, num_threads=4,
+                 user_repr_graph_factory=build_linear_representation_graph,
+                 item_repr_graph_factory=build_linear_representation_graph):
 
         self.no_components = no_components
         self.num_threads = num_threads
+        self.user_repr_graph_factory = user_repr_graph_factory
+        self.item_repr_graph_factory = item_repr_graph_factory
 
         self.tf_user_representation = None
         self.tf_item_representation = None
-        self.tf_affinity = None
         self.tf_user_feature_biases = None
         self.tf_item_feature_biases = None
         self.tf_projected_user_biases = None
@@ -45,6 +27,12 @@ class TensorRec(object):
         self.tf_prediction_sparse = None
         self.tf_prediction_dense = None
         self.tf_rankings = None
+
+        # Training nodes
+        self.tf_basic_loss = None
+        self.tf_weight_reg_loss = None
+        self.tf_loss = None
+        self.tf_optimizer = None
 
         # TF feed placeholders
         self.tf_n_users = None
@@ -58,6 +46,8 @@ class TensorRec(object):
         self.tf_y = None
         self.tf_x_user = None
         self.tf_x_item = None
+        self.tf_learning_rate = None
+        self.tf_alpha = None
 
         # For weight normalization
         self.tf_weights = []
@@ -82,9 +72,9 @@ class TensorRec(object):
 
         feed_dict = {self.tf_n_users: user_features_matrix.shape[0],
                      self.tf_n_items: item_features_matrix.shape[0],
-                     self.tf_user_feature_indices: zip(user_features_matrix.row, user_features_matrix.col),
+                     self.tf_user_feature_indices: [*zip(user_features_matrix.row, user_features_matrix.col)],
                      self.tf_user_feature_values: user_features_matrix.data,
-                     self.tf_item_feature_indices: zip(item_features_matrix.row, item_features_matrix.col),
+                     self.tf_item_feature_indices: [*zip(item_features_matrix.row, item_features_matrix.col)],
                      self.tf_item_feature_values: item_features_matrix.data,
                      self.tf_x_user: interactions_matrix.row,
                      self.tf_x_item: interactions_matrix.col,
@@ -107,6 +97,8 @@ class TensorRec(object):
         self.tf_y = tf.placeholder('float', [None], name='y')
         self.tf_x_user = tf.placeholder('int64', None, name='x_user')
         self.tf_x_item = tf.placeholder('int64', None, name='x_item')
+        self.tf_learning_rate = tf.placeholder('float', None)
+        self.tf_alpha = tf.placeholder('float', None)
 
         # Construct the features as sparse matrices
         self.tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
@@ -116,15 +108,15 @@ class TensorRec(object):
 
         # Build the representations
         self.tf_user_representation, user_weights = \
-            _build_representation_graph(tf_features=self.tf_user_features,
-                                        no_components=self.no_components,
-                                        n_features=n_user_features,
-                                        node_name_ending='user')
+            self.user_repr_graph_factory(tf_features=self.tf_user_features,
+                                         no_components=self.no_components,
+                                         n_features=n_user_features,
+                                         node_name_ending='user')
         self.tf_item_representation, item_weights = \
-            _build_representation_graph(tf_features=self.tf_item_features,
-                                        no_components=self.no_components,
-                                        n_features=n_item_features,
-                                        node_name_ending='item')
+            self.item_repr_graph_factory(tf_features=self.tf_item_features,
+                                         no_components=self.no_components,
+                                         n_features=n_item_features,
+                                         node_name_ending='item')
 
         # Calculate the user and item biases
         self.tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
@@ -170,6 +162,12 @@ class TensorRec(object):
         self.tf_weights.append(self.tf_user_feature_biases)
         self.tf_weights.append(self.tf_item_feature_biases)
 
+        # Loss function nodes
+        self.tf_basic_loss = build_separation_loss(tf_prediction=self.tf_prediction_sparse, tf_y=self.tf_y)
+        self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
+        self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
+        self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
+
     def fit(self, session, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
             verbose=False, out_sample_interactions=None):
 
@@ -182,40 +180,35 @@ class TensorRec(object):
         self.fit_partial(session, interactions, user_features, item_features, epochs, learning_rate, alpha, verbose,
                          out_sample_interactions)
 
-    def fit_partial(self, session, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
+    def fit_partial(self, session, interactions, user_features, item_features, epochs=1, learning_rate=0.1, alpha=0.0001,
                     verbose=False, out_sample_interactions=None):
 
         if verbose:
-            print 'Beginning fitting'
-
-        basic_loss = build_separation_loss(tf_prediction=self.tf_prediction_sparse,
-                                           tf_y=self.tf_y)
-        weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
-
-        tf_loss = basic_loss + (alpha * weight_reg_loss)
-        tf_optimizer = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
-
-        if verbose:
-            print 'Processing interaction and feature data'
+            print('Processing interaction and feature data')
 
         if out_sample_interactions:
             os_feed_dict = self.create_feed_dict(out_sample_interactions, user_features, item_features)
 
-        feed_dict = self.create_feed_dict(interactions, user_features, item_features)
+        feed_dict = self.create_feed_dict(interactions, user_features, item_features,
+                                          extra_feed_kwargs={self.tf_learning_rate: learning_rate,
+                                                             self.tf_alpha: alpha})
 
-        avg_loss = basic_loss.eval(session=session, feed_dict=feed_dict)
+        if verbose:
+            print('Beginning fitting')
+
         for epoch in range(epochs):
 
-            session.run(tf_optimizer, feed_dict=feed_dict)
+            session.run(self.tf_optimizer, feed_dict=feed_dict)
 
             if verbose:
+                mean_loss = self.tf_basic_loss.eval(session=session, feed_dict=feed_dict)
                 mean_pred = np.mean(self.tf_prediction_sparse.eval(session=session, feed_dict=feed_dict))
-                weight_reg_l2_loss = (alpha * weight_reg_loss).eval(session=session, feed_dict=feed_dict)
-                print 'EPOCH %s loss = %s, weight_reg_l2_loss = %s, mean_pred = %s' % (epoch, avg_loss,
-                                                                                       weight_reg_l2_loss, mean_pred)
+                weight_reg_l2_loss = (alpha * self.tf_weight_reg_loss).eval(session=session, feed_dict=feed_dict)
+                print('EPOCH %s loss = %s, weight_reg_l2_loss = %s, mean_pred = %s' % (epoch, mean_loss,
+                                                                                       weight_reg_l2_loss, mean_pred))
                 if out_sample_interactions:
-                    os_loss = basic_loss.eval(session=session, feed_dict=os_feed_dict)
-                    print 'Out-Sample loss = %s' % os_loss
+                    os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
+                    print('Out-Sample loss = %s' % os_loss)
 
     def predict(self, session, user_ids, item_ids, user_features, item_features):
 
@@ -244,7 +237,7 @@ class TensorRec(object):
         rankings = self.tf_rankings.eval(session=session, feed_dict=feed_dict)
 
         result_dok = sp.dok_matrix(rankings.shape)
-        for user_id, item_id in itertools.izip(feed_dict[self.tf_x_user], feed_dict[self.tf_x_item]):
+        for user_id, item_id in zip(feed_dict[self.tf_x_user], feed_dict[self.tf_x_item]):
             result_dok[user_id, item_id] = rankings[user_id, item_id]
 
         return sp.csr_matrix(result_dok, dtype=np.float32)

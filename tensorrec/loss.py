@@ -23,8 +23,8 @@ def build_separation_loss(tf_prediction, tf_y):
     tf_pos_mean, tf_pos_var = tf.nn.moments(tf_positive_predictions, axes=[0])
     tf_neg_mean, tf_neg_var = tf.nn.moments(tf_negative_predictions, axes=[0])
 
-    tf_overlap_gaussian = tf.contrib.distributions.Normal(mu=(tf_neg_mean - tf_pos_mean),
-                                                          sigma=tf.sqrt(tf_neg_var + tf_pos_var))
+    tf_overlap_gaussian = tf.contrib.distributions.Normal(loc=(tf_neg_mean - tf_pos_mean),
+                                                          scale=tf.sqrt(tf_neg_var + tf_pos_var))
 
     loss = 1.0 - tf_overlap_gaussian.cdf(0.0)
     return loss
