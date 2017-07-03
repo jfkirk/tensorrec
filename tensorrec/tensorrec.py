@@ -8,12 +8,11 @@ from .representation_graphs import build_linear_representation_graph
 
 class TensorRec(object):
 
-    def __init__(self, no_components=100, num_threads=4,
+    def __init__(self, no_components=100,
                  user_repr_graph_factory=build_linear_representation_graph,
                  item_repr_graph_factory=build_linear_representation_graph):
 
         self.no_components = no_components
-        self.num_threads = num_threads
         self.user_repr_graph_factory = user_repr_graph_factory
         self.item_repr_graph_factory = item_repr_graph_factory
 
