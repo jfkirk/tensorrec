@@ -1,2 +1,2 @@
-# ReLURec
-A hybrid recommendation algorithm in Python using TensorFlow.
+# TensorRec
+A recommendation algorithm framework in Python using TensorFlow.
