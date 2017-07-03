@@ -1,2 +1,2 @@
 # WIP: TensorRec
-A recommendation algorithm framework in Python using TensorFlow.
+A TensorFlow recommendation algorithm framework in Python.
