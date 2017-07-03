@@ -32,11 +32,12 @@ def build_separation_loss(tf_prediction, tf_y):
 
 def build_warp_loss(tf_prediction, tf_y):
     """
-    NOTE: For now, this is a bastardization of true WARP.
     :param tf_prediction:
     :param tf_y:
     :return:
     """
+
+    # TODO JK: implement WARP loss
 
     tf_positive_mask = tf.greater(tf_y, 0.0)
     tf_negative_mask = tf.less_equal(tf_y, 0.0)
