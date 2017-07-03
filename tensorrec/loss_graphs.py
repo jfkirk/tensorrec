@@ -2,6 +2,12 @@ import tensorflow as tf
 
 
 def build_rmse_loss(tf_prediction, tf_y):
+    """
+    This loss function returns the root mean square error between the predictions and the true interactions.
+    :param tf_prediction:
+    :param tf_y:
+    :return:
+    """
     return tf.sqrt(tf.reduce_mean(tf.square(tf_y - tf_prediction)))
 
 
