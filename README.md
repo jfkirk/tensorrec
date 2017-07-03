@@ -17,6 +17,13 @@ interactions, user_features, item_features = tensorrec.util.generate_dummy_data(
 session = tf.Session()
 model.fit(session, interactions, user_features, item_features, verbose=True)
 
+# Predict scores for user 75 on items 1000, 1001, and 1002
+predictions = model.predict(session, 
+                            user_ids=[75], 
+                            item_ids=[1000, 1001, 1002], 
+                            user_features=user_features, 
+                            item_features=item_features)
+
 # Calculate and print the recall at 1000
 r_at_k = tensorrec.eval.recall_at_k(model, session, interactions, 
                                     k=1000, 
