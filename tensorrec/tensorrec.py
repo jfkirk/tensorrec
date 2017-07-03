@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from loss import build_separation_loss
 
-__all__ = ['ReLURec']
+__all__ = ['TensorRec']
 
 
 def _build_representation_graph(tf_features, tf_nn_dropout_keep_proba, no_components, n_features, node_name_ending):
@@ -29,7 +29,7 @@ def _build_representation_graph(tf_features, tf_nn_dropout_keep_proba, no_compon
     return tf_repr, [tf_relu_weights, tf_tanh_weights, tf_relu_biases]
 
 
-class ReLURec(object):
+class TensorRec(object):
 
     def __init__(self, no_components=100, num_threads=4, session=None):
 
