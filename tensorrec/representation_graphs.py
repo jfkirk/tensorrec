@@ -1,10 +1,10 @@
 import tensorflow as tf
 
 
-def build_linear_representation_graph(tf_features, no_components, n_features, node_name_ending):
+def build_linear_representation_graph(tf_features, n_components, n_features, node_name_ending):
 
     # Create variable nodes
-    tf_linear_weights = tf.Variable(tf.random_normal([n_features, no_components], stddev=.5),
+    tf_linear_weights = tf.Variable(tf.random_normal([n_features, n_components], stddev=.5),
                                     name='linear_weights_%s' % node_name_ending)
     tf_repr = tf.sparse_tensor_dense_matmul(tf_features, tf_linear_weights)
 
@@ -12,15 +12,15 @@ def build_linear_representation_graph(tf_features, no_components, n_features, no
     return tf_repr, [tf_linear_weights]
 
 
-def build_relu_representation_graph(tf_features, no_components, n_features, node_name_ending):
-    relu_size = 4 * no_components
+def build_relu_representation_graph(tf_features, n_components, n_features, node_name_ending):
+    relu_size = 4 * n_components
 
     # Create variable nodes
     tf_relu_weights = tf.Variable(tf.random_normal([n_features, relu_size], stddev=.5),
                                   name='relu_weights_%s' % node_name_ending)
     tf_relu_biases = tf.Variable(tf.zeros([1, relu_size]),
                                  name='relu_biases_%s' % node_name_ending)
-    tf_linear_weights = tf.Variable(tf.random_normal([relu_size, no_components], stddev=.5),
+    tf_linear_weights = tf.Variable(tf.random_normal([relu_size, n_components], stddev=.5),
                                     name='linear_weights_%s' % node_name_ending)
 
     # Create ReLU layer

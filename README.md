@@ -38,8 +38,8 @@ import tensorflow as tf
 import tensorrec
 
 # Define a representation graph function
-def build_tanh_representation_graph(tf_features, no_components, n_features, node_name_ending):
-    tf_tanh_weights = tf.Variable(tf.random_normal([n_features, no_components], 
+def build_tanh_representation_graph(tf_features, n_components, n_features, node_name_ending):
+    tf_tanh_weights = tf.Variable(tf.random_normal([n_features, n_components],
                                                    stddev=.5),
                                   name='tanh_weights_%s' % node_name_ending)
 

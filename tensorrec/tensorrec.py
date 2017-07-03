@@ -8,11 +8,11 @@ from .representation_graphs import build_linear_representation_graph
 
 class TensorRec(object):
 
-    def __init__(self, no_components=100,
+    def __init__(self, n_components=100,
                  user_repr_graph_factory=build_linear_representation_graph,
                  item_repr_graph_factory=build_linear_representation_graph):
 
-        self.no_components = no_components
+        self.n_components = n_components
         self.user_repr_graph_factory = user_repr_graph_factory
         self.item_repr_graph_factory = item_repr_graph_factory
 
@@ -107,12 +107,12 @@ class TensorRec(object):
         # Build the representations
         self.tf_user_representation, user_weights = \
             self.user_repr_graph_factory(tf_features=self.tf_user_features,
-                                         no_components=self.no_components,
+                                         n_components=self.n_components,
                                          n_features=n_user_features,
                                          node_name_ending='user')
         self.tf_item_representation, item_weights = \
             self.item_repr_graph_factory(tf_features=self.tf_item_features,
-                                         no_components=self.no_components,
+                                         n_components=self.n_components,
                                          n_features=n_item_features,
                                          node_name_ending='item')
 

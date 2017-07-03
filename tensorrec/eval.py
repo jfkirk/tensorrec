@@ -80,10 +80,10 @@ def fit_and_eval(model, user_features, item_features, train_interactions, test_i
 def grid_check_model_on_dataset(train_interactions, test_interactions, user_features, item_features):
 
     results = []
-    for no_components in [2, 4, 8, 16, 32, 64, 128, 256]:
+    for n_components in [2, 4, 8, 16, 32, 64, 128, 256]:
         for epochs in [2, 4, 8, 16, 32, 64, 128, 256]:
-            model = TensorRec(no_components=no_components)
+            model = TensorRec(n_components=n_components)
             scores = fit_and_eval(model, user_features, item_features, train_interactions, test_interactions,
                                   fit_kwargs={'epochs': epochs})
-            results.append((no_components, scores))
-            print (no_components, epochs, scores)
+            results.append((n_components, scores))
+            print (n_components, epochs, scores)
