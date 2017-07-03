@@ -3,7 +3,6 @@ import numpy as np
 import tensorflow as tf
 
 from .tensorrec import TensorRec
-from .util import generate_movielens_data
 
 
 def precision_at_k(model, session, test_interactions, k=10, user_features=None, item_features=None,
@@ -88,7 +87,3 @@ def grid_check_model_on_dataset(train_interactions, test_interactions, user_feat
                                   fit_kwargs={'epochs': epochs})
             results.append((no_components, scores))
             print (no_components, epochs, scores)
-
-
-def grid_check_model_on_movielens():
-    grid_check_model_on_dataset(*generate_movielens_data(4.0))
