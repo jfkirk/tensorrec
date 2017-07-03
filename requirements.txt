@@ -1,2 +1,2 @@
-lightfm=1.13
-tensorflow=1.2.1
+lightfm==1.13
+tensorflow==1.2.1
