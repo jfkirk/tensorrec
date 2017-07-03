@@ -39,8 +39,10 @@ import tensorrec
 
 # Define a representation graph function
 def build_tanh_representation_graph(tf_features, no_components, n_features, node_name_ending):
-    tf_tanh_weights = tf.Variable(tf.random_normal([n_features, no_components], stddev=.5),
+    tf_tanh_weights = tf.Variable(tf.random_normal([n_features, no_components], 
+                                                   stddev=.5),
                                   name='tanh_weights_%s' % node_name_ending)
+
     tf_repr = tf.nn.tanh(tf.sparse_tensor_dense_matmul(tf_features, tf_tanh_weights))
 
     # Return repr layer and variables
