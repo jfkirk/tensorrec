@@ -2,7 +2,7 @@ import numpy as np
 from scipy import sparse as sp
 import tensorflow as tf
 
-from .loss_graphs import build_separation_loss
+from .loss_graphs import build_rmse_loss
 from .representation_graphs import build_linear_representation_graph
 
 
@@ -10,11 +10,13 @@ class TensorRec(object):
 
     def __init__(self, n_components=100,
                  user_repr_graph_factory=build_linear_representation_graph,
-                 item_repr_graph_factory=build_linear_representation_graph):
+                 item_repr_graph_factory=build_linear_representation_graph,
+                 loss_graph_factory=build_rmse_loss):
 
         self.n_components = n_components
         self.user_repr_graph_factory = user_repr_graph_factory
         self.item_repr_graph_factory = item_repr_graph_factory
+        self.loss_graph_factory = loss_graph_factory
 
         self.tf_user_representation = None
         self.tf_item_representation = None
@@ -161,7 +163,7 @@ class TensorRec(object):
         self.tf_weights.append(self.tf_item_feature_biases)
 
         # Loss function nodes
-        self.tf_basic_loss = build_separation_loss(tf_prediction=self.tf_prediction_sparse, tf_y=self.tf_y)
+        self.tf_basic_loss = self.loss_graph_factory(tf_prediction=self.tf_prediction_sparse, tf_y=self.tf_y)
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
