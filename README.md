@@ -77,8 +77,9 @@ def build_tanh_representation_graph(tf_features, n_components, n_features, node_
     :param node_name_ending: String
     Either 'user' or 'item'
     :return:
-    A tuple of (tf.Tensor, list) where the first value is the resulting representation in n_components dimensions and
-    the second value is a list containing all tf.Variables which should be subject to regularization.
+    A tuple of (tf.Tensor, list) where the first value is the resulting representation in n_components
+    dimensions and the second value is a list containing all tf.Variables which should be subject to
+    regularization.
     """
     tf_tanh_weights = tf.Variable(tf.random_normal([n_features, n_components],
                                                    stddev=.5),
