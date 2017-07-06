@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def build_rmse_loss(tf_prediction, tf_y):
+def build_rmse_loss(tf_prediction, tf_y, **kwargs):
     """
     This loss function returns the root mean square error between the predictions and the true interactions.
     :param tf_prediction:
@@ -11,7 +11,7 @@ def build_rmse_loss(tf_prediction, tf_y):
     return tf.sqrt(tf.reduce_mean(tf.square(tf_y - tf_prediction)))
 
 
-def build_separation_loss(tf_prediction, tf_y):
+def build_separation_loss(tf_prediction, tf_y, **kwargs):
     """
     This loss function models the explicit positive and negative interaction predictions as normal distributions and
     returns the probability of overlap between the two distributions.
@@ -36,13 +36,7 @@ def build_separation_loss(tf_prediction, tf_y):
     return loss
 
 
-def build_warp_loss(tf_prediction, tf_y):
-    """
-    :param tf_prediction:
-    :param tf_y:
-    :return:
-    """
-
+def build_warp_loss(tf_prediction, tf_y, **kwargs):
     # TODO JK: implement WARP loss
 
     tf_positive_mask = tf.greater(tf_y, 0.0)
@@ -50,9 +44,3 @@ def build_warp_loss(tf_prediction, tf_y):
 
     tf_positive_predictions = tf.boolean_mask(tf_prediction, tf_positive_mask)
     tf_negative_predictions = tf.boolean_mask(tf_prediction, tf_negative_mask)
-
-    # Rank the prediction values
-    # Like most of my career, I got this from StackOverflow -JK
-    size = tf.size(tf_prediction)
-    indices_of_ranks = tf.nn.top_k(tf_prediction, size)[1]
-    ranks_of_indices = tf.nn.top_k(-indices_of_ranks, size)[1]
