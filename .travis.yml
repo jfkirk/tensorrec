@@ -3,4 +3,4 @@ python:
   - 3.6.1
 
 script:
-  - flake8 codetransformer
+  - flake8 tensorrec
