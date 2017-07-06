@@ -8,6 +8,14 @@ TensorRec lets you to customize your recommendation system's embedding functions
 
 A TensorRec system consumes three pieces of data: `user_features`, `item_features`, and `interactions`. It uses this data to learn to make and rank recommendations.
 
+## TODO
+Immediate plans for development of TensorRec include:
+1. Documentation of TensorRec class and methods
+2. Automated testing
+3. Implementation of WARP loss, or an alternate pairwise loss solution
+4. Implementation of more evaluation methods (AUC, F score, etc)
+5. Integration of publicly available data sets (MovieLens, etc)
+
 ## Example: Input data
 
 The following examples show what user/item features and interactions would look like in a TensorRec system meant to recommend business consulting projects (items) to consultants (users).
