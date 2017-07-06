@@ -64,7 +64,8 @@ def fit_and_eval(model, user_features, item_features, train_interactions, test_i
 
     session = tf.Session()
 
-    model.fit(session=session, user_features=user_features, item_features=item_features, interactions=train_interactions, **fit_kwargs)
+    model.fit(session=session, user_features=user_features, item_features=item_features,
+              interactions=train_interactions, **fit_kwargs)
     p_at_k = precision_at_k(model, session, test_interactions,
                             user_features=user_features,
                             item_features=item_features,
@@ -86,4 +87,4 @@ def grid_check_model_on_dataset(train_interactions, test_interactions, user_feat
             scores = fit_and_eval(model, user_features, item_features, train_interactions, test_interactions,
                                   fit_kwargs={'epochs': epochs})
             results.append((n_components, scores))
-            print (n_components, epochs, scores)
+            print(n_components, epochs, scores)

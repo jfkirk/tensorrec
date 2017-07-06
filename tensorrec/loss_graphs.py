@@ -42,5 +42,5 @@ def build_warp_loss(tf_prediction, tf_y, **kwargs):
     tf_positive_mask = tf.greater(tf_y, 0.0)
     tf_negative_mask = tf.less_equal(tf_y, 0.0)
 
-    tf_positive_predictions = tf.boolean_mask(tf_prediction, tf_positive_mask)
-    tf_negative_predictions = tf.boolean_mask(tf_prediction, tf_negative_mask)
+    tf_positive_predictions = tf.boolean_mask(tf_prediction, tf_positive_mask) # noqa
+    tf_negative_predictions = tf.boolean_mask(tf_prediction, tf_negative_mask) # noqa

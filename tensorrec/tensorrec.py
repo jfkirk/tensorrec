@@ -145,11 +145,11 @@ class TensorRec(object):
 
         # For the dense prediction case, repr matrices can be multiplied together and the projected biases can be
         # broadcast across the resultant matrix
-        self.tf_prediction_dense = tf.matmul(self.tf_user_representation,
-                                             self.tf_item_representation,
-                                             transpose_b=True) \
-                                   + tf.expand_dims(self.tf_projected_user_biases, 1) \
-                                   + tf.expand_dims(self.tf_projected_item_biases, 0)
+        self.tf_prediction_dense = (
+            tf.matmul(self.tf_user_representation, self.tf_item_representation, transpose_b=True)
+            + tf.expand_dims(self.tf_projected_user_biases, 1)
+            + tf.expand_dims(self.tf_projected_item_biases, 0)
+        )
 
         # Double-sortation serves as a ranking process
         tf_prediction_item_size = tf.shape(self.tf_prediction_dense)[1]
@@ -180,8 +180,8 @@ class TensorRec(object):
         self.fit_partial(session, interactions, user_features, item_features, epochs, learning_rate, alpha, verbose,
                          out_sample_interactions)
 
-    def fit_partial(self, session, interactions, user_features, item_features, epochs=1, learning_rate=0.1, alpha=0.0001,
-                    verbose=False, out_sample_interactions=None):
+    def fit_partial(self, session, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
+                    alpha=0.0001, verbose=False, out_sample_interactions=None):
 
         if verbose:
             print('Processing interaction and feature data')
