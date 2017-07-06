@@ -14,13 +14,16 @@ The following examples show what user/item features and interactions would look 
 
 The data is represented in matrices. TensorRec can consume these matrices as any `scipy.sparse` matrix.
 
-User features:
+### User features:
+
 ![user_features](https://cdn-images-1.medium.com/max/1600/1*43Be-sAmktN9HYvseA3mng.png)
 
-Item features:
+### Item features:
+
 ![item_features](https://cdn-images-1.medium.com/max/1600/1*56TwD4Sh5A2SEGvl1S_82g.png)
 
-Interactions:
+### Interactions:
+
 ![interactions](https://cdn-images-1.medium.com/max/1600/1*tfnTAxGB-SSY8tV_Mrw2CQ.png)
 
 Images from [Medium](https://medium.com/product-at-catalant-technologies/using-lightfm-to-recommend-projects-to-consultants-44084df7321c)
