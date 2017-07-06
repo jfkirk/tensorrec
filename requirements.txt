@@ -1,1 +1,2 @@
+flake8==3.3.0
 tensorflow==1.2.1
