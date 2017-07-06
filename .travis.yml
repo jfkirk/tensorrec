@@ -4,3 +4,6 @@ python:
 
 script:
   - flake8 tensorrec
+
+notifications:
+  email: false
