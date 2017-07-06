@@ -59,7 +59,7 @@ r_at_k = tensorrec.eval.recall_at_k(model, session, interactions,
 print(np.mean(r_at_k))
 ```
 
-## Example: Defining custom representation graph
+## Example: Defining custom representation function
 ```python
 import tensorflow as tf
 import tensorrec
