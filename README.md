@@ -63,9 +63,9 @@ predictions = model.predict(session,
                             user_features=user_features,
                             item_features=item_features)
 
-# Calculate and print the recall at 1000
+# Calculate and print the recall at 10
 r_at_k = tensorrec.eval.recall_at_k(model, session, interactions, 
-                                    k=1000, 
+                                    k=10,
                                     user_features=user_features,
                                     item_features=item_features)
 print(np.mean(r_at_k))

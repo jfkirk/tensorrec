@@ -67,16 +67,16 @@ class ReadmeTestCase(TestCase):
         session = tf.Session()
         model.fit(session, interactions, user_features, item_features, epochs=5, verbose=True)
 
-        # Predict scores for user 75 on items 1000, 1001, and 1002
+        # Predict scores for user 75 on items 100, 101, and 102
         predictions = model.predict(session,
                                     user_ids=[75, 75, 75],
                                     item_ids=[100, 101, 102],
                                     user_features=user_features,
                                     item_features=item_features)
 
-        # Calculate and print the recall at 1000
+        # Calculate and print the recall at 10
         r_at_k = recall_at_k(model, session, interactions,
-                             k=1000,
+                             k=10,
                              user_features=user_features,
                              item_features=item_features)
         print(np.mean(r_at_k))
