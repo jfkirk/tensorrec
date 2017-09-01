@@ -4,6 +4,7 @@ python:
 
 script:
   - flake8 tensorrec
+  - nosetests
 
 notifications:
   email: false
