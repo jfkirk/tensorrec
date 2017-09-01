@@ -1,8 +1,10 @@
 from unittest import TestCase
 
+import numpy as np
 import tensorflow as tf
 
 from tensorrec import TensorRec
+from tensorrec.eval import recall_at_k
 from tensorrec.util import generate_dummy_data
 
 
@@ -32,3 +34,61 @@ class TensorRecTestCase(TestCase):
         model.fit(session, interactions, user_features, item_features, epochs=10)
         # Ensure that the nodes have been built
         self.assertIsNotNone(model.tf_prediction_dense)
+
+
+class ReadmeTestCase(TestCase):
+
+    def test_basic_usage(self):
+        # Build the model with default parameters
+        model = TensorRec()
+
+        # Generate some dummy data
+        interactions, user_features, item_features = generate_dummy_data()
+
+        # Start a TensorFlow session and fit the model
+        session = tf.Session()
+        model.fit(session, interactions, user_features, item_features, epochs=5, verbose=True)
+
+        # Predict scores for user 75 on items 1000, 1001, and 1002
+        predictions = model.predict(session,
+                                    user_ids=[75],
+                                    item_ids=[1000, 1001, 1002],
+                                    user_features=user_features,
+                                    item_features=item_features)
+
+        # Calculate and print the recall at 1000
+        r_at_k = recall_at_k(model, session, interactions,
+                             k=1000,
+                             user_features=user_features,
+                             item_features=item_features)
+        print(np.mean(r_at_k))
+
+        self.assertIsNotNone(predictions)
+
+    def test_custom_repr_graph(self):
+        # Define a custom representation function graph
+        def build_tanh_representation_graph(tf_features, n_components, n_features, node_name_ending):
+            tf_tanh_weights = tf.Variable(tf.random_normal([n_features, n_components],
+                                                           stddev=.5),
+                                          name='tanh_weights_%s' % node_name_ending)
+
+            tf_repr = tf.nn.tanh(tf.sparse_tensor_dense_matmul(tf_features, tf_tanh_weights))
+
+            # Return repr layer and variables
+            return tf_repr, [tf_tanh_weights]
+
+        # Build a model with the custom representation function
+        model = TensorRec(user_repr_graph_factory=build_tanh_representation_graph,
+                          item_repr_graph_factory=build_tanh_representation_graph)
+
+        self.assertIsNotNone(model)
+
+    def test_custom_loss_graph(self):
+        # Define a custom loss function graph
+        def build_simple_error_graph(tf_prediction, tf_y, **kwargs):
+            return tf.reduce_mean(tf.abs(tf_y - tf_prediction))
+
+        # Build a model with the custom loss function
+        model = TensorRec(loss_graph_factory=build_simple_error_graph)
+
+        self.assertIsNotNone(model)
