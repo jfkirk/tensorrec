@@ -13,6 +13,12 @@ class TensorRec(object):
                  item_repr_graph_factory=build_linear_representation_graph,
                  loss_graph_factory=build_rmse_loss):
 
+        # Arg-check
+        if (n_components is None) or (user_repr_graph_factory is None) or (item_repr_graph_factory is None) or (loss_graph_factory is None):
+            raise ValueError("All arguments to TensorRec() must be non-None")
+        if n_components < 1:
+            raise ValueError("n_components must be >= 1")
+
         self.n_components = n_components
         self.user_repr_graph_factory = user_repr_graph_factory
         self.item_repr_graph_factory = item_repr_graph_factory
@@ -171,17 +177,20 @@ class TensorRec(object):
     def fit(self, session, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
             verbose=False, out_sample_interactions=None):
 
-        # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed without
-        # refitting
-        self.build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
-
-        session.run(tf.global_variables_initializer())
-
+        # Pass-through to fit_partial
         self.fit_partial(session, interactions, user_features, item_features, epochs, learning_rate, alpha, verbose,
                          out_sample_interactions)
 
     def fit_partial(self, session, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
                     alpha=0.0001, verbose=False, out_sample_interactions=None):
+
+        # Check if the graph has been constructed buy checking the dense prediction node
+        # If it hasn't been constructed, initialize it
+        if self.tf_prediction_dense is None:
+            # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed
+            # without refitting
+            self.build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
+            session.run(tf.global_variables_initializer())
 
         if verbose:
             print('Processing interaction and feature data')
