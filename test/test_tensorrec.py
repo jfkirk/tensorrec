@@ -43,7 +43,7 @@ class ReadmeTestCase(TestCase):
         model = TensorRec()
 
         # Generate some dummy data
-        interactions, user_features, item_features = generate_dummy_data()
+        interactions, user_features, item_features = generate_dummy_data(100, 150, .05)
 
         # Start a TensorFlow session and fit the model
         session = tf.Session()
@@ -52,7 +52,7 @@ class ReadmeTestCase(TestCase):
         # Predict scores for user 75 on items 1000, 1001, and 1002
         predictions = model.predict(session,
                                     user_ids=[75],
-                                    item_ids=[1000, 1001, 1002],
+                                    item_ids=[100, 101, 102],
                                     user_features=user_features,
                                     item_features=item_features)
 
