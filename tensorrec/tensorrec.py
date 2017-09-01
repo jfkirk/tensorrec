@@ -14,7 +14,8 @@ class TensorRec(object):
                  loss_graph_factory=build_rmse_loss):
 
         # Arg-check
-        if (n_components is None) or (user_repr_graph_factory is None) or (item_repr_graph_factory is None) or (loss_graph_factory is None):
+        if (n_components is None) or (user_repr_graph_factory is None) or (item_repr_graph_factory is None) or \
+                (loss_graph_factory is None):
             raise ValueError("All arguments to TensorRec() must be non-None")
         if n_components < 1:
             raise ValueError("n_components must be >= 1")
