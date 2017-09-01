@@ -56,7 +56,7 @@ interactions, user_features, item_features = tensorrec.util.generate_dummy_data(
 session = tf.Session()
 model.fit(session, interactions, user_features, item_features, epochs=5, verbose=True)
 
-# Predict scores for user 75 on items 1000, 1001, and 1002
+# Predict scores for user 75 on items 100, 101, and 102
 predictions = model.predict(session,
                             user_ids=[75, 75, 75],
                             item_ids=[100, 101, 102],
