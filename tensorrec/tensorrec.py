@@ -222,13 +222,15 @@ class TensorRec(object):
 
     def predict(self, session, user_ids, item_ids, user_features, item_features):
 
+        if len(user_ids) != len(item_ids):
+            raise ValueError("Args user_ids and item_ids must be of equal length")
+
         user_ids = np.asarray(user_ids, dtype=np.int32)
         item_ids = np.asarray(item_ids, dtype=np.int32)
 
         placeholders = sp.dok_matrix((max(user_ids) + 1, max(item_ids) + 1))
-        for user in user_ids:
-            for item in item_ids:
-                placeholders[user, item] = 1
+        for user, item in zip(user_ids, item_ids):
+            placeholders[user, item] = 1
 
         feed_dict = self.create_feed_dict(placeholders, user_features, item_features)
 

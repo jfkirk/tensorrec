@@ -35,6 +35,22 @@ class TensorRecTestCase(TestCase):
         # Ensure that the nodes have been built
         self.assertIsNotNone(model.tf_prediction_dense)
 
+    def test_predict(self):
+        interactions, user_features, item_features = generate_dummy_data(num_users=10,
+                                                                         num_items=10,
+                                                                         interaction_density=.5)
+        model = TensorRec(n_components=10)
+        session = tf.Session()
+        model.fit(session, interactions, user_features, item_features, epochs=10)
+
+        predictions = model.predict(session,
+                                    user_ids=[1, 2, 3],
+                                    item_ids=[4, 5, 6],
+                                    user_features=user_features,
+                                    item_features=item_features)
+
+        self.assertEqual(len(predictions), 3)
+
 
 class ReadmeTestCase(TestCase):
 
@@ -43,7 +59,9 @@ class ReadmeTestCase(TestCase):
         model = TensorRec()
 
         # Generate some dummy data
-        interactions, user_features, item_features = generate_dummy_data(100, 150, .05)
+        interactions, user_features, item_features = generate_dummy_data(num_users=100,
+                                                                         num_items=150,
+                                                                         interaction_density=.05)
 
         # Start a TensorFlow session and fit the model
         session = tf.Session()
@@ -51,7 +69,7 @@ class ReadmeTestCase(TestCase):
 
         # Predict scores for user 75 on items 1000, 1001, and 1002
         predictions = model.predict(session,
-                                    user_ids=[75],
+                                    user_ids=[75, 75, 75],
                                     item_ids=[100, 101, 102],
                                     user_features=user_features,
                                     item_features=item_features)

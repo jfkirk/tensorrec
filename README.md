@@ -48,23 +48,25 @@ import tensorrec
 model = tensorrec.TensorRec()
 
 # Generate some dummy data
-interactions, user_features, item_features = tensorrec.util.generate_dummy_data()
+interactions, user_features, item_features = tensorrec.util.generate_dummy_data(num_users=100,
+                                                                                num_items=150,
+                                                                                interaction_density=.05)
 
-# Start a TensorFlow session and fit the model
+# Start a TensorFlow session and fit the model for 5 epochs
 session = tf.Session()
-model.fit(session, interactions, user_features, item_features, verbose=True)
+model.fit(session, interactions, user_features, item_features, epochs=5, verbose=True)
 
 # Predict scores for user 75 on items 1000, 1001, and 1002
-predictions = model.predict(session, 
-                            user_ids=[75], 
-                            item_ids=[1000, 1001, 1002], 
-                            user_features=user_features, 
+predictions = model.predict(session,
+                            user_ids=[75, 75, 75],
+                            item_ids=[100, 101, 102],
+                            user_features=user_features,
                             item_features=item_features)
 
 # Calculate and print the recall at 1000
 r_at_k = tensorrec.eval.recall_at_k(model, session, interactions, 
                                     k=1000, 
-                                    user_features=user_features, 
+                                    user_features=user_features,
                                     item_features=item_features)
 print(np.mean(r_at_k))
 ```
