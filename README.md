@@ -10,6 +10,8 @@ TensorRec lets you to customize your recommendation system's embedding functions
 
 A TensorRec system consumes three pieces of data: `user_features`, `item_features`, and `interactions`. It uses this data to learn to make and rank recommendations.
 
+For more information, and for an outline of this project, please read [this blog post](https://medium.com/product-at-catalant-technologies/using-lightfm-to-recommend-projects-to-consultants-44084df7321c).
+
 ## TODO
 Immediate plans for development of TensorRec include:
 1. Documentation of TensorRec class and methods
