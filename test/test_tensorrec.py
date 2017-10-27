@@ -30,8 +30,7 @@ class TensorRecTestCase(TestCase):
                                                                          num_items=10,
                                                                          interaction_density=.5)
         model = TensorRec(n_components=10)
-        session = tf.Session()
-        model.fit(session, interactions, user_features, item_features, epochs=10)
+        model.fit(interactions, user_features, item_features, epochs=10)
         # Ensure that the nodes have been built
         self.assertIsNotNone(model.tf_prediction_dense)
 
@@ -40,11 +39,9 @@ class TensorRecTestCase(TestCase):
                                                                          num_items=10,
                                                                          interaction_density=.5)
         model = TensorRec(n_components=10)
-        session = tf.Session()
-        model.fit(session, interactions, user_features, item_features, epochs=10)
+        model.fit(interactions, user_features, item_features, epochs=10)
 
-        predictions = model.predict(session,
-                                    user_ids=[1, 2, 3],
+        predictions = model.predict(user_ids=[1, 2, 3],
                                     item_ids=[4, 5, 6],
                                     user_features=user_features,
                                     item_features=item_features)
@@ -63,19 +60,17 @@ class ReadmeTestCase(TestCase):
                                                                          num_items=150,
                                                                          interaction_density=.05)
 
-        # Start a TensorFlow session and fit the model
-        session = tf.Session()
-        model.fit(session, interactions, user_features, item_features, epochs=5, verbose=True)
+        # Fit the model
+        model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 
         # Predict scores for user 75 on items 100, 101, and 102
-        predictions = model.predict(session,
-                                    user_ids=[75, 75, 75],
+        predictions = model.predict(user_ids=[75, 75, 75],
                                     item_ids=[100, 101, 102],
                                     user_features=user_features,
                                     item_features=item_features)
 
         # Calculate and print the recall at 10
-        r_at_k = recall_at_k(model, session, interactions,
+        r_at_k = recall_at_k(model, interactions,
                              k=10,
                              user_features=user_features,
                              item_features=item_features)

@@ -4,6 +4,7 @@ import tensorflow as tf
 
 from .loss_graphs import rmse_loss
 from .representation_graphs import linear_representation_graph
+from .session_management import get_session
 
 
 class TensorRec(object):
@@ -189,12 +190,10 @@ class TensorRec(object):
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
 
-    def fit(self, session, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
+    def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
             verbose=False, out_sample_interactions=None):
         """
         Constructs the TensorRec graph and fits the model.
-        :param session: tf.Session
-        The TensorFlow session in which to build and fit the TensorRec model.
         :param interactions: scipy.sparse matrix
         A matrix of interactions of shape [n_users, n_items].
         :param user_features: scipy.sparse matrix
@@ -215,15 +214,13 @@ class TensorRec(object):
         """
 
         # Pass-through to fit_partial
-        self.fit_partial(session, interactions, user_features, item_features, epochs, learning_rate, alpha, verbose,
+        self.fit_partial(interactions, user_features, item_features, epochs, learning_rate, alpha, verbose,
                          out_sample_interactions)
 
-    def fit_partial(self, session, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
+    def fit_partial(self, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
                     alpha=0.0001, verbose=False, out_sample_interactions=None):
         """
         Constructs the TensorRec graph and fits the model.
-        :param session: tf.Session
-        The TensorFlow session in which to build and fit the TensorRec model.
         :param interactions: scipy.sparse matrix
         A matrix of interactions of shape [n_users, n_items].
         :param user_features: scipy.sparse matrix
@@ -242,6 +239,8 @@ class TensorRec(object):
         A matrix of interactions of shape [n_users, n_items].
         If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         """
+
+        session = get_session()
 
         # Check if the graph has been constructed buy checking the dense prediction node
         # If it hasn't been constructed, initialize it
@@ -278,11 +277,9 @@ class TensorRec(object):
                     os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
                     print('Out-Sample loss = %s' % os_loss)
 
-    def predict(self, session, user_ids, item_ids, user_features, item_features):
+    def predict(self, user_ids, item_ids, user_features, item_features):
         """
         Predict recommendation scores for the given users and items.
-        :param session: tf.Session
-        The TensorFlow session in which to execute the TensorRec model.
         :param user_ids: Iterable
         An iterable of length num_predictions of the user ids to predict.
         :param item_ids: Iterable
@@ -307,20 +304,20 @@ class TensorRec(object):
 
         feed_dict = self.create_feed_dict(placeholders, user_features, item_features)
 
-        predictions = self.tf_prediction_sparse.eval(session=session, feed_dict=feed_dict)
+        predictions = self.tf_prediction_sparse.eval(session=get_session(), feed_dict=feed_dict)
 
         return predictions
 
-    def predict_rank(self, session, test_interactions, user_features, item_features):
+    def predict_rank(self, test_interactions, user_features, item_features):
         # TODO JK - fix this API and document
 
         feed_dict = self.create_feed_dict(test_interactions, user_features, item_features)
 
         # TODO JK - I'm commenting this out for now, but this does the ranking using numpy ops instead of tf ops
-        # predictions = self.tf_prediction_dense.eval(session=session, feed_dict=feed_dict)
+        # predictions = self.tf_prediction_dense.eval(session=get_session(), feed_dict=feed_dict)
         # rankings = (-predictions).argsort().argsort()
 
-        rankings = self.tf_rankings.eval(session=session, feed_dict=feed_dict)
+        rankings = self.tf_rankings.eval(session=get_session(), feed_dict=feed_dict)
 
         result_dok = sp.dok_matrix(rankings.shape)
         for user_id, item_id in zip(feed_dict[self.tf_x_user], feed_dict[self.tf_x_item]):

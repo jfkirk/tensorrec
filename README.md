@@ -42,7 +42,6 @@ Images from [Medium](https://medium.com/product-at-catalant-technologies/using-l
 ## Example: Basic usage
 ```python
 import numpy as np
-import tensorflow as tf
 import tensorrec
 
 # Build the model with default parameters
@@ -53,19 +52,17 @@ interactions, user_features, item_features = tensorrec.util.generate_dummy_data(
                                                                                 num_items=150,
                                                                                 interaction_density=.05)
 
-# Start a TensorFlow session and fit the model for 5 epochs
-session = tf.Session()
-model.fit(session, interactions, user_features, item_features, epochs=5, verbose=True)
+# Fit the model for 5 epochs
+model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 
 # Predict scores for user 75 on items 100, 101, and 102
-predictions = model.predict(session,
-                            user_ids=[75, 75, 75],
+predictions = model.predict(user_ids=[75, 75, 75],
                             item_ids=[100, 101, 102],
                             user_features=user_features,
                             item_features=item_features)
 
 # Calculate and print the recall at 10
-r_at_k = tensorrec.eval.recall_at_k(model, session, interactions, 
+r_at_k = tensorrec.eval.recall_at_k(model, interactions,
                                     k=10,
                                     user_features=user_features,
                                     item_features=item_features)

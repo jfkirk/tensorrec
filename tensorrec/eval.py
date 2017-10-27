@@ -5,12 +5,11 @@ import tensorflow as tf
 from .tensorrec import TensorRec
 
 
-def precision_at_k(model, session, test_interactions, k=10, user_features=None, item_features=None,
+def precision_at_k(model, test_interactions, k=10, user_features=None, item_features=None,
                    preserve_rows=False):
     """
     Modified from LightFM.
     :param model:
-    :param session:
     :param test_interactions:
     :param k:
     :param user_features:
@@ -18,7 +17,7 @@ def precision_at_k(model, session, test_interactions, k=10, user_features=None, 
     :param preserve_rows:
     :return:
     """
-    ranks = model.predict_rank(session, test_interactions,
+    ranks = model.predict_rank(test_interactions,
                                user_features=user_features,
                                item_features=item_features)
 
@@ -32,11 +31,10 @@ def precision_at_k(model, session, test_interactions, k=10, user_features=None, 
     return precision
 
 
-def recall_at_k(model, session, test_interactions, k=10, user_features=None, item_features=None, preserve_rows=False):
+def recall_at_k(model, test_interactions, k=10, user_features=None, item_features=None, preserve_rows=False):
     """
     Modified from LightFM.
     :param model:
-    :param session:
     :param test_interactions:
     :param k:
     :param user_features:
@@ -44,7 +42,7 @@ def recall_at_k(model, session, test_interactions, k=10, user_features=None, ite
     :param preserve_rows:
     :return:
     """
-    ranks = model.predict_rank(session, test_interactions,
+    ranks = model.predict_rank(test_interactions,
                                user_features=user_features,
                                item_features=item_features)
 
@@ -62,15 +60,13 @@ def recall_at_k(model, session, test_interactions, k=10, user_features=None, ite
 
 def fit_and_eval(model, user_features, item_features, train_interactions, test_interactions, fit_kwargs):
 
-    session = tf.Session()
-
-    model.fit(session=session, user_features=user_features, item_features=item_features,
+    model.fit(user_features=user_features, item_features=item_features,
               interactions=train_interactions, **fit_kwargs)
-    p_at_k = precision_at_k(model, session, test_interactions,
+    p_at_k = precision_at_k(model, test_interactions,
                             user_features=user_features,
                             item_features=item_features,
                             k=100)
-    r_at_k = recall_at_k(model, session, test_interactions,
+    r_at_k = recall_at_k(model, test_interactions,
                          user_features=user_features,
                          item_features=item_features,
                          k=100)
