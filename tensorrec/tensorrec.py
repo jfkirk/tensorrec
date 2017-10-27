@@ -12,6 +12,20 @@ class TensorRec(object):
                  user_repr_graph_factory=build_linear_representation_graph,
                  item_repr_graph_factory=build_linear_representation_graph,
                  loss_graph_factory=build_rmse_loss):
+        """
+        A TensorRec recommendation model.
+        :param n_components: Integer
+        The dimension of a single output of the representation function. Must be >= 1.
+        :param user_repr_graph_factory: Method
+        A method which creates TensorFlow nodes to calculate the user representation.
+        See tensorrec.representation_graphs for examples.
+        :param item_repr_graph_factory: Method
+        A method which creates TensorFlow nodes to calculate the item representation.
+        See tensorrec.representation_graphs for examples.
+        :param loss_graph_factory: Method
+        A method which creates TensorFlow nodes to calculate the loss function.
+        See tensorrec.loss_graphs for examples.
+        """
 
         # Arg-check
         if (n_components is None) or (user_repr_graph_factory is None) or (item_repr_graph_factory is None) or \
@@ -92,7 +106,7 @@ class TensorRec(object):
 
         return feed_dict
 
-    def build_tf_graph(self, n_user_features, n_item_features):
+    def _build_tf_graph(self, n_user_features, n_item_features):
 
         # Initialize placeholder values for inputs
         self.tf_n_users = tf.placeholder('int64')
@@ -177,6 +191,28 @@ class TensorRec(object):
 
     def fit(self, session, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
             verbose=False, out_sample_interactions=None):
+        """
+        Constructs the TensorRec graph and fits the model.
+        :param session: tf.Session
+        The TensorFlow session in which to build and fit the TensorRec model.
+        :param interactions: scipy.sparse matrix
+        A matrix of interactions of shape [n_users, n_items].
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :param epochs: Integer
+        The number of epochs to fit the model.
+        :param learning_rate: Float
+        The learning rate of the model.
+        :param alpha:
+        The weight regularization loss coefficient.
+        :param verbose: boolean
+        If true, the model will print a number of status statements during fitting.
+        :param out_sample_interactions: scipy.sparse matrix
+        A matrix of interactions of shape [n_users, n_items].
+        If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
+        """
 
         # Pass-through to fit_partial
         self.fit_partial(session, interactions, user_features, item_features, epochs, learning_rate, alpha, verbose,
@@ -184,13 +220,35 @@ class TensorRec(object):
 
     def fit_partial(self, session, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
                     alpha=0.0001, verbose=False, out_sample_interactions=None):
+        """
+        Constructs the TensorRec graph and fits the model.
+        :param session: tf.Session
+        The TensorFlow session in which to build and fit the TensorRec model.
+        :param interactions: scipy.sparse matrix
+        A matrix of interactions of shape [n_users, n_items].
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :param epochs: Integer
+        The number of epochs to fit the model.
+        :param learning_rate: Float
+        The learning rate of the model.
+        :param alpha:
+        The weight regularization loss coefficient.
+        :param verbose: boolean
+        If true, the model will print a number of status statements during fitting.
+        :param out_sample_interactions: scipy.sparse matrix
+        A matrix of interactions of shape [n_users, n_items].
+        If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
+        """
 
         # Check if the graph has been constructed buy checking the dense prediction node
         # If it hasn't been constructed, initialize it
         if self.tf_prediction_dense is None:
             # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed
             # without refitting
-            self.build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
+            self._build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
             session.run(tf.global_variables_initializer())
 
         if verbose:
@@ -221,6 +279,21 @@ class TensorRec(object):
                     print('Out-Sample loss = %s' % os_loss)
 
     def predict(self, session, user_ids, item_ids, user_features, item_features):
+        """
+        Predict recommendation scores for the given users and items.
+        :param session: tf.Session
+        The TensorFlow session in which to execute the TensorRec model.
+        :param user_ids: Iterable
+        An iterable of length num_predictions of the user ids to predict.
+        :param item_ids: Iterable
+        An iterable of length num_predictions of the item ids to predict.
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :return: np.array
+        The recommendation scores of length num_predictions.
+        """
 
         if len(user_ids) != len(item_ids):
             raise ValueError("Args user_ids and item_ids must be of equal length")
@@ -239,6 +312,7 @@ class TensorRec(object):
         return predictions
 
     def predict_rank(self, session, test_interactions, user_features, item_features):
+        # TODO JK - fix this API and document
 
         feed_dict = self.create_feed_dict(test_interactions, user_features, item_features)
 
