@@ -1,4 +1,4 @@
-# WIP: TensorRec
+# TensorRec
 A TensorFlow recommendation algorithm framework in Python.
 
 [![Build Status](https://travis-ci.org/jfkirk/tensorrec.svg?branch=master)](https://travis-ci.org/jfkirk/tensorrec)
