@@ -76,7 +76,7 @@ import tensorflow as tf
 import tensorrec
 
 # Define a custom representation function graph
-def build_tanh_representation_graph(tf_features, n_components, n_features, node_name_ending):
+def tanh_representation_graph(tf_features, n_components, n_features, node_name_ending):
     """
     This representation function embeds the user/item features by passing them through a single tanh layer.
     :param tf_features: tf.SparseTensor
@@ -102,8 +102,8 @@ def build_tanh_representation_graph(tf_features, n_components, n_features, node_
     return tf_repr, [tf_tanh_weights]
 
 # Build a model with the custom representation function
-model = tensorrec.TensorRec(user_repr_graph_factory=build_tanh_representation_graph,
-                            item_repr_graph_factory=build_tanh_representation_graph)
+model = tensorrec.TensorRec(user_repr_graph=tanh_representation_graph,
+                            item_repr_graph=tanh_representation_graph)
 ```
 
 ## Example: Defining custom loss function
@@ -112,7 +112,7 @@ import tensorflow as tf
 import tensorrec
 
 # Define a custom loss function graph
-def build_simple_error_graph(tf_prediction, tf_y, **kwargs):
+def simple_error_graph(tf_prediction, tf_y, **kwargs):
     """
     This loss function returns the absolute simple error between the predictions and the interactions.
     :param tf_prediction: tf.Tensor
@@ -127,5 +127,5 @@ def build_simple_error_graph(tf_prediction, tf_y, **kwargs):
     return tf.reduce_mean(tf.abs(tf_y - tf_prediction))
 
 # Build a model with the custom loss function
-model = tensorrec.TensorRec(loss_graph_factory=build_simple_error_graph)
+model = tensorrec.TensorRec(loss_graph=simple_error_graph)
 ```

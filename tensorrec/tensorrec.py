@@ -2,42 +2,42 @@ import numpy as np
 from scipy import sparse as sp
 import tensorflow as tf
 
-from .loss_graphs import build_rmse_loss
-from .representation_graphs import build_linear_representation_graph
+from .loss_graphs import rmse_loss
+from .representation_graphs import linear_representation_graph
 
 
 class TensorRec(object):
 
     def __init__(self, n_components=100,
-                 user_repr_graph_factory=build_linear_representation_graph,
-                 item_repr_graph_factory=build_linear_representation_graph,
-                 loss_graph_factory=build_rmse_loss):
+                 user_repr_graph=linear_representation_graph,
+                 item_repr_graph=linear_representation_graph,
+                 loss_graph=rmse_loss):
         """
         A TensorRec recommendation model.
         :param n_components: Integer
         The dimension of a single output of the representation function. Must be >= 1.
-        :param user_repr_graph_factory: Method
+        :param user_repr_graph: Method
         A method which creates TensorFlow nodes to calculate the user representation.
         See tensorrec.representation_graphs for examples.
-        :param item_repr_graph_factory: Method
+        :param item_repr_graph: Method
         A method which creates TensorFlow nodes to calculate the item representation.
         See tensorrec.representation_graphs for examples.
-        :param loss_graph_factory: Method
+        :param loss_graph: Method
         A method which creates TensorFlow nodes to calculate the loss function.
         See tensorrec.loss_graphs for examples.
         """
 
         # Arg-check
-        if (n_components is None) or (user_repr_graph_factory is None) or (item_repr_graph_factory is None) or \
-                (loss_graph_factory is None):
+        if (n_components is None) or (user_repr_graph is None) or (item_repr_graph is None) or \
+                (loss_graph is None):
             raise ValueError("All arguments to TensorRec() must be non-None")
         if n_components < 1:
             raise ValueError("n_components must be >= 1")
 
         self.n_components = n_components
-        self.user_repr_graph_factory = user_repr_graph_factory
-        self.item_repr_graph_factory = item_repr_graph_factory
-        self.loss_graph_factory = loss_graph_factory
+        self.user_repr_graph_factory = user_repr_graph
+        self.item_repr_graph_factory = item_repr_graph
+        self.loss_graph_factory = loss_graph
 
         self.tf_user_representation = None
         self.tf_item_representation = None

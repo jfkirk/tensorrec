@@ -19,11 +19,11 @@ class TensorRecTestCase(TestCase):
 
     def test_init_fail_none_factory(self):
         with self.assertRaises(ValueError):
-            TensorRec(user_repr_graph_factory=None)
+            TensorRec(user_repr_graph=None)
         with self.assertRaises(ValueError):
-            TensorRec(item_repr_graph_factory=None)
+            TensorRec(item_repr_graph=None)
         with self.assertRaises(ValueError):
-            TensorRec(loss_graph_factory=None)
+            TensorRec(loss_graph=None)
 
     def test_fit(self):
         interactions, user_features, item_features = generate_dummy_data(num_users=10,
@@ -96,8 +96,8 @@ class ReadmeTestCase(TestCase):
             return tf_repr, [tf_tanh_weights]
 
         # Build a model with the custom representation function
-        model = TensorRec(user_repr_graph_factory=build_tanh_representation_graph,
-                          item_repr_graph_factory=build_tanh_representation_graph)
+        model = TensorRec(user_repr_graph=build_tanh_representation_graph,
+                          item_repr_graph=build_tanh_representation_graph)
 
         self.assertIsNotNone(model)
 
@@ -107,6 +107,6 @@ class ReadmeTestCase(TestCase):
             return tf.reduce_mean(tf.abs(tf_y - tf_prediction))
 
         # Build a model with the custom loss function
-        model = TensorRec(loss_graph_factory=build_simple_error_graph)
+        model = TensorRec(loss_graph=build_simple_error_graph)
 
         self.assertIsNotNone(model)

@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def build_rmse_loss(tf_prediction, tf_y, **kwargs):
+def rmse_loss(tf_prediction, tf_y, **kwargs):
     """
     This loss function returns the root mean square error between the predictions and the true interactions.
     :param tf_prediction:
@@ -11,7 +11,7 @@ def build_rmse_loss(tf_prediction, tf_y, **kwargs):
     return tf.sqrt(tf.reduce_mean(tf.square(tf_y - tf_prediction)))
 
 
-def build_separation_loss(tf_prediction, tf_y, **kwargs):
+def separation_loss(tf_prediction, tf_y, **kwargs):
     """
     This loss function models the explicit positive and negative interaction predictions as normal distributions and
     returns the probability of overlap between the two distributions.
@@ -36,7 +36,7 @@ def build_separation_loss(tf_prediction, tf_y, **kwargs):
     return loss
 
 
-def build_warp_loss(tf_prediction, tf_y, **kwargs):
+def warp_loss(tf_prediction, tf_y, **kwargs):
     # TODO JK: implement WARP loss
 
     tf_positive_mask = tf.greater(tf_y, 0.0)

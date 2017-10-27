@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def build_linear_representation_graph(tf_features, n_components, n_features, node_name_ending):
+def linear_representation_graph(tf_features, n_components, n_features, node_name_ending):
 
     # Create variable nodes
     tf_linear_weights = tf.Variable(tf.random_normal([n_features, n_components], stddev=.5),
@@ -12,7 +12,7 @@ def build_linear_representation_graph(tf_features, n_components, n_features, nod
     return tf_repr, [tf_linear_weights]
 
 
-def build_relu_representation_graph(tf_features, n_components, n_features, node_name_ending):
+def relu_representation_graph(tf_features, n_components, n_features, node_name_ending):
     relu_size = 4 * n_components
 
     # Create variable nodes
