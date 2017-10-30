@@ -254,9 +254,6 @@ class TensorRec(object):
         if verbose:
             print('Processing interaction and feature data')
 
-        if out_sample_interactions:
-            os_feed_dict = self._create_feed_dict(out_sample_interactions, user_features, item_features)
-
         feed_dict = self._create_feed_dict(interactions, user_features, item_features,
                                            extra_feed_kwargs={self.tf_learning_rate: learning_rate,
                                                               self.tf_alpha: alpha})
@@ -275,6 +272,7 @@ class TensorRec(object):
                 print('EPOCH %s loss = %s, weight_reg_l2_loss = %s, mean_pred = %s' % (epoch, mean_loss,
                                                                                        weight_reg_l2_loss, mean_pred))
                 if out_sample_interactions:
+                    os_feed_dict = self._create_feed_dict(out_sample_interactions, user_features, item_features)
                     os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
                     print('Out-Sample loss = %s' % os_loss)
 
