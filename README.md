@@ -12,6 +12,10 @@ A TensorRec system consumes three pieces of data: `user_features`, `item_feature
 
 For more information, and for an outline of this project, please read [this blog post](https://medium.com/@jameskirk1/tensorrec-a-recommendation-engine-framework-in-tensorflow-d85e4f0874e8).
 
+## Quick Start
+TensorRec can be installed via pip:
+```pip install tensorrec```
+
 ## TODO
 Immediate plans for development of TensorRec include:
 1. Documentation of TensorRec class and methods
