@@ -1,5 +1,5 @@
 # TensorRec
-A TensorFlow recommendation algorithm framework in Python.
+A TensorFlow recommendation algorithm and framework in Python.
 
 [![Build Status](https://travis-ci.org/jfkirk/tensorrec.svg?branch=master)](https://travis-ci.org/jfkirk/tensorrec) [![Gitter chat](https://badges.gitter.im/tensorrec/gitter.png)](https://gitter.im/tensorrec)
 
