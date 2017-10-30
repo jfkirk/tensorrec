@@ -74,7 +74,8 @@ class TensorRec(object):
         # For weight normalization
         self.tf_weights = []
 
-    def create_feed_dict(self, interactions_matrix, user_features_matrix, item_features_matrix, extra_feed_kwargs=None):
+    def _create_feed_dict(self, interactions_matrix, user_features_matrix, item_features_matrix,
+                          extra_feed_kwargs=None):
 
         # Check that input data is of a sparse type
         if not sp.issparse(interactions_matrix):
@@ -254,10 +255,10 @@ class TensorRec(object):
             print('Processing interaction and feature data')
 
         if out_sample_interactions:
-            os_feed_dict = self.create_feed_dict(out_sample_interactions, user_features, item_features)
+            os_feed_dict = self._create_feed_dict(out_sample_interactions, user_features, item_features)
 
-        feed_dict = self.create_feed_dict(interactions, user_features, item_features,
-                                          extra_feed_kwargs={self.tf_learning_rate: learning_rate,
+        feed_dict = self._create_feed_dict(interactions, user_features, item_features,
+                                           extra_feed_kwargs={self.tf_learning_rate: learning_rate,
                                                              self.tf_alpha: alpha})
 
         if verbose:
@@ -302,7 +303,7 @@ class TensorRec(object):
         for user, item in zip(user_ids, item_ids):
             placeholders[user, item] = 1
 
-        feed_dict = self.create_feed_dict(placeholders, user_features, item_features)
+        feed_dict = self._create_feed_dict(placeholders, user_features, item_features)
 
         predictions = self.tf_prediction_sparse.eval(session=get_session(), feed_dict=feed_dict)
 
@@ -311,7 +312,7 @@ class TensorRec(object):
     def predict_rank(self, test_interactions, user_features, item_features):
         # TODO JK - fix this API and document
 
-        feed_dict = self.create_feed_dict(test_interactions, user_features, item_features)
+        feed_dict = self._create_feed_dict(test_interactions, user_features, item_features)
 
         # TODO JK - I'm commenting this out for now, but this does the ranking using numpy ops instead of tf ops
         # predictions = self.tf_prediction_dense.eval(session=get_session(), feed_dict=feed_dict)
