@@ -62,6 +62,23 @@ def recall_at_k(model, test_interactions, k=10, user_features=None, item_feature
     return hit / retrieved
 
 
+def f1_at_k(model, test_interactions, k=10, user_features=None, item_features=None, preserve_rows=False):
+    # TODO: Refactor to calculate more quickly
+    p_at_k = precision_at_k(model=model,
+                            test_interactions=test_interactions,
+                            k=k, user_features=user_features,
+                            item_features=item_features,
+                            preserve_rows=preserve_rows)
+    r_at_k = recall_at_k(model=model,
+                         test_interactions=test_interactions,
+                         k=k, user_features=user_features,
+                         item_features=item_features,
+                         preserve_rows=preserve_rows)
+
+    f1_score = (2.0 * p_at_k * r_at_k) / (p_at_k + r_at_k)
+    return f1_score
+
+
 def fit_and_eval(model, user_features, item_features, train_interactions, test_interactions, fit_kwargs):
 
     model.fit(user_features=user_features, item_features=item_features,
