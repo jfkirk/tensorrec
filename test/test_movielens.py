@@ -12,7 +12,7 @@ class MovieLensTestCase(TestCase):
         This test checks whether the movielens getter works and that the resulting data is viable for fitting/testing a
         TensorRec model.
         """
-        train_interactions, user_features, item_features, test_interactions = get_movielens_100k()
+        train_interactions, test_interactions, user_features, item_features = get_movielens_100k()
 
         model = TensorRec()
         model.fit(interactions=train_interactions, user_features=user_features, item_features=item_features)

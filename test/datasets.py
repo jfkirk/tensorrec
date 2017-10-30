@@ -18,4 +18,4 @@ def get_movielens_100k(min_positive_score=4):
     num_users = train_interactions.shape[0]
     user_features = sp.identity(num_users)
 
-    return train_interactions, user_features, movielens_100k_dict['item_features'], test_interactions
+    return train_interactions, test_interactions, user_features, movielens_100k_dict['item_features']
