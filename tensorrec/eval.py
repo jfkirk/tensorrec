@@ -15,7 +15,10 @@ def precision_at_k(model, test_interactions, k=10, user_features=None, item_feat
     :param preserve_rows:
     :return:
     """
-    ranks = model.predict_rank(test_interactions,
+
+    positive_test_interactions = test_interactions > 0
+
+    ranks = model.predict_rank(positive_test_interactions,
                                user_features=user_features,
                                item_features=item_features)
 
@@ -24,7 +27,7 @@ def precision_at_k(model, test_interactions, k=10, user_features=None, item_feat
     precision = np.squeeze(np.array(ranks.sum(axis=1))) / k
 
     if not preserve_rows:
-        precision = precision[test_interactions.getnnz(axis=1) > 0]
+        precision = precision[positive_test_interactions.getnnz(axis=1) > 0]
 
     return precision
 
@@ -40,18 +43,21 @@ def recall_at_k(model, test_interactions, k=10, user_features=None, item_feature
     :param preserve_rows:
     :return:
     """
-    ranks = model.predict_rank(test_interactions,
+
+    positive_test_interactions = test_interactions > 0
+
+    ranks = model.predict_rank(positive_test_interactions,
                                user_features=user_features,
                                item_features=item_features)
 
     ranks.data = np.less(ranks.data, k, ranks.data)
 
-    retrieved = np.squeeze(test_interactions.getnnz(axis=1))
+    retrieved = np.squeeze(positive_test_interactions.getnnz(axis=1))
     hit = np.squeeze(np.array(ranks.sum(axis=1)))
 
     if not preserve_rows:
-        hit = hit[test_interactions.getnnz(axis=1) > 0]
-        retrieved = retrieved[test_interactions.getnnz(axis=1) > 0]
+        hit = hit[positive_test_interactions.getnnz(axis=1) > 0]
+        retrieved = retrieved[positive_test_interactions.getnnz(axis=1) > 0]
 
     return hit / retrieved
 
