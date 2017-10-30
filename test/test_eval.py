@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from tensorrec import TensorRec
-from tensorrec.eval import recall_at_k, precision_at_k, f1_at_k
+from tensorrec.eval import recall_at_k, precision_at_k, f1_score_at_k
 from tensorrec.util import generate_dummy_data
 
 
@@ -46,17 +46,17 @@ class EvalTestCase(TestCase):
                                             item_features=self.item_features,
                                             preserve_rows=True))
 
-    def test_f1_at_k(self):
+    def test_f1_score_at_k(self):
         # Check non-none results with and without preserve_rows
-        self.assertIsNotNone(f1_at_k(model=self.model,
-                                     test_interactions=self.interactions,
-                                     k=5,
-                                     user_features=self.user_features,
-                                     item_features=self.item_features,
-                                     preserve_rows=False))
-        self.assertIsNotNone(f1_at_k(model=self.model,
-                                     test_interactions=self.interactions,
-                                     k=5,
-                                     user_features=self.user_features,
-                                     item_features=self.item_features,
-                                     preserve_rows=True))
+        self.assertIsNotNone(f1_score_at_k(model=self.model,
+                                           test_interactions=self.interactions,
+                                           k=5,
+                                           user_features=self.user_features,
+                                           item_features=self.item_features,
+                                           preserve_rows=False))
+        self.assertIsNotNone(f1_score_at_k(model=self.model,
+                                           test_interactions=self.interactions,
+                                           k=5,
+                                           user_features=self.user_features,
+                                           item_features=self.item_features,
+                                           preserve_rows=True))
