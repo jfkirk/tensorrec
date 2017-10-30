@@ -1,7 +1,7 @@
 # TensorRec
 A TensorFlow recommendation algorithm framework in Python.
 
-[![Build Status](https://travis-ci.org/jfkirk/tensorrec.svg?branch=master)](https://travis-ci.org/jfkirk/tensorrec)
+[![Build Status](https://travis-ci.org/jfkirk/tensorrec.svg?branch=master)](https://travis-ci.org/jfkirk/tensorrec) [![Gitter chat](https://badges.gitter.im/tensorrec/gitter.png)]
 
 ## What is TensorRec?
 TensorRec is a Python recommendation system that allows you to quickly develop recommendation algorithms and customize them using TensorFlow.
