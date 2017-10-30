@@ -259,7 +259,7 @@ class TensorRec(object):
 
         feed_dict = self._create_feed_dict(interactions, user_features, item_features,
                                            extra_feed_kwargs={self.tf_learning_rate: learning_rate,
-                                                             self.tf_alpha: alpha})
+                                                              self.tf_alpha: alpha})
 
         if verbose:
             print('Beginning fitting')
