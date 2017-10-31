@@ -10,7 +10,7 @@ class EvalTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(num_users=10,
-                                                                                     num_items=10,
+                                                                                     num_items=12,
                                                                                      interaction_density=.5)
         model = TensorRec(n_components=10)
         model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
