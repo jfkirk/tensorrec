@@ -170,7 +170,7 @@ class TensorRec(object):
 
         # For the serial prediction case, gather the desired values from the parallel prediction and the interactions
         self.tf_prediction_serial = tf.gather_nd(self.tf_prediction, indices=self.tf_interactions.indices)
-        self.tf_y_serial = self.tf_interactions.values
+        self.tf_interactions_serial = self.tf_interactions.values
 
         # Double-sortation serves as a ranking process
         # The +1 is so the top-ranked has a non-zero rank
@@ -186,7 +186,9 @@ class TensorRec(object):
 
         # Loss function nodes
         self.tf_basic_loss = self.loss_graph_factory(tf_prediction_serial=self.tf_prediction_serial,
-                                                     tf_y_serial=self.tf_y_serial)
+                                                     tf_interactions_serial=self.tf_interactions_serial,
+                                                     tf_prediction=self.tf_prediction,
+                                                     tf_interactions=self.tf_interactions)
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
