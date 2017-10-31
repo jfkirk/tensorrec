@@ -16,8 +16,7 @@ class MovieLensTestCase(TestCase):
 
         model = TensorRec()
         model.fit(interactions=train_interactions, user_features=user_features, item_features=item_features)
-        predictions = model.predict(test_interactions.row, test_interactions.col,
-                                    user_features=user_features,
+        predictions = model.predict(user_features=user_features,
                                     item_features=item_features)
 
         self.assertIsNotNone(predictions)

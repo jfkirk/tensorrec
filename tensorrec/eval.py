@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.sparse as sp
 
 from .tensorrec import TensorRec
 
@@ -16,13 +17,11 @@ def precision_at_k(model, test_interactions, k=10, user_features=None, item_feat
     :return:
     """
 
+    predicted_ranks = model.predict_rank(user_features=user_features, item_features=item_features)
+
     positive_test_interactions = test_interactions > 0
-
-    ranks = model.predict_rank(positive_test_interactions,
-                               user_features=user_features,
-                               item_features=item_features)
-
-    ranks.data = np.less(ranks.data, k, ranks.data)
+    ranks = sp.csr_matrix(predicted_ranks * positive_test_interactions.A)
+    ranks.data = np.less(ranks.data, (k + 1), ranks.data)
 
     precision = np.squeeze(np.array(ranks.sum(axis=1))) / k
 
@@ -44,13 +43,11 @@ def recall_at_k(model, test_interactions, k=10, user_features=None, item_feature
     :return:
     """
 
+    predicted_ranks = model.predict_rank(user_features=user_features, item_features=item_features)
+
     positive_test_interactions = test_interactions > 0
-
-    ranks = model.predict_rank(positive_test_interactions,
-                               user_features=user_features,
-                               item_features=item_features)
-
-    ranks.data = np.less(ranks.data, k, ranks.data)
+    ranks = sp.csr_matrix(predicted_ranks * positive_test_interactions.A)
+    ranks.data = np.less(ranks.data, (k + 1), ranks.data)
 
     retrieved = np.squeeze(positive_test_interactions.getnnz(axis=1))
     hit = np.squeeze(np.array(ranks.sum(axis=1)))

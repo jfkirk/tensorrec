@@ -59,10 +59,8 @@ interactions, user_features, item_features = tensorrec.util.generate_dummy_data(
 # Fit the model for 5 epochs
 model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 
-# Predict scores for user 75 on items 100, 101, and 102
-predictions = model.predict(user_ids=[75, 75, 75],
-                            item_ids=[100, 101, 102],
-                            user_features=user_features,
+# Predict scores for all users and all items
+predictions = model.predict(user_features=user_features,
                             item_features=item_features)
 
 # Calculate and print the recall at 10
@@ -115,19 +113,19 @@ import tensorflow as tf
 import tensorrec
 
 # Define a custom loss function graph
-def simple_error_graph(tf_prediction, tf_y, **kwargs):
+def simple_error_graph(tf_prediction_serial, tf_y_serial, **kwargs):
     """
     This loss function returns the absolute simple error between the predictions and the interactions.
-    :param tf_prediction: tf.Tensor
+    :param tf_prediction_serial: tf.Tensor
     The recommendation scores as a Tensor of shape [n_samples, 1]
-    :param tf_y: tf.Tensor
+    :param tf_y_serial: tf.Tensor
     The sample interactions corresponding to tf_prediction as a Tensor of shape [n_samples, 1]
     :param kwargs:
     Other TensorFlow nodes (not yet implemented)
     :return:
     A tf.Tensor containing the learning loss.
     """
-    return tf.reduce_mean(tf.abs(tf_y - tf_prediction))
+    return tf.reduce_mean(tf.abs(tf_y_serial - tf_prediction_serial))
 
 # Build a model with the custom loss function
 model = tensorrec.TensorRec(loss_graph=simple_error_graph)

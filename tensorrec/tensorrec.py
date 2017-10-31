@@ -46,8 +46,8 @@ class TensorRec(object):
         self.tf_item_feature_biases = None
         self.tf_projected_user_biases = None
         self.tf_projected_item_biases = None
-        self.tf_prediction_sparse = None
-        self.tf_prediction_dense = None
+        self.tf_prediction_serial = None
+        self.tf_prediction = None
         self.tf_rankings = None
 
         # Training nodes
@@ -62,12 +62,11 @@ class TensorRec(object):
         self.tf_user_features = None
         self.tf_item_features = None
         self.tf_user_feature_indices = None
-        self.tf_item_feature_indices = None
         self.tf_user_feature_values = None
+        self.tf_item_feature_indices = None
         self.tf_item_feature_values = None
-        self.tf_y = None
-        self.tf_x_user = None
-        self.tf_x_item = None
+        self.tf_interaction_indices = None
+        self.tf_interaction_values = None
         self.tf_learning_rate = None
         self.tf_alpha = None
 
@@ -78,12 +77,17 @@ class TensorRec(object):
                           extra_feed_kwargs=None):
 
         # Check that input data is of a sparse type
-        if not sp.issparse(interactions_matrix):
+        if (interactions_matrix is not None) and (not sp.issparse(interactions_matrix)):
             raise Exception('Interactions must be a scipy sparse matrix')
         if not sp.issparse(user_features_matrix):
             raise Exception('User features must be a scipy sparse matrix')
         if not sp.issparse(item_features_matrix):
             raise Exception('Item features must be a scipy sparse matrix')
+
+        # Create placeholders if interactions_matrix is none
+        # TODO JK - This probably isn't necessary -- will the graph execute without it?
+        if interactions_matrix is None:
+            interactions_matrix = np.ones((user_features_matrix.shape[0], item_features_matrix.shape[0]))
 
         # Coerce input data to zippable sparse types
         if not isinstance(interactions_matrix, sp.coo_matrix):
@@ -99,9 +103,8 @@ class TensorRec(object):
                      self.tf_user_feature_values: user_features_matrix.data,
                      self.tf_item_feature_indices: [*zip(item_features_matrix.row, item_features_matrix.col)],
                      self.tf_item_feature_values: item_features_matrix.data,
-                     self.tf_x_user: interactions_matrix.row,
-                     self.tf_x_item: interactions_matrix.col,
-                     self.tf_y: interactions_matrix.data}
+                     self.tf_interaction_indices: [*zip(interactions_matrix.row, interactions_matrix.col)],
+                     self.tf_interaction_values: interactions_matrix.data}
 
         if extra_feed_kwargs:
             feed_dict.update(extra_feed_kwargs)
@@ -117,17 +120,18 @@ class TensorRec(object):
         self.tf_user_feature_values = tf.placeholder('float', None)
         self.tf_item_feature_indices = tf.placeholder('int64', [None, 2])
         self.tf_item_feature_values = tf.placeholder('float', None)
-        self.tf_y = tf.placeholder('float', [None], name='y')
-        self.tf_x_user = tf.placeholder('int64', None, name='x_user')
-        self.tf_x_item = tf.placeholder('int64', None, name='x_item')
+        self.tf_interaction_indices = tf.placeholder('int64', [None, 2])
+        self.tf_interaction_values = tf.placeholder('float', None)
         self.tf_learning_rate = tf.placeholder('float', None)
         self.tf_alpha = tf.placeholder('float', None)
 
-        # Construct the features as sparse matrices
+        # Construct the features and interactions as sparse matrices
         self.tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
                                                 [self.tf_n_users, n_user_features])
         self.tf_item_features = tf.SparseTensor(self.tf_item_feature_indices, self.tf_item_feature_values,
                                                 [self.tf_n_items, n_item_features])
+        self.tf_interactions = tf.SparseTensor(self.tf_interaction_indices, self.tf_interaction_values,
+                                               [self.tf_n_users, self.tf_n_items])
 
         # Build the representations
         self.tf_user_representation, user_weights = \
@@ -145,6 +149,7 @@ class TensorRec(object):
         self.tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
         self.tf_item_feature_biases = tf.Variable(tf.zeros([n_item_features, 1]))
 
+        # The reduce sum is to perform a rank reduction
         self.tf_projected_user_biases = tf.reduce_sum(
             tf.sparse_tensor_dense_matmul(self.tf_user_features, self.tf_user_feature_biases),
             axis=1
@@ -155,29 +160,23 @@ class TensorRec(object):
         )
 
         # Prediction = user_repr * item_repr + user_bias + item_bias
-        # The reduce sum is to perform a rank reduction
-
-        # For the sparse prediction case, reprs and biases are gathered based on user and item ids
-        gathered_user_reprs = tf.gather(self.tf_user_representation, self.tf_x_user)
-        gathered_item_reprs = tf.gather(self.tf_item_representation, self.tf_x_item)
-        gathered_user_biases = tf.gather(self.tf_projected_user_biases, self.tf_x_user)
-        gathered_item_biases = tf.gather(self.tf_projected_item_biases, self.tf_x_item)
-        self.tf_prediction_sparse = (tf.reduce_sum(tf.multiply(gathered_user_reprs,
-                                                               gathered_item_reprs), axis=1)
-                                     + gathered_user_biases + gathered_item_biases)
-
-        # For the dense prediction case, repr matrices can be multiplied together and the projected biases can be
+        # For the parallel prediction case, repr matrices can be multiplied together and the projected biases can be
         # broadcast across the resultant matrix
-        self.tf_prediction_dense = (
+        self.tf_prediction = (
             tf.matmul(self.tf_user_representation, self.tf_item_representation, transpose_b=True)
             + tf.expand_dims(self.tf_projected_user_biases, 1)
             + tf.expand_dims(self.tf_projected_item_biases, 0)
         )
 
+        # For the serial prediction case, gather the desired values from the parallel prediction and the interactions
+        self.tf_prediction_serial = tf.gather_nd(self.tf_prediction, indices=self.tf_interactions.indices)
+        self.tf_y_serial = self.tf_interactions.values
+
         # Double-sortation serves as a ranking process
-        tf_prediction_item_size = tf.shape(self.tf_prediction_dense)[1]
-        tf_indices_of_ranks = tf.nn.top_k(self.tf_prediction_dense, k=tf_prediction_item_size)[1]
-        self.tf_rankings = tf.nn.top_k(-tf_indices_of_ranks, k=tf_prediction_item_size)[1]
+        # The +1 is so the top-ranked has a non-zero rank
+        tf_prediction_item_size = tf.shape(self.tf_prediction)[1]
+        tf_indices_of_ranks = tf.nn.top_k(self.tf_prediction, k=tf_prediction_item_size)[1]
+        self.tf_rankings = tf.nn.top_k(-tf_indices_of_ranks, k=tf_prediction_item_size)[1] + 1
 
         self.tf_weights = []
         self.tf_weights.extend(user_weights)
@@ -186,7 +185,8 @@ class TensorRec(object):
         self.tf_weights.append(self.tf_item_feature_biases)
 
         # Loss function nodes
-        self.tf_basic_loss = self.loss_graph_factory(tf_prediction=self.tf_prediction_sparse, tf_y=self.tf_y)
+        self.tf_basic_loss = self.loss_graph_factory(tf_prediction_serial=self.tf_prediction_serial,
+                                                     tf_y_serial=self.tf_y_serial)
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
@@ -245,7 +245,7 @@ class TensorRec(object):
 
         # Check if the graph has been constructed buy checking the dense prediction node
         # If it hasn't been constructed, initialize it
-        if self.tf_prediction_dense is None:
+        if self.tf_prediction is None:
             # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed
             # without refitting
             self._build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
@@ -267,7 +267,7 @@ class TensorRec(object):
 
             if verbose:
                 mean_loss = self.tf_basic_loss.eval(session=session, feed_dict=feed_dict)
-                mean_pred = np.mean(self.tf_prediction_sparse.eval(session=session, feed_dict=feed_dict))
+                mean_pred = np.mean(self.tf_prediction_serial.eval(session=session, feed_dict=feed_dict))
                 weight_reg_l2_loss = (alpha * self.tf_weight_reg_loss).eval(session=session, feed_dict=feed_dict)
                 print('EPOCH %s loss = %s, weight_reg_l2_loss = %s, mean_pred = %s' % (epoch, mean_loss,
                                                                                        weight_reg_l2_loss, mean_pred))
@@ -276,50 +276,28 @@ class TensorRec(object):
                     os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
                     print('Out-Sample loss = %s' % os_loss)
 
-    def predict(self, user_ids, item_ids, user_features, item_features):
+    def predict(self, user_features, item_features):
         """
         Predict recommendation scores for the given users and items.
-        :param user_ids: Iterable
-        An iterable of length num_predictions of the user ids to predict.
-        :param item_ids: Iterable
-        An iterable of length num_predictions of the item ids to predict.
         :param user_features: scipy.sparse matrix
         A matrix of user features of shape [n_users, n_user_features].
         :param item_features: scipy.sparse matrix
         A matrix of item features of shape [n_items, n_item_features].
-        :return: np.array
-        The recommendation scores of length num_predictions.
+        :return: TBD
         """
+        feed_dict = self._create_feed_dict(interactions_matrix=None,
+                                           user_features_matrix=user_features,
+                                           item_features_matrix=item_features)
 
-        if len(user_ids) != len(item_ids):
-            raise ValueError("Args user_ids and item_ids must be of equal length")
-
-        user_ids = np.asarray(user_ids, dtype=np.int32)
-        item_ids = np.asarray(item_ids, dtype=np.int32)
-
-        placeholders = sp.dok_matrix((max(user_ids) + 1, max(item_ids) + 1))
-        for user, item in zip(user_ids, item_ids):
-            placeholders[user, item] = 1
-
-        feed_dict = self._create_feed_dict(placeholders, user_features, item_features)
-
-        predictions = self.tf_prediction_sparse.eval(session=get_session(), feed_dict=feed_dict)
+        predictions = self.tf_prediction.eval(session=get_session(), feed_dict=feed_dict)
 
         return predictions
 
-    def predict_rank(self, test_interactions, user_features, item_features):
-        # TODO JK - fix this API and document
-
-        feed_dict = self._create_feed_dict(test_interactions, user_features, item_features)
-
-        # TODO JK - I'm commenting this out for now, but this does the ranking using numpy ops instead of tf ops
-        # predictions = self.tf_prediction_dense.eval(session=get_session(), feed_dict=feed_dict)
-        # rankings = (-predictions).argsort().argsort()
+    def predict_rank(self, user_features, item_features):
+        feed_dict = self._create_feed_dict(interactions_matrix=None,
+                                           user_features_matrix=user_features,
+                                           item_features_matrix=item_features)
 
         rankings = self.tf_rankings.eval(session=get_session(), feed_dict=feed_dict)
 
-        result_dok = sp.dok_matrix(rankings.shape)
-        for user_id, item_id in zip(feed_dict[self.tf_x_user], feed_dict[self.tf_x_item]):
-            result_dok[user_id, item_id] = rankings[user_id, item_id]
-
-        return sp.csr_matrix(result_dok, dtype=np.float32)
+        return rankings

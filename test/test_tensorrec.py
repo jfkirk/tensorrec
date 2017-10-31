@@ -27,26 +27,24 @@ class TensorRecTestCase(TestCase):
 
     def test_fit(self):
         interactions, user_features, item_features = generate_dummy_data(num_users=10,
-                                                                         num_items=10,
+                                                                         num_items=20,
                                                                          interaction_density=.5)
         model = TensorRec(n_components=10)
         model.fit(interactions, user_features, item_features, epochs=10)
         # Ensure that the nodes have been built
-        self.assertIsNotNone(model.tf_prediction_dense)
+        self.assertIsNotNone(model.tf_prediction)
 
     def test_predict(self):
         interactions, user_features, item_features = generate_dummy_data(num_users=10,
-                                                                         num_items=10,
+                                                                         num_items=20,
                                                                          interaction_density=.5)
         model = TensorRec(n_components=10)
         model.fit(interactions, user_features, item_features, epochs=10)
 
-        predictions = model.predict(user_ids=[1, 2, 3],
-                                    item_ids=[4, 5, 6],
-                                    user_features=user_features,
+        predictions = model.predict(user_features=user_features,
                                     item_features=item_features)
 
-        self.assertEqual(len(predictions), 3)
+        self.assertEqual(predictions.shape, (user_features.shape[0], item_features.shape[0]))
 
 
 class ReadmeTestCase(TestCase):
@@ -63,10 +61,8 @@ class ReadmeTestCase(TestCase):
         # Fit the model
         model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 
-        # Predict scores for user 75 on items 100, 101, and 102
-        predictions = model.predict(user_ids=[75, 75, 75],
-                                    item_ids=[100, 101, 102],
-                                    user_features=user_features,
+        # Predict scores for all users and all items
+        predictions = model.predict(user_features=user_features,
                                     item_features=item_features)
 
         # Calculate and print the recall at 10
