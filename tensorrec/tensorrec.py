@@ -249,7 +249,7 @@ class TensorRec(object):
 
         session = get_session()
 
-        # Check if the graph has been constructed buy checking the dense prediction node
+        # Check if the graph has been constructed by checking the dense prediction node
         # If it hasn't been constructed, initialize it
         if self.tf_prediction is None:
             # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed
