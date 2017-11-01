@@ -11,7 +11,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
   name='tensorrec',
   packages=['tensorrec'],
-  version='0.1',
+  version='0.11',
   description='A TensorFlow recommendation algorithm and framework in Python.',
   long_description=long_description,
   author='James Kirk',
