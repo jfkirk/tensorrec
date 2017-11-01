@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import sparse as sp
+import six
 import tensorflow as tf
 
 from .loss_graphs import rmse_loss
@@ -99,11 +100,11 @@ class TensorRec(object):
 
         feed_dict = {self.tf_n_users: user_features_matrix.shape[0],
                      self.tf_n_items: item_features_matrix.shape[0],
-                     self.tf_user_feature_indices: [*zip(user_features_matrix.row, user_features_matrix.col)],
+                     self.tf_user_feature_indices: [*six.moves.zip(user_features_matrix.row, user_features_matrix.col)],
                      self.tf_user_feature_values: user_features_matrix.data,
-                     self.tf_item_feature_indices: [*zip(item_features_matrix.row, item_features_matrix.col)],
+                     self.tf_item_feature_indices: [*six.moves.zip(item_features_matrix.row, item_features_matrix.col)],
                      self.tf_item_feature_values: item_features_matrix.data,
-                     self.tf_interaction_indices: [*zip(interactions_matrix.row, interactions_matrix.col)],
+                     self.tf_interaction_indices: [*six.moves.zip(interactions_matrix.row, interactions_matrix.col)],
                      self.tf_interaction_values: interactions_matrix.data}
 
         if extra_feed_kwargs:
