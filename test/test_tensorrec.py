@@ -10,6 +10,12 @@ from tensorrec.util import generate_dummy_data
 
 class TensorRecTestCase(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(num_users=10,
+                                                                                     num_items=20,
+                                                                                     interaction_density=.5)
+
     def test_init(self):
         self.assertIsNotNone(TensorRec())
 
@@ -26,37 +32,42 @@ class TensorRecTestCase(TestCase):
             TensorRec(loss_graph=None)
 
     def test_fit(self):
-        interactions, user_features, item_features = generate_dummy_data(num_users=10,
-                                                                         num_items=20,
-                                                                         interaction_density=.5)
         model = TensorRec(n_components=10)
-        model.fit(interactions, user_features, item_features, epochs=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
         # Ensure that the nodes have been built
         self.assertIsNotNone(model.tf_prediction)
 
     def test_predict(self):
-        interactions, user_features, item_features = generate_dummy_data(num_users=10,
-                                                                         num_items=20,
-                                                                         interaction_density=.5)
         model = TensorRec(n_components=10)
-        model.fit(interactions, user_features, item_features, epochs=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
 
-        predictions = model.predict(user_features=user_features,
-                                    item_features=item_features)
+        predictions = model.predict(user_features=self.user_features,
+                                    item_features=self.item_features)
 
-        self.assertEqual(predictions.shape, (user_features.shape[0], item_features.shape[0]))
+        self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
 
     def test_fit_predict_unbiased(self):
-        interactions, user_features, item_features = generate_dummy_data(num_users=10,
-                                                                         num_items=20,
-                                                                         interaction_density=.5)
         model = TensorRec(n_components=10, biased=False)
-        model.fit(interactions, user_features, item_features, epochs=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
 
-        predictions = model.predict(user_features=user_features,
-                                    item_features=item_features)
+        predictions = model.predict(user_features=self.user_features,
+                                    item_features=self.item_features)
 
-        self.assertEqual(predictions.shape, (user_features.shape[0], item_features.shape[0]))
+        self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+
+    def test_predict_user_repr(self):
+        model = TensorRec(n_components=10, biased=False)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
+
+        user_repr = model.predict_user_representation(self.user_features)
+        self.assertEqual(user_repr.shape, (self.user_features.shape[0], 10))
+
+    def test_predict_item_repr(self):
+        model = TensorRec(n_components=10, biased=False)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
+
+        item_repr = model.predict_item_representation(self.item_features)
+        self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
 
 class ReadmeTestCase(TestCase):

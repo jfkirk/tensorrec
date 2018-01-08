@@ -29,7 +29,7 @@ class TensorRec(object):
         A method which creates TensorFlow nodes to calculate the loss function.
         See tensorrec.loss_graphs for examples.
         :param biased: Boolean
-        If True, a bias value will be calculated for every user and item feature.
+        If True, a bias value will be calculated for every user feature and item feature.
         """
 
         # Arg-check
@@ -97,30 +97,67 @@ class TensorRec(object):
         if interactions_matrix is None:
             interactions_matrix = np.ones((user_features_matrix.shape[0], item_features_matrix.shape[0]))
 
-        # Coerce input data to zippable sparse types
-        if not isinstance(interactions_matrix, sp.coo_matrix):
-            interactions_matrix = sp.coo_matrix(interactions_matrix)
-        if not isinstance(user_features_matrix, sp.coo_matrix):
-            user_features_matrix = sp.coo_matrix(user_features_matrix)
-        if not isinstance(item_features_matrix, sp.coo_matrix):
-            item_features_matrix = sp.coo_matrix(item_features_matrix)
+        n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix)
+        n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix)
+        _, interaction_indices, interaction_values = self._process_matrix(interactions_matrix)
 
-        feed_dict = {self.tf_n_users: user_features_matrix.shape[0],
-                     self.tf_n_items: item_features_matrix.shape[0],
-                     self.tf_user_feature_indices: [pair for pair in
-                                                    six.moves.zip(user_features_matrix.row, user_features_matrix.col)],
-                     self.tf_user_feature_values: user_features_matrix.data,
-                     self.tf_item_feature_indices: [pair for pair in
-                                                    six.moves.zip(item_features_matrix.row, item_features_matrix.col)],
-                     self.tf_item_feature_values: item_features_matrix.data,
-                     self.tf_interaction_indices: [pair for pair in
-                                                   six.moves.zip(interactions_matrix.row, interactions_matrix.col)],
-                     self.tf_interaction_values: interactions_matrix.data}
+        feed_dict = {self.tf_n_users: n_users,
+                     self.tf_n_items: n_items,
+                     self.tf_user_feature_indices: user_feature_indices,
+                     self.tf_user_feature_values: user_feature_values,
+                     self.tf_item_feature_indices: item_feature_indices,
+                     self.tf_item_feature_values: item_feature_values,
+                     self.tf_interaction_indices: interaction_indices,
+                     self.tf_interaction_values: interaction_values}
 
         if extra_feed_kwargs:
             feed_dict.update(extra_feed_kwargs)
 
         return feed_dict
+
+    def _create_user_feed_dict(self, user_features_matrix, extra_feed_kwargs=None):
+
+        if not sp.issparse(user_features_matrix):
+            raise Exception('User features must be a scipy sparse matrix')
+
+        n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix)
+
+        feed_dict = {self.tf_n_users: n_users,
+                     self.tf_user_feature_indices: user_feature_indices,
+                     self.tf_user_feature_values: user_feature_values}
+
+        if extra_feed_kwargs:
+            feed_dict.update(extra_feed_kwargs)
+
+        return feed_dict
+
+    def _create_item_feed_dict(self, item_features_matrix, extra_feed_kwargs=None):
+
+        if not sp.issparse(item_features_matrix):
+            raise Exception('Item features must be a scipy sparse matrix')
+
+        n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix)
+
+        feed_dict = {self.tf_n_items: n_items,
+                     self.tf_item_feature_indices: item_feature_indices,
+                     self.tf_item_feature_values: item_feature_values}
+
+        if extra_feed_kwargs:
+            feed_dict.update(extra_feed_kwargs)
+
+        return feed_dict
+
+    def _process_matrix(self, features_matrix):
+
+        if not isinstance(features_matrix, sp.coo_matrix):
+            features_matrix = sp.coo_matrix(features_matrix)
+
+        # "Actors" is used to signify "users or items" -- unused for interactions
+        n_actors = features_matrix.shape[0]
+        feature_indices = [pair for pair in six.moves.zip(features_matrix.row, features_matrix.col)]
+        feature_values = features_matrix.data
+
+        return n_actors, feature_indices, feature_values
 
     def _build_tf_graph(self, n_user_features, n_item_features):
 
@@ -319,3 +356,23 @@ class TensorRec(object):
         rankings = self.tf_rankings.eval(session=get_session(), feed_dict=feed_dict)
 
         return rankings
+
+    def predict_user_representation(self, user_features):
+
+        if self.biased:
+            raise NotImplementedError('predict_user_representation() is not supported with biased models.'
+                                      'Try TensorRec(biased=False)')
+
+        feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
+        user_repr = self.tf_user_representation.eval(session=get_session(), feed_dict=feed_dict)
+        return user_repr
+
+    def predict_item_representation(self, item_features):
+
+        if self.biased:
+            raise NotImplementedError('predict_item_representation() is not supported with biased models.'
+                                      'Try TensorRec(biased=False)')
+
+        feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
+        item_repr = self.tf_item_representation.eval(session=get_session(), feed_dict=feed_dict)
+        return item_repr
