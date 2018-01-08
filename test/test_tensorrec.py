@@ -69,6 +69,20 @@ class TensorRecTestCase(TestCase):
         item_repr = model.predict_item_representation(self.item_features)
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
+    def test_predict_user_repr_biased_fails(self):
+        model = TensorRec(n_components=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
+
+        with self.assertRaises(NotImplementedError):
+            model.predict_user_representation(self.user_features)
+
+    def test_predict_item_repr_biased_fails(self):
+        model = TensorRec(n_components=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
+
+        with self.assertRaises(NotImplementedError):
+            model.predict_item_representation(self.item_features)
+
 
 class ReadmeTestCase(TestCase):
 
