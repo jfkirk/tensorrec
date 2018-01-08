@@ -46,6 +46,18 @@ class TensorRecTestCase(TestCase):
 
         self.assertEqual(predictions.shape, (user_features.shape[0], item_features.shape[0]))
 
+    def test_fit_predict_unbiased(self):
+        interactions, user_features, item_features = generate_dummy_data(num_users=10,
+                                                                         num_items=20,
+                                                                         interaction_density=.5)
+        model = TensorRec(n_components=10, biased=False)
+        model.fit(interactions, user_features, item_features, epochs=10)
+
+        predictions = model.predict(user_features=user_features,
+                                    item_features=item_features)
+
+        self.assertEqual(predictions.shape, (user_features.shape[0], item_features.shape[0]))
+
 
 class ReadmeTestCase(TestCase):
 

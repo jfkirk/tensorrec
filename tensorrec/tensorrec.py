@@ -13,7 +13,8 @@ class TensorRec(object):
     def __init__(self, n_components=100,
                  user_repr_graph=linear_representation_graph,
                  item_repr_graph=linear_representation_graph,
-                 loss_graph=rmse_loss):
+                 loss_graph=rmse_loss,
+                 biased=True):
         """
         A TensorRec recommendation model.
         :param n_components: Integer
@@ -27,6 +28,8 @@ class TensorRec(object):
         :param loss_graph: Method
         A method which creates TensorFlow nodes to calculate the loss function.
         See tensorrec.loss_graphs for examples.
+        :param biased: Boolean
+        If True, a bias value will be calculated for every user and item feature.
         """
 
         # Arg-check
@@ -40,16 +43,20 @@ class TensorRec(object):
         self.user_repr_graph_factory = user_repr_graph
         self.item_repr_graph_factory = item_repr_graph
         self.loss_graph_factory = loss_graph
+        self.biased = biased
 
         self.tf_user_representation = None
         self.tf_item_representation = None
-        self.tf_user_feature_biases = None
-        self.tf_item_feature_biases = None
-        self.tf_projected_user_biases = None
-        self.tf_projected_item_biases = None
         self.tf_prediction_serial = None
         self.tf_prediction = None
         self.tf_rankings = None
+
+        # Bias nodes
+        if self.biased:
+            self.tf_user_feature_biases = None
+            self.tf_item_feature_biases = None
+            self.tf_projected_user_biases = None
+            self.tf_projected_item_biases = None
 
         # Training nodes
         self.tf_basic_loss = None
@@ -150,27 +157,30 @@ class TensorRec(object):
                                          node_name_ending='item')
 
         # Calculate the user and item biases
-        self.tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
-        self.tf_item_feature_biases = tf.Variable(tf.zeros([n_item_features, 1]))
+        if self.biased:
+            self.tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
+            self.tf_item_feature_biases = tf.Variable(tf.zeros([n_item_features, 1]))
 
-        # The reduce sum is to perform a rank reduction
-        self.tf_projected_user_biases = tf.reduce_sum(
-            tf.sparse_tensor_dense_matmul(self.tf_user_features, self.tf_user_feature_biases),
-            axis=1
-        )
-        self.tf_projected_item_biases = tf.reduce_sum(
-            tf.sparse_tensor_dense_matmul(self.tf_item_features, self.tf_item_feature_biases),
-            axis=1
-        )
+            # The reduce sum is to perform a rank reduction
+            self.tf_projected_user_biases = tf.reduce_sum(
+                tf.sparse_tensor_dense_matmul(self.tf_user_features, self.tf_user_feature_biases),
+                axis=1
+            )
+            self.tf_projected_item_biases = tf.reduce_sum(
+                tf.sparse_tensor_dense_matmul(self.tf_item_features, self.tf_item_feature_biases),
+                axis=1
+            )
 
         # Prediction = user_repr * item_repr + user_bias + item_bias
         # For the parallel prediction case, repr matrices can be multiplied together and the projected biases can be
         # broadcast across the resultant matrix
-        self.tf_prediction = (
-            tf.matmul(self.tf_user_representation, self.tf_item_representation, transpose_b=True)
-            + tf.expand_dims(self.tf_projected_user_biases, 1)
-            + tf.expand_dims(self.tf_projected_item_biases, 0)
-        )
+        self.tf_prediction = tf.matmul(self.tf_user_representation, self.tf_item_representation, transpose_b=True)
+
+        # Add biases, if this is a biased estimator
+        if self.biased:
+            self.tf_prediction = self.tf_prediction \
+                                 + tf.expand_dims(self.tf_projected_user_biases, 1) \
+                                 + tf.expand_dims(self.tf_projected_item_biases, 0)
 
         # For the serial prediction case, gather the desired values from the parallel prediction and the interactions
         self.tf_prediction_serial = tf.gather_nd(self.tf_prediction, indices=self.tf_interactions.indices)
@@ -185,8 +195,10 @@ class TensorRec(object):
         self.tf_weights = []
         self.tf_weights.extend(user_weights)
         self.tf_weights.extend(item_weights)
-        self.tf_weights.append(self.tf_user_feature_biases)
-        self.tf_weights.append(self.tf_item_feature_biases)
+
+        if self.biased:
+            self.tf_weights.append(self.tf_user_feature_biases)
+            self.tf_weights.append(self.tf_item_feature_biases)
 
         # Loss function nodes
         self.tf_basic_loss = self.loss_graph_factory(tf_prediction_serial=self.tf_prediction_serial,
