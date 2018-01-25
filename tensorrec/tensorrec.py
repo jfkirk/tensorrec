@@ -241,7 +241,8 @@ class TensorRec(object):
         self.tf_basic_loss = self.loss_graph_factory(tf_prediction_serial=self.tf_prediction_serial,
                                                      tf_interactions_serial=self.tf_interactions_serial,
                                                      tf_prediction=self.tf_prediction,
-                                                     tf_interactions=self.tf_interactions)
+                                                     tf_interactions=self.tf_interactions,
+                                                     tf_rankings=self.tf_rankings)
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)

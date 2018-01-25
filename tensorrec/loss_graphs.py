@@ -36,6 +36,38 @@ def separation_loss(tf_prediction_serial, tf_interactions_serial, **kwargs):
     return loss
 
 
+def wmrb_loss(tf_interactions, tf_prediction, **kwargs):
+    """
+    Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
+    :param tf_interactions:
+    :param tf_prediction:
+    :param tf_prediction_serial:
+    :param tf_interactions_serial:
+    :param kwargs:
+    :return:
+    """
+
+    positive_interaction_mask = tf.greater(tf_interactions.values, 0.0)
+    positive_interaction_indices = tf.boolean_mask(tf_interactions.indices,
+                                                   positive_interaction_mask)
+    positive_predictions = tf.gather_nd(tf_prediction, indices=positive_interaction_indices)
+
+    n_items = tf.cast(tf.shape(tf_prediction)[1], dtype=tf.float32)
+    predictions_sum_per_user = tf.reduce_sum(tf_prediction, axis=1)
+    mapped_predictions_sum_per_user = tf.gather(params=predictions_sum_per_user,
+                                                indices=tf.transpose(positive_interaction_indices)[0])
+
+    # TODO smart irrelevant item indicator -- using n_items is an approximation for sparse interactions
+    irrelevant_item_indicator = n_items # noqa
+
+    sampled_margin_rank = n_items - (n_items * positive_predictions) \
+                          + mapped_predictions_sum_per_user + irrelevant_item_indicator
+
+    # JKirk - I am leaving out the log term due to experimental results
+    # loss = tf.log(sampled_margin_rank + 1.0)
+    return sampled_margin_rank
+
+
 def warp_loss(tf_prediction, tf_y, **kwargs):
     # TODO JK: implement WARP loss
 

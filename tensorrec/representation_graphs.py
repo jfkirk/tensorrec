@@ -2,6 +2,7 @@ import tensorflow as tf
 
 
 def linear_representation_graph(tf_features, n_components, n_features, node_name_ending):
+    # Rough approximation of http://ceur-ws.org/Vol-1448/paper4.pdf
 
     # Create variable nodes
     tf_linear_weights = tf.Variable(tf.random_normal([n_features, n_components], stddev=.5),
