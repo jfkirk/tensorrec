@@ -60,8 +60,8 @@ def wmrb_loss(tf_interactions, tf_prediction, **kwargs):
     # TODO smart irrelevant item indicator -- using n_items is an approximation for sparse interactions
     irrelevant_item_indicator = n_items # noqa
 
-    sampled_margin_rank = n_items - (n_items * positive_predictions) \
-                          + mapped_predictions_sum_per_user + irrelevant_item_indicator
+    sampled_margin_rank = (n_items - (n_items * positive_predictions)
+                           + mapped_predictions_sum_per_user + irrelevant_item_indicator)
 
     # JKirk - I am leaving out the log term due to experimental results
     # loss = tf.log(sampled_margin_rank + 1.0)
