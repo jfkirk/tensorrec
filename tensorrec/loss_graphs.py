@@ -4,6 +4,7 @@ import tensorflow as tf
 def rmse_loss(tf_prediction_serial, tf_interactions_serial, **kwargs):
     """
     This loss function returns the root mean square error between the predictions and the true interactions.
+    Interactions can be any positive or negative values, and this loss function is sensitive to magnitude.
     :param tf_prediction_serial:
     :param tf_interactions_serial:
     :return:
@@ -15,6 +16,8 @@ def separation_loss(tf_prediction_serial, tf_interactions_serial, **kwargs):
     """
     This loss function models the explicit positive and negative interaction predictions as normal distributions and
     returns the probability of overlap between the two distributions.
+    Interactions can be any positive or negative values, but this loss function ignored the magnitude of the
+    interaction -- interactions are grouped in to {i < 0} and {i > 0}.
     :param tf_prediction_serial:
     :param tf_interactions_serial:
     :return:
@@ -39,6 +42,7 @@ def separation_loss(tf_prediction_serial, tf_interactions_serial, **kwargs):
 def wmrb_loss(tf_interactions, tf_prediction, **kwargs):
     """
     Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
+    Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     :param tf_interactions:
     :param tf_prediction:
     :param tf_prediction_serial:
