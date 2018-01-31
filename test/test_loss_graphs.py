@@ -17,10 +17,22 @@ class LossGraphsTestCase(TestCase):
         model = TensorRec(loss_graph=rmse_loss)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
+    def test_rmse_loss_biased(self):
+        model = TensorRec(loss_graph=rmse_loss, biased=True)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+
     def test_separation_loss(self):
         model = TensorRec(loss_graph=separation_loss)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
+    def test_separation_loss_biased(self):
+        model = TensorRec(loss_graph=separation_loss, biased=True)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+
     def test_wmrb_loss(self):
         model = TensorRec(loss_graph=wmrb_loss)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+
+    def test_wmrb_loss_biased(self):
+        model = TensorRec(loss_graph=wmrb_loss, biased=True)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)

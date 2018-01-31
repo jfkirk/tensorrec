@@ -213,14 +213,24 @@ class TensorRec(object):
         # broadcast across the resultant matrix
         self.tf_prediction = tf.matmul(self.tf_user_representation, self.tf_item_representation, transpose_b=True)
 
+        # For the serial prediction case, reprs and biases are gathered based on user and item ids
+        tf_transposed_indices = tf.transpose(self.tf_interactions.indices)
+        tf_x_user = tf_transposed_indices[0]
+        tf_x_item = tf_transposed_indices[0]
+        gathered_user_reprs = tf.gather(self.tf_user_representation, tf_x_user)
+        gathered_item_reprs = tf.gather(self.tf_item_representation, tf_x_item)
+        self.tf_prediction_serial = tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
+
         # Add biases, if this is a biased estimator
         if self.biased:
             self.tf_prediction = self.tf_prediction \
                                  + tf.expand_dims(self.tf_projected_user_biases, 1) \
                                  + tf.expand_dims(self.tf_projected_item_biases, 0)
 
-        # For the serial prediction case, gather the desired values from the parallel prediction and the interactions
-        self.tf_prediction_serial = tf.gather_nd(self.tf_prediction, indices=self.tf_interactions.indices)
+            gathered_user_biases = tf.gather(self.tf_projected_user_biases, tf_x_user)
+            gathered_item_biases = tf.gather(self.tf_projected_item_biases, tf_x_item)
+            self.tf_prediction_serial = self.tf_prediction_serial + gathered_user_biases + gathered_item_biases
+
         self.tf_interactions_serial = self.tf_interactions.values
 
         # Double-sortation serves as a ranking process
