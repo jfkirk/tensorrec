@@ -360,6 +360,14 @@ class TensorRec(object):
         return predictions
 
     def predict_rank(self, user_features, item_features):
+        """
+        Predict recommendation ranks for the given users and items.
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :return: TBD
+        """
         feed_dict = self._create_feed_dict(interactions_matrix=None,
                                            user_features_matrix=user_features,
                                            item_features_matrix=item_features)
@@ -369,7 +377,12 @@ class TensorRec(object):
         return rankings
 
     def predict_user_representation(self, user_features):
-
+        """
+        Predict representation vectors for the given users.
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :return: TBD
+        """
         if self.biased:
             raise NotImplementedError('predict_user_representation() is not supported with biased models.'
                                       'Try TensorRec(biased=False)')
@@ -379,7 +392,12 @@ class TensorRec(object):
         return user_repr
 
     def predict_item_representation(self, item_features):
-
+        """
+        Predict representation vectors for the given items.
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :return: TBD
+        """
         if self.biased:
             raise NotImplementedError('predict_item_representation() is not supported with biased models.'
                                       'Try TensorRec(biased=False)')
