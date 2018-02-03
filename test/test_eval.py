@@ -2,16 +2,16 @@ from unittest import TestCase
 
 from tensorrec import TensorRec
 from tensorrec.eval import recall_at_k, precision_at_k, f1_score_at_k
-from tensorrec.util import generate_dummy_data
+from tensorrec.util import generate_dummy_data_with_indicator
 
 
 class EvalTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(num_users=10,
-                                                                                     num_items=12,
-                                                                                     interaction_density=.5)
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data_with_indicator(num_users=10,
+                                                                                                    num_items=12,
+                                                                                                    interaction_density=.5)
         model = TensorRec(n_components=10)
         model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
         cls.model = model
