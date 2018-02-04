@@ -12,9 +12,10 @@ class TensorRecTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data_with_indicator(num_users=10,
-                                                                                                    num_items=20,
-                                                                                                    interaction_density=.5)
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
+            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
+            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+        )
 
     def test_init(self):
         self.assertIsNotNone(TensorRec())
@@ -84,13 +85,12 @@ class TensorRecTestCase(TestCase):
             model.predict_item_representation(self.item_features)
 
 
-class TensorRecWithoutIndicatorTestCase(TensorRecTestCase):
+class TensorRecWithIndicatorTestCase(TensorRecTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
-            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
-            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data_with_indicator(
+            num_users=10, num_items=20, interaction_density=.5
         )
 
 

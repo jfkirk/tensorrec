@@ -1,3 +1,4 @@
+import numpy as np
 import random
 import scipy.sparse as sp
 
@@ -5,24 +6,23 @@ import scipy.sparse as sp
 def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.00045, num_user_features=200,
                         num_item_features=200, n_features_per_user=20, n_features_per_item=20,  pos_int_ratio=.5):
 
-    num_interactions = (num_users * num_items) * interaction_density
+    if pos_int_ratio <= 0.0:
+        raise Exception("pos_int_ratio must be > 0")
 
-    user_features = sp.lil_matrix((num_users, num_user_features))
-    for i in range(num_users):
-        for j in range(n_features_per_user):
-            user_features[i, random.randrange(num_user_features)] = 1
+    print("Generating positive interactions")
+    interactions = sp.dok_matrix(sp.rand(num_users, num_items, density=interaction_density * pos_int_ratio))
+    if pos_int_ratio < 1.0:
+        print("Generating negative interactions")
+        interactions += -1 * sp.dok_matrix(sp.rand(num_users, num_items,
+                                                   density=interaction_density * (1 - pos_int_ratio)))
 
-    item_features = sp.lil_matrix((num_items, num_item_features))
-    for i in range(num_items):
-        for j in range(n_features_per_item):
-            item_features[i, random.randrange(num_item_features)] = 1
+    print("Generating user features")
+    user_features = sp.dok_matrix(sp.rand(num_users, num_user_features,
+                                          density=float(n_features_per_user) / num_user_features))
 
-    interactions = sp.lil_matrix((num_users, num_items))
-    for i in range(int(num_interactions * pos_int_ratio)):
-        interactions[random.randrange(num_users), random.randrange(num_items)] = 1
-
-    for i in range(int(num_interactions * (1 - pos_int_ratio))):
-        interactions[random.randrange(num_users), random.randrange(num_items)] = -1
+    print("Generating item features")
+    item_features = sp.dok_matrix(sp.rand(num_items, num_item_features,
+                                          density=float(n_features_per_item) / num_item_features))
 
     return interactions, user_features, item_features
 
