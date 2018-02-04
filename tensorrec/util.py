@@ -12,16 +12,13 @@ def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.0
     interactions = sp.rand(num_users, num_items, density=interaction_density * pos_int_ratio)
     if pos_int_ratio < 1.0:
         print("Generating negative interactions")
-        interactions += -1 * sp.rand(num_users, num_items,
-                                                   density=interaction_density * (1 - pos_int_ratio))
+        interactions += -1 * sp.rand(num_users, num_items, density=interaction_density * (1 - pos_int_ratio))
 
     print("Generating user features")
-    user_features = sp.rand(num_users, num_user_features,
-                                          density=float(n_features_per_user) / num_user_features)
+    user_features = sp.rand(num_users, num_user_features, density=float(n_features_per_user) / num_user_features)
 
     print("Generating item features")
-    item_features = sp.rand(num_items, num_item_features,
-                                          density=float(n_features_per_item) / num_item_features)
+    item_features = sp.rand(num_items, num_item_features, density=float(n_features_per_item) / num_item_features)
 
     return interactions, user_features, item_features
 
