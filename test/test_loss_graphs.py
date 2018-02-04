@@ -9,9 +9,8 @@ class LossGraphsTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data_with_indicator(num_users=10,
-                                                                                                    num_items=12,
-                                                                                                    interaction_density=.5)
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data_with_indicator(
+            num_users=10, num_items=12, interaction_density=.5)
 
     def test_rmse_loss(self):
         model = TensorRec(loss_graph=rmse_loss)
