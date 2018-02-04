@@ -216,7 +216,7 @@ class TensorRec(object):
         # For the serial prediction case, reprs and biases are gathered based on user and item ids
         tf_transposed_indices = tf.transpose(self.tf_interactions.indices)
         tf_x_user = tf_transposed_indices[0]
-        tf_x_item = tf_transposed_indices[0]
+        tf_x_item = tf_transposed_indices[1]
         gathered_user_reprs = tf.gather(self.tf_user_representation, tf_x_user)
         gathered_item_reprs = tf.gather(self.tf_item_representation, tf_x_item)
         self.tf_prediction_serial = tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
