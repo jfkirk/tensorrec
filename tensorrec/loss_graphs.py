@@ -45,8 +45,6 @@ def wmrb_loss(tf_interactions, tf_prediction, **kwargs):
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     :param tf_interactions:
     :param tf_prediction:
-    :param tf_prediction_serial:
-    :param tf_interactions_serial:
     :param kwargs:
     :return:
     """

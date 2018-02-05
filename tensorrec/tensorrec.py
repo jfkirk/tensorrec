@@ -4,6 +4,8 @@ import six
 import tensorflow as tf
 
 from .loss_graphs import rmse_loss
+from .recommendation_graphs import (project_biases, prediction_serial, split_sparse_tensor_indices,
+                                    bias_prediction_dense, bias_prediction_serial, rank_predictions)
 from .representation_graphs import linear_representation_graph
 from .session_management import get_session
 
@@ -195,17 +197,11 @@ class TensorRec(object):
 
         # Calculate the user and item biases
         if self.biased:
-            self.tf_user_feature_biases = tf.Variable(tf.zeros([n_user_features, 1]))
-            self.tf_item_feature_biases = tf.Variable(tf.zeros([n_item_features, 1]))
-
-            # The reduce sum is to perform a rank reduction
-            self.tf_projected_user_biases = tf.reduce_sum(
-                tf.sparse_tensor_dense_matmul(self.tf_user_features, self.tf_user_feature_biases),
-                axis=1
+            self.tf_user_feature_biases, self.tf_projected_user_biases = project_biases(
+                tf_features=self.tf_user_features, n_features=n_user_features
             )
-            self.tf_projected_item_biases = tf.reduce_sum(
-                tf.sparse_tensor_dense_matmul(self.tf_item_features, self.tf_item_feature_biases),
-                axis=1
+            self.tf_item_feature_biases, self.tf_projected_item_biases = project_biases(
+                tf_features=self.tf_item_features, n_features=n_item_features
             )
 
         # Prediction = user_repr * item_repr + user_bias + item_bias
@@ -213,31 +209,26 @@ class TensorRec(object):
         # broadcast across the resultant matrix
         self.tf_prediction = tf.matmul(self.tf_user_representation, self.tf_item_representation, transpose_b=True)
 
-        # For the serial prediction case, reprs and biases are gathered based on user and item ids
-        tf_transposed_indices = tf.transpose(self.tf_interactions.indices)
-        tf_x_user = tf_transposed_indices[0]
-        tf_x_item = tf_transposed_indices[1]
-        gathered_user_reprs = tf.gather(self.tf_user_representation, tf_x_user)
-        gathered_item_reprs = tf.gather(self.tf_item_representation, tf_x_item)
-        self.tf_prediction_serial = tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
+        tf_x_user, tf_x_item = split_sparse_tensor_indices(tf_sparse_tensor=self.tf_interactions, n_dimensions=2)
+        self.tf_prediction_serial = prediction_serial(tf_user_representation=self.tf_user_representation,
+                                                      tf_item_representation=self.tf_item_representation,
+                                                      tf_x_user=tf_x_user,
+                                                      tf_x_item=tf_x_item)
 
         # Add biases, if this is a biased estimator
         if self.biased:
-            self.tf_prediction = self.tf_prediction \
-                                 + tf.expand_dims(self.tf_projected_user_biases, 1) \
-                                 + tf.expand_dims(self.tf_projected_item_biases, 0)
+            self.tf_prediction = bias_prediction_dense(tf_prediction=self.tf_prediction,
+                                                       tf_projected_user_biases=self.tf_projected_user_biases,
+                                                       tf_projected_item_biases=self.tf_projected_item_biases)
 
-            gathered_user_biases = tf.gather(self.tf_projected_user_biases, tf_x_user)
-            gathered_item_biases = tf.gather(self.tf_projected_item_biases, tf_x_item)
-            self.tf_prediction_serial = self.tf_prediction_serial + gathered_user_biases + gathered_item_biases
+            self.tf_prediction_serial = bias_prediction_serial(tf_prediction_serial=self.tf_prediction_serial,
+                                                               tf_projected_user_biases=self.tf_projected_user_biases,
+                                                               tf_projected_item_biases=self.tf_projected_item_biases,
+                                                               tf_x_user=tf_x_user,
+                                                               tf_x_item=tf_x_item)
 
         self.tf_interactions_serial = self.tf_interactions.values
-
-        # Double-sortation serves as a ranking process
-        # The +1 is so the top-ranked has a non-zero rank
-        tf_prediction_item_size = tf.shape(self.tf_prediction)[1]
-        tf_indices_of_ranks = tf.nn.top_k(self.tf_prediction, k=tf_prediction_item_size)[1]
-        self.tf_rankings = tf.nn.top_k(-tf_indices_of_ranks, k=tf_prediction_item_size)[1] + 1
+        self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
 
         self.tf_weights = []
         self.tf_weights.extend(user_weights)
