@@ -1,3 +1,5 @@
+import shutil
+import tempfile
 from unittest import TestCase
 
 import numpy as np
@@ -6,6 +8,7 @@ import tensorflow as tf
 from tensorrec import TensorRec
 from tensorrec.eval import recall_at_k
 from tensorrec.util import generate_dummy_data_with_indicator, generate_dummy_data
+from tensorrec.session_management import set_session
 
 
 class TensorRecTestCase(TestCase):
@@ -92,6 +95,43 @@ class TensorRecWithIndicatorTestCase(TensorRecTestCase):
         cls.interactions, cls.user_features, cls.item_features = generate_dummy_data_with_indicator(
             num_users=10, num_items=20, interaction_density=.5
         )
+
+
+class TensorRecSavingTestCase(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
+            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
+            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+        )
+
+    def setUp(self):
+        # Create a temporary directory
+        self.test_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        # Remove the directory after the test
+        shutil.rmtree(self.test_dir)
+
+    def test_save_and_load_model(self):
+        model = TensorRec(n_components=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
+
+        predictions = model.predict(user_features=self.user_features, item_features=self.item_features)
+        ranks = model.predict_rank(user_features=self.user_features, item_features=self.item_features)
+        model.save_model(directory_path=self.test_dir)
+
+        # Blow away the session
+        set_session(tf.Session())
+
+        # Reload the model, predict, and check for equal predictions
+        new_model = TensorRec.load_model(directory_path=self.test_dir)
+        new_predictions = new_model.predict(user_features=self.user_features, item_features=self.item_features)
+        new_ranks = new_model.predict_rank(user_features=self.user_features, item_features=self.item_features)
+
+        self.assertEqual(predictions.all(), new_predictions.all())
+        self.assertEqual(ranks.all(), new_ranks.all())
 
 
 class ReadmeTestCase(TestCase):
