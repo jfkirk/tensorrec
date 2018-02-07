@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 from scipy import sparse as sp
 import six
 import tensorflow as tf
@@ -53,13 +54,6 @@ class TensorRec(object):
         self.tf_prediction = None
         self.tf_rankings = None
 
-        # Bias nodes
-        if self.biased:
-            self.tf_user_feature_biases = None
-            self.tf_item_feature_biases = None
-            self.tf_projected_user_biases = None
-            self.tf_projected_item_biases = None
-
         # Training nodes
         self.tf_basic_loss = None
         self.tf_weight_reg_loss = None
@@ -79,9 +73,6 @@ class TensorRec(object):
         self.tf_interaction_values = None
         self.tf_learning_rate = None
         self.tf_alpha = None
-
-        # For weight normalization
-        self.tf_weights = []
 
     def _create_feed_dict(self, interactions_matrix, user_features_matrix, item_features_matrix,
                           extra_feed_kwargs=None):
@@ -195,14 +186,10 @@ class TensorRec(object):
                                          n_features=n_item_features,
                                          node_name_ending='item')
 
-        # Calculate the user and item biases
-        if self.biased:
-            self.tf_user_feature_biases, self.tf_projected_user_biases = project_biases(
-                tf_features=self.tf_user_features, n_features=n_user_features
-            )
-            self.tf_item_feature_biases, self.tf_projected_item_biases = project_biases(
-                tf_features=self.tf_item_features, n_features=n_item_features
-            )
+        # Collect the weights for normalization
+        tf_weights = []
+        tf_weights.extend(user_weights)
+        tf_weights.extend(item_weights)
 
         # Prediction = user_repr * item_repr + user_bias + item_bias
         # For the parallel prediction case, repr matrices can be multiplied together and the projected biases can be
@@ -217,26 +204,28 @@ class TensorRec(object):
 
         # Add biases, if this is a biased estimator
         if self.biased:
+            tf_user_feature_biases, tf_projected_user_biases = project_biases(
+                tf_features=self.tf_user_features, n_features=n_user_features
+            )
+            tf_item_feature_biases, tf_projected_item_biases = project_biases(
+                tf_features=self.tf_item_features, n_features=n_item_features
+            )
+
+            tf_weights.append(tf_user_feature_biases)
+            tf_weights.append(tf_item_feature_biases)
+
             self.tf_prediction = bias_prediction_dense(tf_prediction=self.tf_prediction,
-                                                       tf_projected_user_biases=self.tf_projected_user_biases,
-                                                       tf_projected_item_biases=self.tf_projected_item_biases)
+                                                       tf_projected_user_biases=tf_projected_user_biases,
+                                                       tf_projected_item_biases=tf_projected_item_biases)
 
             self.tf_prediction_serial = bias_prediction_serial(tf_prediction_serial=self.tf_prediction_serial,
-                                                               tf_projected_user_biases=self.tf_projected_user_biases,
-                                                               tf_projected_item_biases=self.tf_projected_item_biases,
+                                                               tf_projected_user_biases=tf_projected_user_biases,
+                                                               tf_projected_item_biases=tf_projected_item_biases,
                                                                tf_x_user=tf_x_user,
                                                                tf_x_item=tf_x_item)
 
         self.tf_interactions_serial = self.tf_interactions.values
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
-
-        self.tf_weights = []
-        self.tf_weights.extend(user_weights)
-        self.tf_weights.extend(item_weights)
-
-        if self.biased:
-            self.tf_weights.append(self.tf_user_feature_biases)
-            self.tf_weights.append(self.tf_item_feature_biases)
 
         # Loss function nodes
         self.tf_basic_loss = self.loss_graph_factory(tf_prediction_serial=self.tf_prediction_serial,
@@ -244,7 +233,8 @@ class TensorRec(object):
                                                      tf_prediction=self.tf_prediction,
                                                      tf_interactions=self.tf_interactions,
                                                      tf_rankings=self.tf_rankings)
-        self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
+
+        self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
 
@@ -396,3 +386,14 @@ class TensorRec(object):
         feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
         item_repr = self.tf_item_representation.eval(session=get_session(), feed_dict=feed_dict)
         return item_repr
+
+    def save_model(self, directory_path):
+        file_path = '%s/tensorrec.pkl' % directory_path
+        with open(file_path, 'wb') as file:
+            pickle.dump(file=file, obj=self)
+
+    @classmethod
+    def load_model(cls, directory_path):
+        file_path = '%s/tensorrec.pkl' % directory_path
+        with open(file_path, 'rb') as file:
+            return pickle.load(file=file)
