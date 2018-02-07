@@ -412,15 +412,25 @@ class TensorRec(object):
         return item_repr
 
     def save_model(self, directory_path):
+
+        saver = tf.train.Saver()
+        session_path = '%s/tensorrec_session.cpkt' % directory_path
+        saver.save(sess=get_session(), save_path=session_path)
+
         self._clear_graph_hook_attrs()
-        file_path = '%s/tensorrec.pkl' % directory_path
-        with open(file_path, 'wb') as file:
+        tensorrec_path = '%s/tensorrec.pkl' % directory_path
+        with open(tensorrec_path, 'wb') as file:
             pickle.dump(file=file, obj=self)
 
     @classmethod
     def load_model(cls, directory_path):
-        file_path = '%s/tensorrec.pkl' % directory_path
-        with open(file_path, 'rb') as file:
+
+        saver = tf.train.Saver()
+        session_path = '%s/tensorrec_session.cpkt' % directory_path
+        saver.restore(sess=get_session(), save_path=session_path)
+
+        tensorrec_path = '%s/tensorrec.pkl' % directory_path
+        with open(tensorrec_path, 'rb') as file:
             model = pickle.load(file=file)
         model._attach_graph_hook_attrs()
         return model
