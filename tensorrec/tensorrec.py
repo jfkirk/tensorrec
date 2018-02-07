@@ -48,31 +48,25 @@ class TensorRec(object):
         self.loss_graph_factory = loss_graph
         self.biased = biased
 
-        self.tf_user_representation = None
-        self.tf_item_representation = None
-        self.tf_prediction_serial = None
-        self.tf_prediction = None
-        self.tf_rankings = None
+        # A list of the attr names of every graph hook attr
+        self.graph_hook_attr_names = [
 
-        # Training nodes
-        self.tf_basic_loss = None
-        self.tf_weight_reg_loss = None
-        self.tf_loss = None
-        self.tf_optimizer = None
+            # Top-level API nodes
+            'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
 
-        # TF feed placeholders
-        self.tf_n_users = None
-        self.tf_n_items = None
-        self.tf_user_features = None
-        self.tf_item_features = None
-        self.tf_user_feature_indices = None
-        self.tf_user_feature_values = None
-        self.tf_item_feature_indices = None
-        self.tf_item_feature_values = None
-        self.tf_interaction_indices = None
-        self.tf_interaction_values = None
-        self.tf_learning_rate = None
-        self.tf_alpha = None
+            # Training nodes
+            'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss', 'tf_optimizer',
+
+            # Feed placeholders
+            'tf_n_users', 'tf_n_items', 'tf_user_features', 'tf_item_features', 'tf_user_feature_indices',
+            'tf_user_feature_values', 'tf_item_feature_indices', 'tf_item_feature_values', 'tf_interaction_indices',
+            'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
+        ]
+        for graph_hook_attr_name in self.graph_hook_attr_names:
+            self.__setattr__(graph_hook_attr_name, None)
+
+        # A map of every graph hook attr name to the node name after construction
+        self.graph_hook_node_names = {}
 
     def _create_feed_dict(self, interactions_matrix, user_features_matrix, item_features_matrix,
                           extra_feed_kwargs=None):
