@@ -412,6 +412,12 @@ class TensorRec(object):
         return item_repr
 
     def save_model(self, directory_path):
+        """
+        Saves the model to files in the given directory.
+        :param directory_path: str
+        The path to the directory in which to save the model.
+        :return:
+        """
 
         saver = tf.train.Saver()
         session_path = '%s/tensorrec_session.cpkt' % directory_path
@@ -424,6 +430,12 @@ class TensorRec(object):
 
     @classmethod
     def load_model(cls, directory_path):
+        """
+        Loads the TensorRec model and TensorFlow session saved in the given directory.
+        :param directory_path: str
+        The path to the directory containing the saved model.
+        :return:
+        """
 
         saver = tf.train.Saver()
         session_path = '%s/tensorrec_session.cpkt' % directory_path
