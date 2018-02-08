@@ -68,6 +68,7 @@ class TensorRec(object):
         self._clear_graph_hook_attrs()
 
         # A map of every graph hook attr name to the node name after construction
+        # Tensors and operations are stored separated because they are handled differently by TensorFlow
         self.graph_tensor_hook_node_names = {}
         self.graph_operation_hook_node_names = {}
 
