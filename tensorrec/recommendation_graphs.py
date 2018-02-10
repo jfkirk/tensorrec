@@ -47,7 +47,6 @@ def prediction_serial(tf_user_representation, tf_item_representation, tf_x_user,
 def bias_prediction_dense(tf_prediction, tf_projected_user_biases, tf_projected_item_biases):
     """
     Broadcasts user and item biases across their respective axes of the dense predictions
-    Broadcasts user and item biases across their respective axes of the dense predictions
     :param tf_prediction:
     :param tf_projected_user_biases:
     :param tf_projected_item_biases:

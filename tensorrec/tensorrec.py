@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 from scipy import sparse as sp
 import six
 import tensorflow as tf
@@ -47,41 +48,48 @@ class TensorRec(object):
         self.loss_graph_factory = loss_graph
         self.biased = biased
 
-        self.tf_user_representation = None
-        self.tf_item_representation = None
-        self.tf_prediction_serial = None
-        self.tf_prediction = None
-        self.tf_rankings = None
+        # A list of the attr names of every graph hook attr
+        self.graph_tensor_hook_attr_names = [
 
-        # Bias nodes
-        if self.biased:
-            self.tf_user_feature_biases = None
-            self.tf_item_feature_biases = None
-            self.tf_projected_user_biases = None
-            self.tf_projected_item_biases = None
+            # Top-level API nodes
+            'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
 
-        # Training nodes
-        self.tf_basic_loss = None
-        self.tf_weight_reg_loss = None
-        self.tf_loss = None
-        self.tf_optimizer = None
+            # Training nodes
+            'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
 
-        # TF feed placeholders
-        self.tf_n_users = None
-        self.tf_n_items = None
-        self.tf_user_features = None
-        self.tf_item_features = None
-        self.tf_user_feature_indices = None
-        self.tf_user_feature_values = None
-        self.tf_item_feature_indices = None
-        self.tf_item_feature_values = None
-        self.tf_interaction_indices = None
-        self.tf_interaction_values = None
-        self.tf_learning_rate = None
-        self.tf_alpha = None
+            # Feed placeholders
+            'tf_n_users', 'tf_n_items', 'tf_user_feature_indices', 'tf_user_feature_values', 'tf_item_feature_indices',
+            'tf_item_feature_values', 'tf_interaction_indices', 'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
+        ]
+        self.graph_operation_hook_attr_names = [
+            # AdamOptimizer
+            'tf_optimizer',
+        ]
+        self._clear_graph_hook_attrs()
 
-        # For weight normalization
-        self.tf_weights = []
+        # A map of every graph hook attr name to the node name after construction
+        # Tensors and operations are stored separated because they are handled differently by TensorFlow
+        self.graph_tensor_hook_node_names = {}
+        self.graph_operation_hook_node_names = {}
+
+    def _clear_graph_hook_attrs(self):
+        for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
+            self.__setattr__(graph_tensor_hook_attr_name, None)
+        for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
+            self.__setattr__(graph_operation_hook_attr_name, None)
+
+    def _attach_graph_hook_attrs(self):
+        session = get_session()
+
+        for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
+            graph_tensor_hook_node_name = self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name]
+            node = session.graph.get_tensor_by_name(name=graph_tensor_hook_node_name)
+            self.__setattr__(graph_tensor_hook_attr_name, node)
+
+        for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
+            graph_operation_hook_node_name = self.graph_operation_hook_node_names[graph_operation_hook_attr_name]
+            node = session.graph.get_operation_by_name(name=graph_operation_hook_node_name)
+            self.__setattr__(graph_operation_hook_attr_name, node)
 
     def _create_feed_dict(self, interactions_matrix, user_features_matrix, item_features_matrix,
                           extra_feed_kwargs=None):
@@ -176,40 +184,36 @@ class TensorRec(object):
         self.tf_alpha = tf.placeholder('float', None)
 
         # Construct the features and interactions as sparse matrices
-        self.tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
-                                                [self.tf_n_users, n_user_features])
-        self.tf_item_features = tf.SparseTensor(self.tf_item_feature_indices, self.tf_item_feature_values,
-                                                [self.tf_n_items, n_item_features])
-        self.tf_interactions = tf.SparseTensor(self.tf_interaction_indices, self.tf_interaction_values,
-                                               [self.tf_n_users, self.tf_n_items])
+        tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
+                                           [self.tf_n_users, n_user_features])
+        tf_item_features = tf.SparseTensor(self.tf_item_feature_indices, self.tf_item_feature_values,
+                                           [self.tf_n_items, n_item_features])
+        tf_interactions = tf.SparseTensor(self.tf_interaction_indices, self.tf_interaction_values,
+                                          [self.tf_n_users, self.tf_n_items])
 
         # Build the representations
         self.tf_user_representation, user_weights = \
-            self.user_repr_graph_factory(tf_features=self.tf_user_features,
+            self.user_repr_graph_factory(tf_features=tf_user_features,
                                          n_components=self.n_components,
                                          n_features=n_user_features,
                                          node_name_ending='user')
         self.tf_item_representation, item_weights = \
-            self.item_repr_graph_factory(tf_features=self.tf_item_features,
+            self.item_repr_graph_factory(tf_features=tf_item_features,
                                          n_components=self.n_components,
                                          n_features=n_item_features,
                                          node_name_ending='item')
 
-        # Calculate the user and item biases
-        if self.biased:
-            self.tf_user_feature_biases, self.tf_projected_user_biases = project_biases(
-                tf_features=self.tf_user_features, n_features=n_user_features
-            )
-            self.tf_item_feature_biases, self.tf_projected_item_biases = project_biases(
-                tf_features=self.tf_item_features, n_features=n_item_features
-            )
+        # Collect the weights for normalization
+        tf_weights = []
+        tf_weights.extend(user_weights)
+        tf_weights.extend(item_weights)
 
         # Prediction = user_repr * item_repr + user_bias + item_bias
         # For the parallel prediction case, repr matrices can be multiplied together and the projected biases can be
         # broadcast across the resultant matrix
         self.tf_prediction = tf.matmul(self.tf_user_representation, self.tf_item_representation, transpose_b=True)
 
-        tf_x_user, tf_x_item = split_sparse_tensor_indices(tf_sparse_tensor=self.tf_interactions, n_dimensions=2)
+        tf_x_user, tf_x_item = split_sparse_tensor_indices(tf_sparse_tensor=tf_interactions, n_dimensions=2)
         self.tf_prediction_serial = prediction_serial(tf_user_representation=self.tf_user_representation,
                                                       tf_item_representation=self.tf_item_representation,
                                                       tf_x_user=tf_x_user,
@@ -217,36 +221,47 @@ class TensorRec(object):
 
         # Add biases, if this is a biased estimator
         if self.biased:
+            tf_user_feature_biases, tf_projected_user_biases = project_biases(
+                tf_features=tf_user_features, n_features=n_user_features
+            )
+            tf_item_feature_biases, tf_projected_item_biases = project_biases(
+                tf_features=tf_item_features, n_features=n_item_features
+            )
+
+            tf_weights.append(tf_user_feature_biases)
+            tf_weights.append(tf_item_feature_biases)
+
             self.tf_prediction = bias_prediction_dense(tf_prediction=self.tf_prediction,
-                                                       tf_projected_user_biases=self.tf_projected_user_biases,
-                                                       tf_projected_item_biases=self.tf_projected_item_biases)
+                                                       tf_projected_user_biases=tf_projected_user_biases,
+                                                       tf_projected_item_biases=tf_projected_item_biases)
 
             self.tf_prediction_serial = bias_prediction_serial(tf_prediction_serial=self.tf_prediction_serial,
-                                                               tf_projected_user_biases=self.tf_projected_user_biases,
-                                                               tf_projected_item_biases=self.tf_projected_item_biases,
+                                                               tf_projected_user_biases=tf_projected_user_biases,
+                                                               tf_projected_item_biases=tf_projected_item_biases,
                                                                tf_x_user=tf_x_user,
                                                                tf_x_item=tf_x_item)
 
-        self.tf_interactions_serial = self.tf_interactions.values
+        tf_interactions_serial = tf_interactions.values
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
-
-        self.tf_weights = []
-        self.tf_weights.extend(user_weights)
-        self.tf_weights.extend(item_weights)
-
-        if self.biased:
-            self.tf_weights.append(self.tf_user_feature_biases)
-            self.tf_weights.append(self.tf_item_feature_biases)
 
         # Loss function nodes
         self.tf_basic_loss = self.loss_graph_factory(tf_prediction_serial=self.tf_prediction_serial,
-                                                     tf_interactions_serial=self.tf_interactions_serial,
+                                                     tf_interactions_serial=tf_interactions_serial,
                                                      tf_prediction=self.tf_prediction,
-                                                     tf_interactions=self.tf_interactions,
+                                                     tf_interactions=tf_interactions,
                                                      tf_rankings=self.tf_rankings)
-        self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in self.tf_weights)
+
+        self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
+
+        # Get node names for each graph hook
+        for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
+            hook = self.__getattribute__(graph_tensor_hook_attr_name)
+            self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
+        for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
+            hook = self.__getattribute__(graph_operation_hook_attr_name)
+            self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
 
     def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
             verbose=False, out_sample_interactions=None):
@@ -396,3 +411,43 @@ class TensorRec(object):
         feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
         item_repr = self.tf_item_representation.eval(session=get_session(), feed_dict=feed_dict)
         return item_repr
+
+    def save_model(self, directory_path):
+        """
+        Saves the model to files in the given directory.
+        :param directory_path: str
+        The path to the directory in which to save the model.
+        :return:
+        """
+
+        saver = tf.train.Saver()
+        session_path = '%s/tensorrec_session.cpkt' % directory_path
+        saver.save(sess=get_session(), save_path=session_path)
+
+        # Break connections to the graph before saving the python object
+        self._clear_graph_hook_attrs()
+        tensorrec_path = '%s/tensorrec.pkl' % directory_path
+        with open(tensorrec_path, 'wb') as file:
+            pickle.dump(file=file, obj=self)
+
+        # Reconnect to the graph after saving
+        self._attach_graph_hook_attrs()
+
+    @classmethod
+    def load_model(cls, directory_path):
+        """
+        Loads the TensorRec model and TensorFlow session saved in the given directory.
+        :param directory_path: str
+        The path to the directory containing the saved model.
+        :return:
+        """
+
+        saver = tf.train.Saver()
+        session_path = '%s/tensorrec_session.cpkt' % directory_path
+        saver.restore(sess=get_session(), save_path=session_path)
+
+        tensorrec_path = '%s/tensorrec.pkl' % directory_path
+        with open(tensorrec_path, 'rb') as file:
+            model = pickle.load(file=file)
+        model._attach_graph_hook_attrs()
+        return model
