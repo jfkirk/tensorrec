@@ -424,10 +424,14 @@ class TensorRec(object):
         session_path = '%s/tensorrec_session.cpkt' % directory_path
         saver.save(sess=get_session(), save_path=session_path)
 
+        # Break connections to the graph before saving the python object
         self._clear_graph_hook_attrs()
         tensorrec_path = '%s/tensorrec.pkl' % directory_path
         with open(tensorrec_path, 'wb') as file:
             pickle.dump(file=file, obj=self)
+
+        # Reconnect to the graph after saving
+        self._attach_graph_hook_attrs()
 
     @classmethod
     def load_model(cls, directory_path):

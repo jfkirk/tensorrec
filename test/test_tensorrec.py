@@ -122,6 +122,12 @@ class TensorRecSavingTestCase(TestCase):
         ranks = model.predict_rank(user_features=self.user_features, item_features=self.item_features)
         model.save_model(directory_path=self.test_dir)
 
+        # Check that, after saving, the same predictions come back
+        predictions_after_save = model.predict(user_features=self.user_features, item_features=self.item_features)
+        ranks_after_save = model.predict_rank(user_features=self.user_features, item_features=self.item_features)
+        self.assertEqual(predictions.all(), predictions_after_save.all())
+        self.assertEqual(ranks.all(), ranks_after_save.all())
+
         # Blow away the session
         set_session(tf.Session())
 
