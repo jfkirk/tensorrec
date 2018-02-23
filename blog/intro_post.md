@@ -25,11 +25,11 @@ While the first three goals remain a work in progress — your mileage may vary 
 
 TensorRec scores recommendations by consuming user and item [features](https://en.wikipedia.org/wiki/Feature_(machine_learning)) (ids, tags, or other metadata) and building two low-dimensional vectors, a “user representation” and an “item representation”. The [dot product](https://en.wikipedia.org/wiki/Dot_product) of these two vectors is the score for the relationship between that user and that item — the highest scores are predicted to be the best recommendations.
 
-    # Predict scores for user 75 on items 100, 101, and 102
-    predictions = model.predict(user_ids=[75, 75, 75],
-                                item_ids=[100, 101, 102],
-                                user_features=user_features,
-                                item_features=item_features)
+	# Predict scores for user 75 on items 100, 101, and 102
+	predictions = model.predict(user_ids=[75, 75, 75],
+								item_ids=[100, 101, 102],
+								user_features=user_features,
+								item_features=item_features)
 
 The algorithm used to generate these representations, called the embedding function, can be customized: anything from a straight-forward linear transform to a deep neural network can be applied, depending on the particulars of the problem you need TensorRec to solve and the feature data you have available. Also, the user and item embedding functions can be customized independently. You can find an example of embedding function customization [here](https://github.com/jfkirk/tensorrec#example-defining-custom-representation-function).
 
@@ -37,9 +37,9 @@ TensorRec learns by comparing the scores it generates to actual interactions (li
 
 The functions for fitting a TensorRec model are similar to fitting functions for other common machine learning tools:
 
-    # Fit the model for 5 epochs
-    model.fit(interactions, user_features, item_features,
-              epochs=5, verbose=True)
+	# Fit the model for 5 epochs
+	model.fit(interactions, user_features, item_features,
+			  epochs=5, verbose=True)
 
 ## Inspiration
 
