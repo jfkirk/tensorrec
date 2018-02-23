@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pickle
 from scipy import sparse as sp
@@ -36,8 +37,7 @@ class TensorRec(object):
         """
 
         # Arg-check
-        if (n_components is None) or (user_repr_graph is None) or (item_repr_graph is None) or \
-                (loss_graph is None):
+        if (n_components is None) or (user_repr_graph is None) or (item_repr_graph is None) or (loss_graph is None):
             raise ValueError("All arguments to TensorRec() must be non-None")
         if n_components < 1:
             raise ValueError("n_components must be >= 1")
@@ -324,14 +324,14 @@ class TensorRec(object):
             session.run(tf.global_variables_initializer())
 
         if verbose:
-            print('Processing interaction and feature data')
+            logging.info('Processing interaction and feature data')
 
         feed_dict = self._create_feed_dict(interactions, user_features, item_features,
                                            extra_feed_kwargs={self.tf_learning_rate: learning_rate,
                                                               self.tf_alpha: alpha})
 
         if verbose:
-            print('Beginning fitting')
+            logging.info('Beginning fitting')
 
         for epoch in range(epochs):
 
@@ -341,12 +341,12 @@ class TensorRec(object):
                 mean_loss = self.tf_basic_loss.eval(session=session, feed_dict=feed_dict)
                 mean_pred = np.mean(self.tf_prediction_serial.eval(session=session, feed_dict=feed_dict))
                 weight_reg_l2_loss = (alpha * self.tf_weight_reg_loss).eval(session=session, feed_dict=feed_dict)
-                print('EPOCH %s loss = %s, weight_reg_l2_loss = %s, mean_pred = %s' % (epoch, mean_loss,
+                logging.info('EPOCH %s loss = %s, weight_reg_l2_loss = %s, mean_pred = %s' % (epoch, mean_loss,
                                                                                        weight_reg_l2_loss, mean_pred))
                 if out_sample_interactions:
                     os_feed_dict = self._create_feed_dict(out_sample_interactions, user_features, item_features)
                     os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
-                    print('Out-Sample loss = %s' % os_loss)
+                    logging.info('Out-Sample loss = %s' % os_loss)
 
     def predict(self, user_features, item_features):
         """
