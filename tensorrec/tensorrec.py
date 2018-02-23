@@ -341,8 +341,9 @@ class TensorRec(object):
                 mean_loss = self.tf_basic_loss.eval(session=session, feed_dict=feed_dict)
                 mean_pred = np.mean(self.tf_prediction_serial.eval(session=session, feed_dict=feed_dict))
                 weight_reg_l2_loss = (alpha * self.tf_weight_reg_loss).eval(session=session, feed_dict=feed_dict)
-                logging.info('EPOCH %s loss = %s, weight_reg_l2_loss = %s, mean_pred = %s' % (epoch, mean_loss,
-                                                                                       weight_reg_l2_loss, mean_pred))
+                logging.info('EPOCH %s loss = %s, weight_reg_l2_loss = %s, mean_pred = %s' % (
+                    epoch, mean_loss, weight_reg_l2_loss, mean_pred
+                ))
                 if out_sample_interactions:
                     os_feed_dict = self._create_feed_dict(out_sample_interactions, user_features, item_features)
                     os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
