@@ -102,23 +102,20 @@ class TensorRec(object):
         if not sp.issparse(item_features_matrix):
             raise Exception('Item features must be a scipy sparse matrix')
 
-        # Create placeholders if interactions_matrix is none
-        # TODO JK - This probably isn't necessary -- will the graph execute without it?
-        if interactions_matrix is None:
-            interactions_matrix = np.ones((user_features_matrix.shape[0], item_features_matrix.shape[0]))
-
         n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix)
         n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix)
-        _, interaction_indices, interaction_values = self._process_matrix(interactions_matrix)
 
         feed_dict = {self.tf_n_users: n_users,
                      self.tf_n_items: n_items,
                      self.tf_user_feature_indices: user_feature_indices,
                      self.tf_user_feature_values: user_feature_values,
                      self.tf_item_feature_indices: item_feature_indices,
-                     self.tf_item_feature_values: item_feature_values,
-                     self.tf_interaction_indices: interaction_indices,
-                     self.tf_interaction_values: interaction_values}
+                     self.tf_item_feature_values: item_feature_values,}
+
+        if interactions_matrix is not None:
+            _, interaction_indices, interaction_values = self._process_matrix(interactions_matrix)
+            feed_dict[self.tf_interaction_indices] = interaction_indices
+            feed_dict[self.tf_interaction_values] = interaction_values
 
         if extra_feed_kwargs:
             feed_dict.update(extra_feed_kwargs)
