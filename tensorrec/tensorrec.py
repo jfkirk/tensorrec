@@ -335,12 +335,17 @@ class TensorRec(object):
 
         for epoch in range(epochs):
 
-            session.run(self.tf_optimizer, feed_dict=feed_dict)
+            # TODO find something more elegant than these cascaded ifs
+            if not verbose:
+                session.run(self.tf_optimizer, feed_dict=feed_dict)
 
-            if verbose:
-                mean_loss = self.tf_basic_loss.eval(session=session, feed_dict=feed_dict)
-                mean_pred = np.mean(self.tf_prediction_serial.eval(session=session, feed_dict=feed_dict))
-                weight_reg_l2_loss = (alpha * self.tf_weight_reg_loss).eval(session=session, feed_dict=feed_dict)
+            else:
+                _, mean_loss, serial_predictions, wr_loss = session.run(
+                    [self.tf_optimizer, self.tf_basic_loss, self.tf_prediction_serial, self.tf_weight_reg_loss],
+                    feed_dict=feed_dict
+                )
+                mean_pred = np.mean(serial_predictions)
+                weight_reg_l2_loss = alpha * wr_loss
                 logging.info('EPOCH {} loss = {}, weight_reg_l2_loss = {}, mean_pred = {}'.format(
                     epoch, mean_loss, weight_reg_l2_loss, mean_pred
                 ))
