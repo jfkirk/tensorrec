@@ -110,7 +110,7 @@ class TensorRec(object):
                      self.tf_user_feature_indices: user_feature_indices,
                      self.tf_user_feature_values: user_feature_values,
                      self.tf_item_feature_indices: item_feature_indices,
-                     self.tf_item_feature_values: item_feature_values,}
+                     self.tf_item_feature_values: item_feature_values, }
 
         if interactions_matrix is not None:
             _, interaction_indices, interaction_values = self._process_matrix(interactions_matrix)
