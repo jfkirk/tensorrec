@@ -263,7 +263,7 @@ class TensorRec(object):
             hook = self.__getattribute__(graph_operation_hook_attr_name)
             self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
 
-    def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.0001,
+    def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.00001,
             verbose=False, out_sample_interactions=None):
         """
         Constructs the TensorRec graph and fits the model.
@@ -291,7 +291,7 @@ class TensorRec(object):
                          out_sample_interactions)
 
     def fit_partial(self, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
-                    alpha=0.0001, verbose=False, out_sample_interactions=None):
+                    alpha=0.00001, verbose=False, out_sample_interactions=None):
         """
         Constructs the TensorRec graph and fits the model.
         :param interactions: scipy.sparse matrix
