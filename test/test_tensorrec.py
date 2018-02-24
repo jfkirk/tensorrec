@@ -41,6 +41,12 @@ class TensorRecTestCase(TestCase):
         # Ensure that the nodes have been built
         self.assertIsNotNone(model.tf_prediction)
 
+    def test_fit_verbose(self):
+        model = TensorRec(n_components=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10, verbose=True)
+        # Ensure that the nodes have been built
+        self.assertIsNotNone(model.tf_prediction)
+
     def test_predict(self):
         model = TensorRec(n_components=10)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
@@ -188,7 +194,7 @@ class ReadmeTestCase(TestCase):
         def build_tanh_representation_graph(tf_features, n_components, n_features, node_name_ending):
             tf_tanh_weights = tf.Variable(tf.random_normal([n_features, n_components],
                                                            stddev=.5),
-                                          name='tanh_weights_%s' % node_name_ending)
+                                          name='tanh_weights_{}'.format(node_name_ending))
 
             tf_repr = tf.nn.tanh(tf.sparse_tensor_dense_matmul(tf_features, tf_tanh_weights))
 
