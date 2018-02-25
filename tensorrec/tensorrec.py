@@ -6,8 +6,8 @@ import six
 import tensorflow as tf
 
 from .loss_graphs import rmse_loss
-from .recommendation_graphs import (project_biases, prediction_serial, split_sparse_tensor_indices,
-                                    bias_prediction_dense, bias_prediction_serial, rank_predictions)
+from .recommendation_graphs import (project_biases, prediction_dense, prediction_serial, split_sparse_tensor_indices,
+                                    bias_prediction_dense, bias_prediction_serial, rank_predictions, alignment)
 from .representation_graphs import linear_representation_graph
 from .session_management import get_session
 
@@ -53,6 +53,7 @@ class TensorRec(object):
 
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
+            'tf_alignment',
 
             # Training nodes
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
@@ -208,13 +209,17 @@ class TensorRec(object):
         # Prediction = user_repr * item_repr + user_bias + item_bias
         # For the parallel prediction case, repr matrices can be multiplied together and the projected biases can be
         # broadcast across the resultant matrix
-        self.tf_prediction = tf.matmul(self.tf_user_representation, self.tf_item_representation, transpose_b=True)
+        self.tf_prediction = prediction_dense(tf_user_representation=self.tf_user_representation,
+                                              tf_item_representation=self.tf_item_representation)
 
         tf_x_user, tf_x_item = split_sparse_tensor_indices(tf_sparse_tensor=tf_interactions, n_dimensions=2)
         self.tf_prediction_serial = prediction_serial(tf_user_representation=self.tf_user_representation,
                                                       tf_item_representation=self.tf_item_representation,
                                                       tf_x_user=tf_x_user,
                                                       tf_x_item=tf_x_item)
+
+        self.tf_alignment = alignment(tf_user_representation=self.tf_user_representation,
+                                      tf_item_representation=self.tf_item_representation)
 
         # Add biases, if this is a biased estimator
         if self.biased:
@@ -246,7 +251,8 @@ class TensorRec(object):
                                                      tf_interactions_serial=tf_interactions_serial,
                                                      tf_prediction=self.tf_prediction,
                                                      tf_interactions=tf_interactions,
-                                                     tf_rankings=self.tf_rankings)
+                                                     tf_rankings=self.tf_rankings,
+                                                     tf_alignment=self.tf_alignment)
 
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
@@ -365,6 +371,24 @@ class TensorRec(object):
                                            item_features_matrix=item_features)
 
         predictions = self.tf_prediction.eval(session=get_session(), feed_dict=feed_dict)
+
+        return predictions
+
+    def predict_alignment(self, user_features, item_features):
+        """
+        Predict alignment for the given users and items. Alignment is the cosine of the angle between the user and item
+        representations.
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :return: TBD
+        """
+        feed_dict = self._create_feed_dict(interactions_matrix=None,
+                                           user_features_matrix=user_features,
+                                           item_features_matrix=item_features)
+
+        predictions = self.tf_alignment.eval(session=get_session(), feed_dict=feed_dict)
 
         return predictions
 

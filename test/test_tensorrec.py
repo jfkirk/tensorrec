@@ -20,6 +20,9 @@ class TensorRecTestCase(TestCase):
             n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
 
+        cls.standard_model = TensorRec(n_components=10)
+        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
     def test_init(self):
         self.assertIsNotNone(TensorRec())
 
@@ -36,10 +39,8 @@ class TensorRecTestCase(TestCase):
             TensorRec(loss_graph=None)
 
     def test_fit(self):
-        model = TensorRec(n_components=10)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
         # Ensure that the nodes have been built
-        self.assertIsNotNone(model.tf_prediction)
+        self.assertIsNotNone(self.standard_model.tf_prediction)
 
     def test_fit_verbose(self):
         model = TensorRec(n_components=10)
@@ -48,13 +49,31 @@ class TensorRecTestCase(TestCase):
         self.assertIsNotNone(model.tf_prediction)
 
     def test_predict(self):
-        model = TensorRec(n_components=10)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
-
-        predictions = model.predict(user_features=self.user_features,
-                                    item_features=self.item_features)
+        predictions = self.standard_model.predict(user_features=self.user_features,
+                                                  item_features=self.item_features)
 
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+
+    def test_predict_alignment(self):
+        alignments = self.standard_model.predict_alignment(user_features=self.user_features,
+                                                           item_features=self.item_features)
+
+        self.assertEqual(alignments.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+        for x in range(alignments.shape[0]):
+            for y in range(alignments.shape[1]):
+                val = alignments[x][y]
+                self.assertGreaterEqual(val, -1.0)
+                self.assertLessEqual(val, 1.0)
+
+    def test_predict_rank(self):
+        ranks = self.standard_model.predict_rank(user_features=self.user_features,
+                                                 item_features=self.item_features)
+
+        self.assertEqual(ranks.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+        for x in range(ranks.shape[0]):
+            for y in range(ranks.shape[1]):
+                val = ranks[x][y]
+                self.assertGreater(val, 0)
 
     def test_fit_predict_unbiased(self):
         model = TensorRec(n_components=10, biased=False)
@@ -80,18 +99,12 @@ class TensorRecTestCase(TestCase):
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
     def test_predict_user_repr_biased_fails(self):
-        model = TensorRec(n_components=10)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
-
         with self.assertRaises(NotImplementedError):
-            model.predict_user_representation(self.user_features)
+            self.standard_model.predict_user_representation(self.user_features)
 
     def test_predict_item_repr_biased_fails(self):
-        model = TensorRec(n_components=10)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
-
         with self.assertRaises(NotImplementedError):
-            model.predict_item_representation(self.item_features)
+            self.standard_model.predict_item_representation(self.item_features)
 
 
 class TensorRecWithIndicatorTestCase(TensorRecTestCase):
@@ -101,6 +114,9 @@ class TensorRecWithIndicatorTestCase(TensorRecTestCase):
         cls.interactions, cls.user_features, cls.item_features = generate_dummy_data_with_indicator(
             num_users=10, num_items=20, interaction_density=.5
         )
+
+        cls.standard_model = TensorRec(n_components=10)
+        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
 
 class TensorRecSavingTestCase(TestCase):

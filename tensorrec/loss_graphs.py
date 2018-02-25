@@ -70,6 +70,19 @@ def wmrb_loss(tf_interactions, tf_prediction, **kwargs):
     return sampled_margin_rank
 
 
+def wmrb_alignment_loss(tf_interactions, tf_alignment, **kwargs):
+    """
+    Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
+    Ranks items based on alignment, in place of prediction.
+    Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
+    :param tf_interactions:
+    :param tf_alignment:
+    :param kwargs:
+    :return:
+    """
+    return wmrb_loss(tf_interactions=tf_interactions, tf_prediction=tf_alignment)
+
+
 def warp_loss(tf_prediction, tf_y, **kwargs):
     # TODO JK: implement WARP loss
 

@@ -30,6 +30,16 @@ def split_sparse_tensor_indices(tf_sparse_tensor, n_dimensions):
     return (tf_transposed_indices[i] for i in range(n_dimensions))
 
 
+def prediction_dense(tf_user_representation, tf_item_representation):
+    """
+    Returns the dot product between the given user and item representations.
+    :param tf_user_representation:
+    :param tf_item_representation:
+    :return:
+    """
+    return tf.matmul(tf_user_representation, tf_item_representation, transpose_b=True)
+
+
 def prediction_serial(tf_user_representation, tf_item_representation, tf_x_user, tf_x_item):
     """
     For the serial prediction case, reprs and biases are gathered based on user and item ids
@@ -42,6 +52,19 @@ def prediction_serial(tf_user_representation, tf_item_representation, tf_x_user,
     gathered_user_reprs = tf.gather(tf_user_representation, tf_x_user)
     gathered_item_reprs = tf.gather(tf_item_representation, tf_x_item)
     return tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
+
+
+def alignment(tf_user_representation, tf_item_representation):
+    """
+    Returns the cosine distance between the given user representations and item representations.
+    This is a form of dense prediction.
+    :param tf_user_representation:
+    :param tf_item_representation:
+    :return:
+    """
+    normalized_users = tf.nn.l2_normalize(tf_user_representation, 0)
+    normalized_items = tf.nn.l2_normalize(tf_item_representation, 0)
+    return tf.matmul(normalized_users, normalized_items, transpose_b=True)
 
 
 def bias_prediction_dense(tf_prediction, tf_projected_user_biases, tf_projected_item_biases):
