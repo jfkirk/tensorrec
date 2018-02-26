@@ -5,7 +5,7 @@ from scipy import sparse as sp
 import six
 import tensorflow as tf
 
-from .loss_graphs import AbstractLossGraph, RMSELoss
+from .loss_graphs import AbstractLossGraph, RMSELossGraph
 from .recommendation_graphs import (project_biases, prediction_dense, prediction_serial, split_sparse_tensor_indices,
                                     bias_prediction_dense, bias_prediction_serial, rank_predictions, alignment)
 from .representation_graphs import linear_representation_graph
@@ -17,7 +17,7 @@ class TensorRec(object):
     def __init__(self, n_components=100,
                  user_repr_graph=linear_representation_graph,
                  item_repr_graph=linear_representation_graph,
-                 loss_graph=RMSELoss(),
+                 loss_graph=RMSELossGraph(),
                  biased=True):
         """
         A TensorRec recommendation model.

@@ -80,7 +80,7 @@ class ReadmeTestCase(TestCase):
         import tensorrec
 
         # Define a custom loss graph
-        class SimpleLoss(tensorrec.loss_graphs.AbstractLossGraph):
+        class SimpleLossGraph(tensorrec.loss_graphs.AbstractLossGraph):
             def loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
                 """
                 This loss function returns the absolute simple error between the predictions and the interactions.
@@ -96,7 +96,7 @@ class ReadmeTestCase(TestCase):
                 return tf.reduce_mean(tf.abs(tf_interactions_serial - tf_prediction_serial))
 
         # Build a model with the custom loss function
-        model = tensorrec.TensorRec(loss_graph=SimpleLoss())
+        model = tensorrec.TensorRec(loss_graph=SimpleLossGraph())
 
         # Generate some dummy data
         interactions, user_features, item_features = tensorrec.util.generate_dummy_data(num_users=100,

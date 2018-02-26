@@ -32,7 +32,7 @@ class AbstractLossGraph(object):
         pass
 
 
-class RMSELoss(AbstractLossGraph):
+class RMSELossGraph(AbstractLossGraph):
     """
     This loss function returns the root mean square error between the predictions and the true interactions.
     Interactions can be any positive or negative values, and this loss function is sensitive to magnitude.
@@ -41,7 +41,7 @@ class RMSELoss(AbstractLossGraph):
         return tf.sqrt(tf.reduce_mean(tf.square(tf_interactions_serial - tf_prediction_serial)))
 
 
-class SeparationLoss(AbstractLossGraph):
+class SeparationLossGraph(AbstractLossGraph):
     """
     This loss function models the explicit positive and negative interaction predictions as normal distributions and
     returns the probability of overlap between the two distributions.
@@ -66,13 +66,13 @@ class SeparationLoss(AbstractLossGraph):
         return loss
 
 
-class WMRBLoss(AbstractLossGraph):
+class WMRBLossGraph(AbstractLossGraph):
     """
     Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
     def __init__(self):
-        super(WMRBLoss, self).__init__(is_dense=True)
+        super(WMRBLossGraph, self).__init__(is_dense=True)
 
     def loss_graph(self, tf_interactions, tf_prediction, **kwargs):
 
@@ -97,14 +97,15 @@ class WMRBLoss(AbstractLossGraph):
         return sampled_margin_rank
 
 
-class WMRBAlignmentLoss(WMRBLoss):
+class WMRBAlignmentLossGraph(WMRBLossGraph):
     """
     Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
     Ranks items based on alignment, in place of prediction.
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
     def __init__(self):
-        super(WMRBAlignmentLoss, self).__init__()
+        super(WMRBAlignmentLossGraph, self).__init__()
 
     def loss_graph(self, tf_interactions, tf_alignment, **kwargs):
-        return super(WMRBAlignmentLoss, self).loss_graph(tf_interactions=tf_interactions, tf_prediction=tf_alignment)
+        return super(WMRBAlignmentLossGraph, self).loss_graph(tf_interactions=tf_interactions,
+                                                              tf_prediction=tf_alignment)
