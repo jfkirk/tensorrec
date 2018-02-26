@@ -335,7 +335,8 @@ class TensorRec(object):
                          learning_rate=learning_rate,
                          alpha=alpha,
                          verbose=verbose,
-                         out_sample_interactions=out_sample_interactions)
+                         out_sample_interactions=out_sample_interactions,
+                         user_batch_size=user_batch_size)
 
     def fit_partial(self, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
                     alpha=0.00001, verbose=False, out_sample_interactions=None, user_batch_size=None):
