@@ -5,7 +5,7 @@ from scipy import sparse as sp
 import six
 import tensorflow as tf
 
-from .loss_graphs import rmse_loss
+from .loss_graphs import AbstractLossGraph, RMSELoss
 from .recommendation_graphs import (project_biases, prediction_dense, prediction_serial, split_sparse_tensor_indices,
                                     bias_prediction_dense, bias_prediction_serial, rank_predictions, alignment)
 from .representation_graphs import linear_representation_graph
@@ -17,7 +17,7 @@ class TensorRec(object):
     def __init__(self, n_components=100,
                  user_repr_graph=linear_representation_graph,
                  item_repr_graph=linear_representation_graph,
-                 loss_graph=rmse_loss,
+                 loss_graph=RMSELoss(),
                  biased=True):
         """
         A TensorRec recommendation model.
@@ -41,6 +41,8 @@ class TensorRec(object):
             raise ValueError("All arguments to TensorRec() must be non-None")
         if n_components < 1:
             raise ValueError("n_components must be >= 1")
+        if not isinstance(loss_graph, AbstractLossGraph):
+            raise ValueError("loss_graph must be an instance of AbstractLossGraph")
 
         self.n_components = n_components
         self.user_repr_graph_factory = user_repr_graph
@@ -283,12 +285,12 @@ class TensorRec(object):
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
 
         # Loss function nodes
-        self.tf_basic_loss = self.loss_graph_factory(tf_prediction_serial=self.tf_prediction_serial,
-                                                     tf_interactions_serial=tf_interactions_serial,
-                                                     tf_prediction=self.tf_prediction,
-                                                     tf_interactions=tf_interactions,
-                                                     tf_rankings=self.tf_rankings,
-                                                     tf_alignment=self.tf_alignment)
+        self.tf_basic_loss = self.loss_graph_factory.loss_graph(tf_prediction_serial=self.tf_prediction_serial,
+                                                                tf_interactions_serial=tf_interactions_serial,
+                                                                tf_prediction=self.tf_prediction,
+                                                                tf_interactions=tf_interactions,
+                                                                tf_rankings=self.tf_rankings,
+                                                                tf_alignment=self.tf_alignment)
 
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
@@ -394,10 +396,11 @@ class TensorRec(object):
                     session.run(self.tf_optimizer, feed_dict=feed_dict)
 
                 else:
-                    _, mean_loss, serial_predictions, wr_loss = session.run(
+                    _, loss, serial_predictions, wr_loss = session.run(
                         [self.tf_optimizer, self.tf_basic_loss, self.tf_prediction_serial, self.tf_weight_reg_loss],
                         feed_dict=feed_dict
                     )
+                    mean_loss = np.mean(loss)
                     mean_pred = np.mean(serial_predictions)
                     weight_reg_l2_loss = alpha * wr_loss
                     logging.info('EPOCH {} BATCH {} loss = {}, weight_reg_l2_loss = {}, mean_pred = {}'.format(

@@ -113,20 +113,21 @@ import tensorflow as tf
 import tensorrec
 
 # Define a custom loss function graph
-def simple_error_graph(tf_prediction_serial, tf_interactions_serial, **kwargs):
-    """
-    This loss function returns the absolute simple error between the predictions and the interactions.
-    :param tf_prediction_serial: tf.Tensor
-    The recommendation scores as a Tensor of shape [n_samples, 1]
-    :param tf_interactions_serial: tf.Tensor
-    The sample interactions corresponding to tf_prediction as a Tensor of shape [n_samples, 1]
-    :param kwargs:
-    Other TensorFlow nodes (not yet implemented)
-    :return:
-    A tf.Tensor containing the learning loss.
-    """
-    return tf.reduce_mean(tf.abs(tf_interactions_serial - tf_prediction_serial))
+class SimpleLoss(tensorrec.loss_graphs.AbstractLossGraph):
+    def loss_graph(self, tf_prediction, tf_y, **kwargs):
+        """
+        This loss function returns the absolute simple error between the predictions and the interactions.
+        :param tf_prediction_serial: tf.Tensor
+        The recommendation scores as a Tensor of shape [n_samples, 1]
+        :param tf_interactions_serial: tf.Tensor
+        The sample interactions corresponding to tf_prediction as a Tensor of shape [n_samples, 1]
+        :param kwargs:
+        Other TensorFlow nodes.
+        :return:
+        A tf.Tensor containing the learning loss.
+        """
+        return tf.reduce_mean(tf.abs(tf_y - tf_prediction))
 
 # Build a model with the custom loss function
-model = tensorrec.TensorRec(loss_graph=simple_error_graph)
+model = tensorrec.TensorRec(loss_graph=SimpleLoss())
 ```
