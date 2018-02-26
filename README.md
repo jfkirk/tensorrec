@@ -122,7 +122,7 @@ import tensorrec
 
 # Define a custom loss graph
 class SimpleLoss(tensorrec.loss_graphs.AbstractLossGraph):
-    def loss_graph(self, tf_prediction, tf_y, **kwargs):
+    def loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
         """
         This loss function returns the absolute simple error between the predictions and the interactions.
         :param tf_prediction_serial: tf.Tensor
@@ -134,7 +134,7 @@ class SimpleLoss(tensorrec.loss_graphs.AbstractLossGraph):
         :return:
         A tf.Tensor containing the learning loss.
         """
-        return tf.reduce_mean(tf.abs(tf_y - tf_prediction))
+        return tf.reduce_mean(tf.abs(tf_interactions_serial - tf_prediction_serial))
 
 # Build a model with the custom loss function
 model = tensorrec.TensorRec(loss_graph=SimpleLoss())
