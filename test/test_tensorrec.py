@@ -48,6 +48,12 @@ class TensorRecTestCase(TestCase):
         # Ensure that the nodes have been built
         self.assertIsNotNone(model.tf_prediction)
 
+    def test_fit_batched(self):
+        model = TensorRec(n_components=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10, user_batch_size=2)
+        # Ensure that the nodes have been built
+        self.assertIsNotNone(model.tf_prediction)
+
     def test_predict(self):
         predictions = self.standard_model.predict(user_features=self.user_features,
                                                   item_features=self.item_features)

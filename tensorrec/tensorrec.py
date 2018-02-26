@@ -167,6 +167,42 @@ class TensorRec(object):
 
         return n_actors, feature_indices, feature_values
 
+    def _create_batch_feed_dicts(self, interactions, user_features, item_features, extra_feed_kwargs,
+                                 user_batch_size=None):
+
+        if not isinstance(interactions, sp.csr_matrix):
+            interactions = sp.csr_matrix(interactions)
+        if not isinstance(user_features, sp.csr_matrix):
+            user_features = sp.csr_matrix(user_features)
+
+        n_users = user_features.shape[0]
+
+        # Infer the batch size, if necessary
+        if user_batch_size is None:
+            user_batch_size = n_users
+
+        feed_dicts = []
+
+        start_batch = 0
+        while start_batch < n_users:
+
+            # min() ensures that the batch bounds doesn't go past the end of the index
+            end_batch = min(start_batch + user_batch_size, n_users)
+
+            batch_interactions = interactions[start_batch:end_batch]
+            batch_user_features = user_features[start_batch:end_batch]
+
+            # TODO its inefficient to make so many copies of the item features
+            feed_dict = self._create_feed_dict(interactions_matrix=batch_interactions,
+                                               user_features_matrix=batch_user_features,
+                                               item_features_matrix=item_features,
+                                               extra_feed_kwargs=extra_feed_kwargs)
+            feed_dicts.append(feed_dict)
+
+            start_batch = end_batch
+
+        return feed_dicts
+
     def _build_tf_graph(self, n_user_features, n_item_features):
 
         # Initialize placeholder values for inputs
@@ -267,7 +303,7 @@ class TensorRec(object):
             self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
 
     def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.00001,
-            verbose=False, out_sample_interactions=None):
+            verbose=False, out_sample_interactions=None, user_batch_size=None):
         """
         Constructs the TensorRec graph and fits the model.
         :param interactions: scipy.sparse matrix
@@ -286,15 +322,23 @@ class TensorRec(object):
         If true, the model will print a number of status statements during fitting.
         :param out_sample_interactions: scipy.sparse matrix
         A matrix of interactions of shape [n_users, n_items].
+        :param user_batch_size: int or None
+        The maximum number of users per batch, or None for all users.
         If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         """
 
         # Pass-through to fit_partial
-        self.fit_partial(interactions, user_features, item_features, epochs, learning_rate, alpha, verbose,
-                         out_sample_interactions)
+        self.fit_partial(interactions=interactions,
+                         user_features=user_features,
+                         item_features=item_features,
+                         epochs=epochs,
+                         learning_rate=learning_rate,
+                         alpha=alpha,
+                         verbose=verbose,
+                         out_sample_interactions=out_sample_interactions)
 
     def fit_partial(self, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
-                    alpha=0.00001, verbose=False, out_sample_interactions=None):
+                    alpha=0.00001, verbose=False, out_sample_interactions=None, user_batch_size=None):
         """
         Constructs the TensorRec graph and fits the model.
         :param interactions: scipy.sparse matrix
@@ -313,6 +357,8 @@ class TensorRec(object):
         If true, the model will print a number of status statements during fitting.
         :param out_sample_interactions: scipy.sparse matrix
         A matrix of interactions of shape [n_users, n_items].
+        :param user_batch_size: int or None
+        The maximum number of users per batch, or None for all users.
         If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         """
 
@@ -329,33 +375,37 @@ class TensorRec(object):
         if verbose:
             logging.info('Processing interaction and feature data')
 
-        feed_dict = self._create_feed_dict(interactions, user_features, item_features,
-                                           extra_feed_kwargs={self.tf_learning_rate: learning_rate,
-                                                              self.tf_alpha: alpha})
+        batched_feed_dicts = self._create_batch_feed_dicts(interactions=interactions,
+                                                           user_features=user_features,
+                                                           item_features=item_features,
+                                                           user_batch_size=user_batch_size,
+                                                           extra_feed_kwargs={self.tf_learning_rate: learning_rate,
+                                                                              self.tf_alpha: alpha})
 
         if verbose:
             logging.info('Beginning fitting')
 
         for epoch in range(epochs):
+            for batch, feed_dict in enumerate(batched_feed_dicts):
 
-            # TODO find something more elegant than these cascaded ifs
-            if not verbose:
-                session.run(self.tf_optimizer, feed_dict=feed_dict)
+                # TODO find something more elegant than these cascaded ifs
+                if not verbose:
+                    session.run(self.tf_optimizer, feed_dict=feed_dict)
 
-            else:
-                _, mean_loss, serial_predictions, wr_loss = session.run(
-                    [self.tf_optimizer, self.tf_basic_loss, self.tf_prediction_serial, self.tf_weight_reg_loss],
-                    feed_dict=feed_dict
-                )
-                mean_pred = np.mean(serial_predictions)
-                weight_reg_l2_loss = alpha * wr_loss
-                logging.info('EPOCH {} loss = {}, weight_reg_l2_loss = {}, mean_pred = {}'.format(
-                    epoch, mean_loss, weight_reg_l2_loss, mean_pred
-                ))
-                if out_sample_interactions:
-                    os_feed_dict = self._create_feed_dict(out_sample_interactions, user_features, item_features)
-                    os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
-                    logging.info('Out-Sample loss = {}'.format(os_loss))
+                else:
+                    _, mean_loss, serial_predictions, wr_loss = session.run(
+                        [self.tf_optimizer, self.tf_basic_loss, self.tf_prediction_serial, self.tf_weight_reg_loss],
+                        feed_dict=feed_dict
+                    )
+                    mean_pred = np.mean(serial_predictions)
+                    weight_reg_l2_loss = alpha * wr_loss
+                    logging.info('EPOCH {} BATCH {} loss = {}, weight_reg_l2_loss = {}, mean_pred = {}'.format(
+                        epoch, batch, mean_loss, weight_reg_l2_loss, mean_pred
+                    ))
+                    if out_sample_interactions:
+                        os_feed_dict = self._create_feed_dict(out_sample_interactions, user_features, item_features)
+                        os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
+                        logging.info('Out-Sample loss = {}'.format(os_loss))
 
     def predict(self, user_features, item_features):
         """
