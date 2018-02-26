@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from tensorrec import TensorRec
-from tensorrec.loss_graphs import wmrb_loss
+from tensorrec.loss_graphs import WMRBLossGraph
 
 from test.datasets import get_movielens_100k
 
@@ -33,7 +33,7 @@ class MovieLensTestCase(TestCase):
         """
         train_interactions, test_interactions, user_features, item_features = self.movielens_100k
 
-        model = TensorRec(loss_graph=wmrb_loss)
+        model = TensorRec(loss_graph=WMRBLossGraph)
         model.fit(interactions=train_interactions, user_features=user_features, item_features=item_features)
         predictions = model.predict(user_features=user_features,
                                     item_features=item_features)

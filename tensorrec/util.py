@@ -1,5 +1,12 @@
+import numpy as np
 import random
 import scipy.sparse as sp
+
+
+def sample_items(n_items, n_sampled, n_users):
+    return np.array([
+        np.random.choice(a=n_items, size=n_sampled) for _ in range(n_users)
+    ])
 
 
 def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.00045, num_user_features=200,
