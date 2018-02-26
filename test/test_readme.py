@@ -96,7 +96,7 @@ class ReadmeTestCase(TestCase):
                 return tf.reduce_mean(tf.abs(tf_interactions_serial - tf_prediction_serial))
 
         # Build a model with the custom loss function
-        model = tensorrec.TensorRec(loss_graph=SimpleLossGraph())
+        model = tensorrec.TensorRec(loss_graph=SimpleLossGraph)
 
         # Generate some dummy data
         interactions, user_features, item_features = tensorrec.util.generate_dummy_data(num_users=100,

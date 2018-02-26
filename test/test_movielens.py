@@ -33,7 +33,7 @@ class MovieLensTestCase(TestCase):
         """
         train_interactions, test_interactions, user_features, item_features = self.movielens_100k
 
-        model = TensorRec(loss_graph=WMRBLossGraph())
+        model = TensorRec(loss_graph=WMRBLossGraph)
         model.fit(interactions=train_interactions, user_features=user_features, item_features=item_features)
         predictions = model.predict(user_features=user_features,
                                     item_features=item_features)

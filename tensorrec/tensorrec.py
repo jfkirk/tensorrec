@@ -1,3 +1,4 @@
+import inspect
 import logging
 import numpy as np
 import pickle
@@ -17,7 +18,7 @@ class TensorRec(object):
     def __init__(self, n_components=100,
                  user_repr_graph=linear_representation_graph,
                  item_repr_graph=linear_representation_graph,
-                 loss_graph=RMSELossGraph(),
+                 loss_graph=RMSELossGraph,
                  biased=True):
         """
         A TensorRec recommendation model.
@@ -29,8 +30,8 @@ class TensorRec(object):
         :param item_repr_graph: Method
         A method which creates TensorFlow nodes to calculate the item representation.
         See tensorrec.representation_graphs for examples.
-        :param loss_graph: Method
-        A method which creates TensorFlow nodes to calculate the loss function.
+        :param loss_graph: AbstractLossGraph
+        A class which inherits AbstractLossGraph which contains a method to calculate the loss function.
         See tensorrec.loss_graphs for examples.
         :param biased: Boolean
         If True, a bias value will be calculated for every user feature and item feature.
@@ -41,8 +42,10 @@ class TensorRec(object):
             raise ValueError("All arguments to TensorRec() must be non-None")
         if n_components < 1:
             raise ValueError("n_components must be >= 1")
-        if not isinstance(loss_graph, AbstractLossGraph):
-            raise ValueError("loss_graph must be an instance of AbstractLossGraph")
+        if not inspect.isclass(loss_graph):
+            raise ValueError("loss_graph must be a class that inherits AbstractLossGraph")
+        if not issubclass(loss_graph, AbstractLossGraph):
+            raise ValueError("loss_graph must inherit AbstractLossGraph")
 
         self.n_components = n_components
         self.user_repr_graph_factory = user_repr_graph
@@ -300,7 +303,7 @@ class TensorRec(object):
             })
 
         # Build loss graph
-        self.tf_basic_loss = self.loss_graph_factory.loss_graph(**loss_graph_kwargs)
+        self.tf_basic_loss = self.loss_graph_factory().loss_graph(**loss_graph_kwargs)
 
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)

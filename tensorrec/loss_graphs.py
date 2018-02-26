@@ -5,8 +5,8 @@ import tensorflow as tf
 class AbstractLossGraph(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, is_dense=False):
-        self.is_dense = is_dense
+    # Parameters for loss usage
+    is_dense = False
 
     @abc.abstractmethod
     def loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions, tf_rankings,
@@ -41,6 +41,19 @@ class RMSELossGraph(AbstractLossGraph):
         return tf.sqrt(tf.reduce_mean(tf.square(tf_interactions_serial - tf_prediction_serial)))
 
 
+class RMSEDenseLossGraph(AbstractLossGraph):
+    """
+    This loss function returns the root mean square error between the predictions and the true interactions, including
+    all non-interacted values as 0s.
+    Interactions can be any positive or negative values, and this loss function is sensitive to magnitude.
+    """
+    is_dense = True
+
+    def loss_graph(self, tf_interactions, tf_prediction, **kwargs):
+        error = tf.sparse_add(tf_interactions, -1.0 * tf_prediction)
+        return tf.sqrt(tf.reduce_mean(tf.square(error)))
+
+
 class SeparationLossGraph(AbstractLossGraph):
     """
     This loss function models the explicit positive and negative interaction predictions as normal distributions and
@@ -71,8 +84,7 @@ class WMRBLossGraph(AbstractLossGraph):
     Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
-    def __init__(self):
-        super(WMRBLossGraph, self).__init__(is_dense=True)
+    is_dense = True
 
     def loss_graph(self, tf_interactions, tf_prediction, **kwargs):
 
@@ -103,9 +115,6 @@ class WMRBAlignmentLossGraph(WMRBLossGraph):
     Ranks items based on alignment, in place of prediction.
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
-    def __init__(self):
-        super(WMRBAlignmentLossGraph, self).__init__()
-
     def loss_graph(self, tf_interactions, tf_alignment, **kwargs):
         return super(WMRBAlignmentLossGraph, self).loss_graph(tf_interactions=tf_interactions,
                                                               tf_prediction=tf_alignment)
