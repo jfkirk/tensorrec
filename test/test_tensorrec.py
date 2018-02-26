@@ -1,3 +1,4 @@
+import numpy as np
 import shutil
 import tempfile
 from unittest import TestCase
@@ -35,6 +36,10 @@ class TensorRecTestCase(TestCase):
             TensorRec(item_repr_graph=None)
         with self.assertRaises(ValueError):
             TensorRec(loss_graph=None)
+
+    def test_init_fail_bad_loss_graph(self):
+        with self.assertRaises(ValueError):
+            TensorRec(loss_graph=np.mean)
 
     def test_fit(self):
         # Ensure that the nodes have been built

@@ -71,7 +71,7 @@ class ReadmeTestCase(TestCase):
         import tensorflow as tf
         import tensorrec
 
-        # Define a custom loss function graph
+        # Define a custom loss graph
         class SimpleLoss(tensorrec.loss_graphs.AbstractLossGraph):
             def loss_graph(self, tf_prediction, tf_y, **kwargs):
                 """
