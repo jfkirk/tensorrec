@@ -322,9 +322,9 @@ class TensorRec(object):
         If true, the model will print a number of status statements during fitting.
         :param out_sample_interactions: scipy.sparse matrix
         A matrix of interactions of shape [n_users, n_items].
+        If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         :param user_batch_size: int or None
         The maximum number of users per batch, or None for all users.
-        If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         """
 
         # Pass-through to fit_partial
@@ -358,9 +358,9 @@ class TensorRec(object):
         If true, the model will print a number of status statements during fitting.
         :param out_sample_interactions: scipy.sparse matrix
         A matrix of interactions of shape [n_users, n_items].
+        If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         :param user_batch_size: int or None
         The maximum number of users per batch, or None for all users.
-        If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         """
 
         session = get_session()
