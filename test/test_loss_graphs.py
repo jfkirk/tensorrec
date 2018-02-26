@@ -22,11 +22,11 @@ class LossGraphsTestCase(TestCase):
         model = TensorRec(loss_graph=RMSELossGraph, biased=True)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
-    def test_rmse_loss(self):
+    def test_rmse_dense_loss(self):
         model = TensorRec(loss_graph=RMSEDenseLossGraph)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
-    def test_rmse_loss_biased(self):
+    def test_rmse_dense_loss_biased(self):
         model = TensorRec(loss_graph=RMSEDenseLossGraph, biased=True)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
