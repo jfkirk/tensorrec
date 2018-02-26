@@ -284,13 +284,23 @@ class TensorRec(object):
         tf_interactions_serial = tf_interactions.values
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
 
-        # Loss function nodes
-        self.tf_basic_loss = self.loss_graph_factory.loss_graph(tf_prediction_serial=self.tf_prediction_serial,
-                                                                tf_interactions_serial=tf_interactions_serial,
-                                                                tf_prediction=self.tf_prediction,
-                                                                tf_interactions=tf_interactions,
-                                                                tf_rankings=self.tf_rankings,
-                                                                tf_alignment=self.tf_alignment)
+        # Compose loss function args
+        # This composition is for execution safety: it prevents loss functions that are incorrectly configured from
+        # having visibility of certain nodes.
+        loss_graph_kwargs = {
+            'tf_prediction_serial': self.tf_prediction_serial,
+            'tf_interactions_serial': tf_interactions_serial,
+        }
+        if self.loss_graph_factory.is_dense:
+            loss_graph_kwargs.update({
+                'tf_prediction': self.tf_prediction,
+                'tf_interactions': tf_interactions,
+                'tf_rankings': self.tf_rankings,
+                'tf_alignment': self.tf_alignment,
+            })
+
+        # Build loss graph
+        self.tf_basic_loss = self.loss_graph_factory.loss_graph(**loss_graph_kwargs)
 
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
