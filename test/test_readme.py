@@ -65,6 +65,14 @@ class ReadmeTestCase(TestCase):
         model = tensorrec.TensorRec(user_repr_graph=tanh_representation_graph,
                                     item_repr_graph=tanh_representation_graph)
 
+        # Generate some dummy data
+        interactions, user_features, item_features = tensorrec.util.generate_dummy_data(num_users=100,
+                                                                                        num_items=150,
+                                                                                        interaction_density=.05)
+
+        # Fit the model for 5 epochs
+        model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
+
         self.assertIsNotNone(model)
 
     def test_custom_loss_graph(self):
@@ -73,7 +81,7 @@ class ReadmeTestCase(TestCase):
 
         # Define a custom loss graph
         class SimpleLoss(tensorrec.loss_graphs.AbstractLossGraph):
-            def loss_graph(self, tf_prediction, tf_y, **kwargs):
+            def loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
                 """
                 This loss function returns the absolute simple error between the predictions and the interactions.
                 :param tf_prediction_serial: tf.Tensor
@@ -85,9 +93,17 @@ class ReadmeTestCase(TestCase):
                 :return:
                 A tf.Tensor containing the learning loss.
                 """
-                return tf.reduce_mean(tf.abs(tf_y - tf_prediction))
+                return tf.reduce_mean(tf.abs(tf_interactions_serial - tf_prediction_serial))
 
         # Build a model with the custom loss function
         model = tensorrec.TensorRec(loss_graph=SimpleLoss())
+
+        # Generate some dummy data
+        interactions, user_features, item_features = tensorrec.util.generate_dummy_data(num_users=100,
+                                                                                        num_items=150,
+                                                                                        interaction_density=.05)
+
+        # Fit the model for 5 epochs
+        model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 
         self.assertIsNotNone(model)

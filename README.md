@@ -105,6 +105,14 @@ def tanh_representation_graph(tf_features, n_components, n_features, node_name_e
 # Build a model with the custom representation function
 model = tensorrec.TensorRec(user_repr_graph=tanh_representation_graph,
                             item_repr_graph=tanh_representation_graph)
+
+# Generate some dummy data
+interactions, user_features, item_features = tensorrec.util.generate_dummy_data(num_users=100,
+                                                                                num_items=150,
+                                                                                interaction_density=.05)
+
+# Fit the model for 5 epochs
+model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 ```
 
 ## Example: Defining custom loss function
@@ -130,4 +138,12 @@ class SimpleLoss(tensorrec.loss_graphs.AbstractLossGraph):
 
 # Build a model with the custom loss function
 model = tensorrec.TensorRec(loss_graph=SimpleLoss())
+
+# Generate some dummy data
+interactions, user_features, item_features = tensorrec.util.generate_dummy_data(num_users=100,
+                                                                                num_items=150,
+                                                                                interaction_density=.05)
+
+# Fit the model for 5 epochs
+model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 ```
