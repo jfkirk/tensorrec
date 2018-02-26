@@ -87,7 +87,7 @@ class ReadmeTestCase(TestCase):
                 :param tf_prediction_serial: tf.Tensor
                 The recommendation scores as a Tensor of shape [n_samples, 1]
                 :param tf_interactions_serial: tf.Tensor
-                The sample interactions corresponding to tf_prediction as a Tensor of shape [n_samples, 1]
+                The sample interactions corresponding to tf_prediction_serial as a Tensor of shape [n_samples, 1]
                 :param kwargs:
                 Other TensorFlow nodes.
                 :return:

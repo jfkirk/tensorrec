@@ -12,14 +12,22 @@ class AbstractLossGraph(object):
     def loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions, tf_rankings,
                    tf_alignment):
         """
-        TODO document
-        :param tf_prediction_serial:
-        :param tf_interactions_serial:
-        :param tf_prediction:
-        :param tf_interactions:
-        :param tf_rankings:
-        :param tf_alignment:
-        :return:
+        This method is responsible for consuming a number of possible nodes from the graph and calculating loss from
+        those nodes.
+        :param tf_prediction_serial: tf.Tensor
+        The recommendation scores as a Tensor of shape [n_samples, 1]
+        :param tf_interactions_serial: tf.Tensor
+        The sample interactions corresponding to tf_prediction_serial as a Tensor of shape [n_samples, 1]
+        :param tf_prediction: tf.Tensor
+        The recommendation scores as a Tensor of shape [n_users, n_items]
+        :param tf_interactions: tf.SparseTensor
+        The sample interactions as a SparseTensor of shape [n_users, n_items]
+        :param tf_rankings: tf.Tensor
+        The item ranks as a Tensor of shape [n_users, n_items]
+        :param tf_alignment: tf.Tensor
+        The item alignments as a Tensor of shape [n_users, n_items]
+        :return: tf.Tensor
+        The loss value.
         """
         pass
 
