@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from unittest import TestCase
 
-from tensorrec.recommendation_graphs import *
+from tensorrec.recommendation_graphs import gather_sampled_item_predictions, alignment
 from tensorrec.session_management import get_session
 
 
@@ -23,8 +23,9 @@ class RecommendationGraphsTestCase(TestCase):
             [5, 6],  # Corresponds to [6, 7]
             [8, 8],  # Corresponds to [9, 9]
         ])
-        result = gather_sampled_item_predictions(tf_prediction=tf.identity(input_data),
-                                                 tf_sampled_item_indices=tf.identity(sample_indices)).eval(session=self.session)
+        result = gather_sampled_item_predictions(
+            tf_prediction=tf.identity(input_data), tf_sampled_item_indices=tf.identity(sample_indices)
+        ).eval(session=self.session)
 
         expected_result = np.array([
             [1, 4],
