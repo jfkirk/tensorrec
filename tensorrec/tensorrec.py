@@ -8,7 +8,8 @@ import tensorflow as tf
 
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
 from .recommendation_graphs import (project_biases, prediction_dense, prediction_serial, split_sparse_tensor_indices,
-                                    bias_prediction_dense, bias_prediction_serial, rank_predictions, alignment)
+                                    bias_prediction_dense, bias_prediction_serial, rank_predictions, alignment,
+                                    gather_sampled_item_predictions)
 from .representation_graphs import linear_representation_graph
 from .session_management import get_session
 from .util import sample_items
@@ -304,6 +305,15 @@ class TensorRec(object):
                 'tf_rankings': self.tf_rankings,
                 'tf_alignment': self.tf_alignment,
             })
+        if self.loss_graph.is_random_sample_based:
+            tf_random_sample_predictions = gather_sampled_item_predictions(
+                tf_prediction=self.tf_prediction, tf_sampled_item_indices=self.tf_sampled_item_indices
+            )
+            tf_random_sample_alignments = gather_sampled_item_predictions(
+                tf_prediction=self.tf_alignment, tf_sampled_item_indices=self.tf_sampled_item_indices
+            )
+            loss_graph_kwargs.update({'tf_random_sample_predictions': tf_random_sample_predictions,
+                                      'tf_random_sample_alignments': tf_random_sample_alignments})
 
         # Build loss graph
         self.tf_basic_loss = self.loss_graph().loss_graph(**loss_graph_kwargs)

@@ -94,6 +94,24 @@ def bias_prediction_serial(tf_prediction_serial, tf_projected_user_biases, tf_pr
     return tf_prediction_serial + gathered_user_biases + gathered_item_biases
 
 
+def gather_sampled_item_predictions(tf_prediction, tf_sampled_item_indices):
+    """
+    Gathers the predictions for the given sampled items.
+    :param tf_prediction:
+    :param tf_sampled_item_indices:
+    :return:
+    """
+    prediction_shape = tf.shape(tf_prediction)
+    flattened_prediction = tf.reshape(tf_prediction, shape=[prediction_shape[0] * prediction_shape[1]])
+
+    indices_shape = tf.shape(tf_sampled_item_indices)
+    flattened_indices = tf.reshape(tf_sampled_item_indices, shape=[indices_shape[0] * indices_shape[1]])
+
+    gathered_predictions = tf.gather(params=flattened_prediction, indices=flattened_indices)
+    reshaped_gathered_predictions = tf.reshape(gathered_predictions, shape=indices_shape)
+    return reshaped_gathered_predictions
+
+
 def rank_predictions(tf_prediction):
     """
     Double-sortation serves as a ranking process
