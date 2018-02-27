@@ -63,6 +63,65 @@ class RMSEDenseLossGraph(AbstractLossGraph):
         return tf.sqrt(tf.reduce_mean(tf.square(error)))
 
 
+class SeparationLossGraph(AbstractLossGraph):
+    """
+    This loss function models the explicit positive and negative interaction predictions as normal distributions and
+    returns the probability of overlap between the two distributions.
+    Interactions can be any positive or negative values, but this loss function ignored the magnitude of the
+    interaction -- interactions are grouped in to {i < 0} and {i > 0}.
+    """
+    def loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
+
+        tf_positive_mask = tf.greater(tf_interactions_serial, 0.0)
+        tf_negative_mask = tf.less_equal(tf_interactions_serial, 0.0)
+
+        tf_positive_predictions = tf.boolean_mask(tf_prediction_serial, tf_positive_mask)
+        tf_negative_predictions = tf.boolean_mask(tf_prediction_serial, tf_negative_mask)
+
+        tf_pos_mean, tf_pos_var = tf.nn.moments(tf_positive_predictions, axes=[0])
+        tf_neg_mean, tf_neg_var = tf.nn.moments(tf_negative_predictions, axes=[0])
+
+        tf_overlap_distribution = tf.contrib.distributions.Normal(loc=(tf_neg_mean - tf_pos_mean),
+                                                                  scale=tf.sqrt(tf_neg_var + tf_pos_var))
+
+        loss = 1.0 - tf_overlap_distribution.cdf(0.0)
+        return loss
+
+
+class SeparationDenseLossGraph(AbstractLossGraph):
+    """
+    This loss function models all positive and negative interaction predictions as normal distributions and
+    returns the probability of overlap between the two distributions.
+    Interactions can be any positive or negative values, but this loss function ignored the magnitude of the
+    interaction -- interactions are grouped in to {i < 0} and {i > 0}.
+    """
+    is_dense = True
+
+    def loss_graph(self, tf_prediction, tf_interactions, **kwargs):
+
+        interactions_shape = tf.shape(tf_interactions)
+        tf_interactions_serial = tf.reshape(tf.sparse_tensor_to_dense(tf_interactions),
+                                            shape=[interactions_shape[0] * interactions_shape[1]])
+
+        prediction_shape = tf.shape(tf_prediction)
+        tf_prediction_serial = tf.reshape(tf_prediction, shape=[prediction_shape[0] * prediction_shape[1]])
+
+        tf_positive_mask = tf.greater(tf_interactions_serial, 0.0)
+        tf_negative_mask = tf.less_equal(tf_interactions_serial, 0.0)
+
+        tf_positive_predictions = tf.boolean_mask(tf_prediction_serial, tf_positive_mask)
+        tf_negative_predictions = tf.boolean_mask(tf_prediction_serial, tf_negative_mask)
+
+        tf_pos_mean, tf_pos_var = tf.nn.moments(tf_positive_predictions, axes=[0])
+        tf_neg_mean, tf_neg_var = tf.nn.moments(tf_negative_predictions, axes=[0])
+
+        tf_overlap_distribution = tf.contrib.distributions.Normal(loc=(tf_neg_mean - tf_pos_mean),
+                                                                  scale=tf.sqrt(tf_neg_var + tf_pos_var))
+
+        loss = 1.0 - tf_overlap_distribution.cdf(0.0)
+        return loss
+
+
 class WMRBLossGraph(AbstractLossGraph):
     """
     Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
@@ -116,6 +175,11 @@ class WMRBAlignmentLossGraph(WMRBLossGraph):
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
     def loss_graph(self, tf_alignment, tf_interactions, tf_sample_alignments, **kwargs):
-        return self.weighted_margin_rank_batch(tf_prediction=tf_alignment,
+
+        # WMRB expects bounded predictions
+        normed_alignment = .5 * (tf_alignment + 1.0)
+        normed_sample_alignments = .5 * (tf_sample_alignments + 1.0)
+        
+        return self.weighted_margin_rank_batch(tf_prediction=normed_alignment,
                                                tf_interactions=tf_interactions,
-                                               tf_sample_predictions=tf_sample_alignments)
+                                               tf_sample_predictions=normed_sample_alignments)
