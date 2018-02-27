@@ -9,11 +9,11 @@ class AbstractLossGraph(object):
     is_dense = False
 
     # If true, randomly sampled predictions will be passed to the loss function
-    is_random_sample_based = False
+    is_sample_based = False
 
     @abc.abstractmethod
     def loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions, tf_rankings,
-                   tf_alignment, tf_random_sample_predictions):
+                   tf_alignment, tf_sample_predictions, tf_sample_alignments):
         """
         This method is responsible for consuming a number of possible nodes from the graph and calculating loss from
         those nodes.
@@ -29,8 +29,10 @@ class AbstractLossGraph(object):
         The item ranks as a Tensor of shape [n_users, n_items]
         :param tf_alignment: tf.Tensor
         The item alignments as a Tensor of shape [n_users, n_items]
-        :param tf_random_sample_predictions: tf.Tensor
-        The recommendation scores of a random sample of items of shape [n_users, n_sampled_items]
+        :param tf_sample_predictions: tf.Tensor
+        The recommendation scores of a sample of items of shape [n_users, n_sampled_items]
+        :param tf_sample_alignments: tf.Tensor
+        The alignments of a sample of items of shape [n_users, n_sampled_items]
         :return: tf.Tensor
         The loss value.
         """
@@ -90,18 +92,18 @@ class WMRBLossGraph(AbstractLossGraph):
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
     is_dense = True
-    is_random_sample_based = True
+    is_sample_based = True
 
-    def loss_graph(self, tf_prediction, tf_interactions, tf_random_sample_predictions, **kwargs):
+    def loss_graph(self, tf_prediction, tf_interactions, tf_sample_predictions, **kwargs):
 
         positive_interaction_mask = tf.greater(tf_interactions.values, 0.0)
         positive_interaction_indices = tf.boolean_mask(tf_interactions.indices,
                                                        positive_interaction_mask)
         positive_predictions = tf.gather_nd(tf_prediction, indices=positive_interaction_indices)
 
-        n_sampled_items = tf.cast(tf.shape(tf_random_sample_predictions)[1], dtype=tf.float32)
+        n_sampled_items = tf.cast(tf.shape(tf_sample_predictions)[1], dtype=tf.float32)
 
-        predictions_sum_per_user = tf.reduce_sum(tf_random_sample_predictions, axis=1)
+        predictions_sum_per_user = tf.reduce_sum(tf_sample_predictions, axis=1)
         mapped_predictions_sum_per_user = tf.gather(params=predictions_sum_per_user,
                                                     indices=tf.transpose(positive_interaction_indices)[0])
 
@@ -122,7 +124,7 @@ class WMRBAlignmentLossGraph(WMRBLossGraph):
     Ranks items based on alignment, in place of prediction.
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
-    def loss_graph(self, tf_alignment, tf_interactions, tf_random_sample_alignments, **kwargs):
+    def loss_graph(self, tf_alignment, tf_interactions, tf_sample_alignments, **kwargs):
         return super(WMRBAlignmentLossGraph, self).loss_graph(tf_prediction=tf_alignment,
                                                               tf_interactions=tf_interactions,
-                                                              tf_random_sample_predictions=tf_random_sample_alignments)
+                                                              tf_sample_predictions=tf_sample_alignments)

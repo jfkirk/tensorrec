@@ -305,15 +305,15 @@ class TensorRec(object):
                 'tf_rankings': self.tf_rankings,
                 'tf_alignment': self.tf_alignment,
             })
-        if self.loss_graph.is_random_sample_based:
-            tf_random_sample_predictions = gather_sampled_item_predictions(
+        if self.loss_graph.is_sample_based:
+            tf_sample_predictions = gather_sampled_item_predictions(
                 tf_prediction=self.tf_prediction, tf_sampled_item_indices=self.tf_sampled_item_indices
             )
-            tf_random_sample_alignments = gather_sampled_item_predictions(
+            tf_sample_alignments = gather_sampled_item_predictions(
                 tf_prediction=self.tf_alignment, tf_sampled_item_indices=self.tf_sampled_item_indices
             )
-            loss_graph_kwargs.update({'tf_random_sample_predictions': tf_random_sample_predictions,
-                                      'tf_random_sample_alignments': tf_random_sample_alignments})
+            loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions,
+                                      'tf_sample_alignments': tf_sample_alignments})
 
         # Build loss graph
         self.tf_basic_loss = self.loss_graph().loss_graph(**loss_graph_kwargs)
@@ -355,7 +355,7 @@ class TensorRec(object):
         The maximum number of users per batch, or None for all users.
         :param n_sampled_items: int or None
         The number of items to sample per user for use in loss functions. Must be non-None if
-        self.loss_graph.is_random_sample_based is True.
+        self.loss_graph.is_sample_based is True.
         """
 
         # Pass-through to fit_partial
@@ -396,13 +396,13 @@ class TensorRec(object):
         The maximum number of users per batch, or None for all users.
         :param n_sampled_items: int or None
         The number of items to sample per user for use in loss functions. Must be non-None if
-        self.loss_graph.is_random_sample_based is True.
+        self.loss_graph.is_sample_based is True.
         """
 
         session = get_session()
 
         # Arg checking
-        if self.loss_graph.is_random_sample_based:
+        if self.loss_graph.is_sample_based:
             if (n_sampled_items is None) or (n_sampled_items <= 0):
                 raise ValueError("n_sampled_items must be an integer >0")
 
@@ -431,7 +431,7 @@ class TensorRec(object):
             for batch, feed_dict in enumerate(batched_feed_dicts):
 
                 # Handle random item sampling, if applicable
-                if self.loss_graph.is_random_sample_based:
+                if self.loss_graph.is_sample_based:
                     sampled_item_indices = sample_items(n_users=feed_dict[self.tf_n_users],
                                                         n_items=feed_dict[self.tf_n_items],
                                                         n_sampled_items=n_sampled_items)
