@@ -67,8 +67,8 @@ class SeparationLossGraph(AbstractLossGraph):
     """
     This loss function models the explicit positive and negative interaction predictions as normal distributions and
     returns the probability of overlap between the two distributions.
-    Interactions can be any positive or negative values, but this loss function ignored the magnitude of the
-    interaction -- interactions are grouped in to {i < 0} and {i > 0}.
+    Interactions can be any positive or negative values, but this loss function ignores the magnitude of the
+    interaction -- interactions are grouped in to {i <= 0} and {i > 0}.
     """
     def loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
 
@@ -91,9 +91,10 @@ class SeparationLossGraph(AbstractLossGraph):
 class SeparationDenseLossGraph(AbstractLossGraph):
     """
     This loss function models all positive and negative interaction predictions as normal distributions and
-    returns the probability of overlap between the two distributions.
-    Interactions can be any positive or negative values, but this loss function ignored the magnitude of the
-    interaction -- interactions are grouped in to {i < 0} and {i > 0}.
+    returns the probability of overlap between the two distributions. This loss function includes non-interacted items
+    as negative interactions.
+    Interactions can be any positive or negative values, but this loss function ignores the magnitude of the
+    interaction -- interactions are grouped in to {i <= 0} and {i > 0}.
     """
     is_dense = True
 
@@ -179,7 +180,7 @@ class WMRBAlignmentLossGraph(WMRBLossGraph):
         # WMRB expects bounded predictions
         normed_alignment = .5 * (tf_alignment + 1.0)
         normed_sample_alignments = .5 * (tf_sample_alignments + 1.0)
-        
+
         return self.weighted_margin_rank_batch(tf_prediction=normed_alignment,
                                                tf_interactions=tf_interactions,
                                                tf_sample_predictions=normed_sample_alignments)
