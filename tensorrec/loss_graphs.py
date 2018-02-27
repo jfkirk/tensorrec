@@ -8,6 +8,9 @@ class AbstractLossGraph(object):
     # Parameters for loss usage
     is_dense = False
 
+    # Parameter for item sampling in loss
+    is_random_sample_based = False
+
     @abc.abstractmethod
     def loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions, tf_rankings,
                    tf_alignment):
@@ -85,6 +88,7 @@ class WMRBLossGraph(AbstractLossGraph):
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
     is_dense = True
+    is_random_sample_based = True
 
     def loss_graph(self, tf_interactions, tf_prediction, **kwargs):
 

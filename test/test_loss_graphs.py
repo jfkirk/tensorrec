@@ -40,16 +40,16 @@ class LossGraphsTestCase(TestCase):
 
     def test_wmrb_loss(self):
         model = TensorRec(loss_graph=WMRBLossGraph)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5, n_sampled_items=10)
 
     def test_wmrb_loss_biased(self):
         model = TensorRec(loss_graph=WMRBLossGraph, biased=True)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5, n_sampled_items=10)
 
     def test_wmrb_alignment_loss(self):
         model = TensorRec(loss_graph=WMRBAlignmentLossGraph)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5, n_sampled_items=10)
 
     def test_wmrb_alignment_loss_biased(self):
         model = TensorRec(loss_graph=WMRBAlignmentLossGraph, biased=True)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5, n_sampled_items=10)
