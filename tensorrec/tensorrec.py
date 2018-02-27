@@ -434,7 +434,8 @@ class TensorRec(object):
                 if self.loss_graph.is_sample_based:
                     sampled_item_indices = sample_items(n_users=feed_dict[self.tf_n_users],
                                                         n_items=feed_dict[self.tf_n_items],
-                                                        n_sampled_items=n_sampled_items)
+                                                        n_sampled_items=n_sampled_items,
+                                                        replace=self.loss_graph.is_sampled_with_replacement)
                     feed_dict[self.tf_sampled_item_indices] = sampled_item_indices
 
                 # TODO find something more elegant than these cascaded ifs

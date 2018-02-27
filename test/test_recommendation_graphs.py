@@ -32,3 +32,23 @@ class RecommendationGraphsTestCase(TestCase):
             [9, 9],
         ])
         self.assertTrue((result == expected_result).all())
+
+    def test_alignment(self):
+        array_1 = np.array([
+            [1.0, 1.0],
+            [10.0, 10.0],
+            [-1.0, 1.0],
+        ])
+        array_2 = np.array([
+            [1.0, 1.0],
+            [-1.0, -1.0],
+            [-1.0, 1.0],
+        ])
+        result = alignment(tf_user_representation=array_1, tf_item_representation=array_2).eval(session=self.session)
+
+        expected_result = np.array([
+            [1.0, -1.0, 0.0],
+            [1.0, -1.0, 0.0],
+            [0.0, 0.0, 1.0]
+        ])
+        self.assertTrue(np.allclose(result, expected_result))

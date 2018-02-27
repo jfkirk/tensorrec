@@ -5,11 +5,13 @@ import tensorflow as tf
 class AbstractLossGraph(object):
     __metaclass__ = abc.ABCMeta
 
-    # If true, dense prediction results will be passed to the loss function
+    # If True, dense prediction results will be passed to the loss function
     is_dense = False
 
-    # If true, randomly sampled predictions will be passed to the loss function
+    # If True, randomly sampled predictions will be passed to the loss function
     is_sample_based = False
+    # If True, and if is_sample_based is True, predictions will be sampled with replacement
+    is_sampled_with_replacement = False
 
     @abc.abstractmethod
     def loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions, tf_rankings,
@@ -61,31 +63,6 @@ class RMSEDenseLossGraph(AbstractLossGraph):
         return tf.sqrt(tf.reduce_mean(tf.square(error)))
 
 
-class SeparationLossGraph(AbstractLossGraph):
-    """
-    This loss function models the explicit positive and negative interaction predictions as normal distributions and
-    returns the probability of overlap between the two distributions.
-    Interactions can be any positive or negative values, but this loss function ignored the magnitude of the
-    interaction -- interactions are grouped in to {i < 0} and {i > 0}.
-    """
-    def loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
-
-        tf_positive_mask = tf.greater(tf_interactions_serial, 0.0)
-        tf_negative_mask = tf.less_equal(tf_interactions_serial, 0.0)
-
-        tf_positive_predictions = tf.boolean_mask(tf_prediction_serial, tf_positive_mask)
-        tf_negative_predictions = tf.boolean_mask(tf_prediction_serial, tf_negative_mask)
-
-        tf_pos_mean, tf_pos_var = tf.nn.moments(tf_positive_predictions, axes=[0])
-        tf_neg_mean, tf_neg_var = tf.nn.moments(tf_negative_predictions, axes=[0])
-
-        tf_overlap_distribution = tf.contrib.distributions.Normal(loc=(tf_neg_mean - tf_pos_mean),
-                                                                  scale=tf.sqrt(tf_neg_var + tf_pos_var))
-
-        loss = 1.0 - tf_overlap_distribution.cdf(0.0)
-        return loss
-
-
 class WMRBLossGraph(AbstractLossGraph):
     """
     Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
@@ -96,26 +73,40 @@ class WMRBLossGraph(AbstractLossGraph):
 
     def loss_graph(self, tf_prediction, tf_interactions, tf_sample_predictions, **kwargs):
 
+        # WMRB expects bounded predictions
+        tanh_prediction = tf.nn.sigmoid(tf_prediction)
+        tanh_sample_prediction = tf.nn.sigmoid(tf_sample_predictions)
+
+        return self.weighted_margin_rank_batch(tf_prediction=tanh_prediction,
+                                               tf_interactions=tf_interactions,
+                                               tf_sample_predictions=tanh_sample_prediction)
+
+    @classmethod
+    def weighted_margin_rank_batch(cls, tf_prediction, tf_interactions, tf_sample_predictions):
         positive_interaction_mask = tf.greater(tf_interactions.values, 0.0)
         positive_interaction_indices = tf.boolean_mask(tf_interactions.indices,
                                                        positive_interaction_mask)
+
+        # [ n_positive_interactions ]
         positive_predictions = tf.gather_nd(tf_prediction, indices=positive_interaction_indices)
 
+        n_items = tf.cast(tf.shape(tf_prediction)[1], dtype=tf.float32)
         n_sampled_items = tf.cast(tf.shape(tf_sample_predictions)[1], dtype=tf.float32)
 
-        predictions_sum_per_user = tf.reduce_sum(tf_sample_predictions, axis=1)
-        mapped_predictions_sum_per_user = tf.gather(params=predictions_sum_per_user,
-                                                    indices=tf.transpose(positive_interaction_indices)[0])
+        # [ n_positive_interactions, n_sampled_items ]
+        mapped_predictions_sample_per_interaction = tf.gather(params=tf_sample_predictions,
+                                                              indices=tf.transpose(positive_interaction_indices)[0])
 
-        # TODO smart irrelevant item indicator -- using n_items is an approximation for sparse interactions
-        irrelevant_item_indicator = n_sampled_items  # noqa
+        # [ n_positive_interactions, n_sampled_items ]
+        summation_term = tf.abs(1.0
+                                - tf.expand_dims(positive_predictions, axis=1)
+                                + mapped_predictions_sample_per_interaction)
 
-        sampled_margin_rank = (n_sampled_items - (n_sampled_items * positive_predictions)
-                               + mapped_predictions_sum_per_user + irrelevant_item_indicator)
+        # [ n_positive_interactions, 1 ]
+        sampled_margin_rank = (n_items / n_sampled_items) * tf.reduce_sum(summation_term, axis=0)
 
-        # JKirk - I am leaving out the log term due to experimental results
-        # loss = tf.log(sampled_margin_rank + 1.0)
-        return sampled_margin_rank
+        loss = tf.log(sampled_margin_rank + 1.0)
+        return loss
 
 
 class WMRBAlignmentLossGraph(WMRBLossGraph):
@@ -125,6 +116,6 @@ class WMRBAlignmentLossGraph(WMRBLossGraph):
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
     def loss_graph(self, tf_alignment, tf_interactions, tf_sample_alignments, **kwargs):
-        return super(WMRBAlignmentLossGraph, self).loss_graph(tf_prediction=tf_alignment,
-                                                              tf_interactions=tf_interactions,
-                                                              tf_sample_predictions=tf_sample_alignments)
+        return self.weighted_margin_rank_batch(tf_prediction=tf_alignment,
+                                               tf_interactions=tf_interactions,
+                                               tf_sample_predictions=tf_sample_alignments)

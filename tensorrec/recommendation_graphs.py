@@ -62,8 +62,8 @@ def alignment(tf_user_representation, tf_item_representation):
     :param tf_item_representation:
     :return:
     """
-    normalized_users = tf.nn.l2_normalize(tf_user_representation, 0)
-    normalized_items = tf.nn.l2_normalize(tf_item_representation, 0)
+    normalized_users = tf.nn.l2_normalize(tf_user_representation, 1)
+    normalized_items = tf.nn.l2_normalize(tf_item_representation, 1)
     return tf.matmul(normalized_users, normalized_items, transpose_b=True)
 
 

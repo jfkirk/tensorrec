@@ -3,9 +3,9 @@ import random
 import scipy.sparse as sp
 
 
-def sample_items(n_items, n_users, n_sampled_items):
+def sample_items(n_items, n_users, n_sampled_items, replace):
     return np.array([
-        np.random.choice(a=n_items, size=n_sampled_items) + (user_count * n_users)
+        np.random.choice(a=n_items, size=n_sampled_items, replace=replace) + (user_count * n_users)
         for user_count in range(n_users)
     ])
 
