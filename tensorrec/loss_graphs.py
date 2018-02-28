@@ -133,9 +133,9 @@ class WMRBLossGraph(AbstractLossGraph):
 
     def loss_graph(self, tf_prediction, tf_interactions, tf_sample_predictions, **kwargs):
 
-        # WMRB expects bounded predictions
-        bounded_prediction = tf.nn.sigmoid(tf_prediction)
-        bounded_sample_prediction = tf.nn.sigmoid(tf_sample_predictions)
+        # WMRB expects [-1, 1] bounded predictions
+        bounded_prediction = tf.nn.tanh(tf_prediction)
+        bounded_sample_prediction = tf.nn.tanh(tf_sample_predictions)
 
         return self.weighted_margin_rank_batch(tf_prediction=bounded_prediction,
                                                tf_interactions=tf_interactions,
@@ -158,9 +158,10 @@ class WMRBLossGraph(AbstractLossGraph):
                                                               indices=tf.transpose(positive_interaction_indices)[0])
 
         # [ n_positive_interactions, n_sampled_items ]
-        summation_term = tf.abs(1.0
-                                - tf.expand_dims(positive_predictions, axis=1)
-                                + mapped_predictions_sample_per_interaction)
+        summation_term = tf.maximum(1.0
+                                    - tf.expand_dims(positive_predictions, axis=1)
+                                    + mapped_predictions_sample_per_interaction,
+                                    0.0)
 
         # [ n_positive_interactions, 1 ]
         sampled_margin_rank = (n_items / n_sampled_items) * tf.reduce_sum(summation_term, axis=0)
@@ -176,11 +177,6 @@ class WMRBAlignmentLossGraph(WMRBLossGraph):
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
     def loss_graph(self, tf_alignment, tf_interactions, tf_sample_alignments, **kwargs):
-
-        # WMRB expects bounded predictions
-        normed_alignment = .5 * (tf_alignment + 1.0)
-        normed_sample_alignments = .5 * (tf_sample_alignments + 1.0)
-
-        return self.weighted_margin_rank_batch(tf_prediction=normed_alignment,
+        return self.weighted_margin_rank_batch(tf_prediction=tf_alignment,
                                                tf_interactions=tf_interactions,
-                                               tf_sample_predictions=normed_sample_alignments)
+                                               tf_sample_predictions=tf_sample_alignments)
