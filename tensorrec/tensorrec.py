@@ -316,7 +316,7 @@ class TensorRec(object):
                                       'tf_sample_alignments': tf_sample_alignments})
 
         # Build loss graph
-        self.tf_basic_loss = self.loss_graph().loss_graph(**loss_graph_kwargs)
+        self.tf_basic_loss = self.loss_graph().connect_loss_graph(**loss_graph_kwargs)
 
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
