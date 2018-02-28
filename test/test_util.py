@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from tensorrec.util import calculate_batched_alpha
 
+
 class UtilTestcase(TestCase):
 
     def test_calculate_batched_alpha(self):

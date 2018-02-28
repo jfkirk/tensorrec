@@ -1,6 +1,5 @@
 import inspect
 import logging
-import math
 import numpy as np
 import pickle
 from scipy import sparse as sp
