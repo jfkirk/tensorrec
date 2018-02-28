@@ -134,12 +134,12 @@ class WMRBLossGraph(AbstractLossGraph):
     def loss_graph(self, tf_prediction, tf_interactions, tf_sample_predictions, **kwargs):
 
         # WMRB expects bounded predictions
-        tanh_prediction = tf.nn.sigmoid(tf_prediction)
-        tanh_sample_prediction = tf.nn.sigmoid(tf_sample_predictions)
+        bounded_prediction = tf.nn.sigmoid(tf_prediction)
+        bounded_sample_prediction = tf.nn.sigmoid(tf_sample_predictions)
 
-        return self.weighted_margin_rank_batch(tf_prediction=tanh_prediction,
+        return self.weighted_margin_rank_batch(tf_prediction=bounded_prediction,
                                                tf_interactions=tf_interactions,
-                                               tf_sample_predictions=tanh_sample_prediction)
+                                               tf_sample_predictions=bounded_sample_prediction)
 
     @classmethod
     def weighted_margin_rank_batch(cls, tf_prediction, tf_interactions, tf_sample_predictions):
