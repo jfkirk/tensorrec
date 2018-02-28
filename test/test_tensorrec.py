@@ -22,6 +22,9 @@ class TensorRecTestCase(TestCase):
         cls.standard_model = TensorRec(n_components=10)
         cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
+        cls.unbiased_model = TensorRec(n_components=10, biased=False)
+        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
     def test_init(self):
         self.assertIsNotNone(TensorRec())
 
@@ -85,26 +88,15 @@ class TensorRecTestCase(TestCase):
                 self.assertGreater(val, 0)
 
     def test_fit_predict_unbiased(self):
-        model = TensorRec(n_components=10, biased=False)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
-
-        predictions = model.predict(user_features=self.user_features,
-                                    item_features=self.item_features)
-
+        predictions = self.unbiased_model.predict(user_features=self.user_features, item_features=self.item_features)
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
 
     def test_predict_user_repr(self):
-        model = TensorRec(n_components=10, biased=False)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
-
-        user_repr = model.predict_user_representation(self.user_features)
+        user_repr = self.unbiased_model.predict_user_representation(self.user_features)
         self.assertEqual(user_repr.shape, (self.user_features.shape[0], 10))
 
     def test_predict_item_repr(self):
-        model = TensorRec(n_components=10, biased=False)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
-
-        item_repr = model.predict_item_representation(self.item_features)
+        item_repr = self.unbiased_model.predict_item_representation(self.item_features)
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
     def test_predict_user_repr_biased_fails(self):
@@ -156,8 +148,8 @@ class TensorRecSavingTestCase(TestCase):
         # Check that, after saving, the same predictions come back
         predictions_after_save = model.predict(user_features=self.user_features, item_features=self.item_features)
         ranks_after_save = model.predict_rank(user_features=self.user_features, item_features=self.item_features)
-        self.assertEqual(predictions.all(), predictions_after_save.all())
-        self.assertEqual(ranks.all(), ranks_after_save.all())
+        self.assertTrue((predictions == predictions_after_save).all())
+        self.assertTrue((ranks == ranks_after_save).all())
 
         # Blow away the session
         set_session(tf.Session())
@@ -167,8 +159,8 @@ class TensorRecSavingTestCase(TestCase):
         new_predictions = new_model.predict(user_features=self.user_features, item_features=self.item_features)
         new_ranks = new_model.predict_rank(user_features=self.user_features, item_features=self.item_features)
 
-        self.assertEqual(predictions.all(), new_predictions.all())
-        self.assertEqual(ranks.all(), new_ranks.all())
+        self.assertTrue((predictions == new_predictions).all())
+        self.assertTrue((ranks == new_ranks).all())
 
     def test_save_and_load_model_same_session(self):
         model = TensorRec(n_components=10)
@@ -183,5 +175,5 @@ class TensorRecSavingTestCase(TestCase):
         new_predictions = new_model.predict(user_features=self.user_features, item_features=self.item_features)
         new_ranks = new_model.predict_rank(user_features=self.user_features, item_features=self.item_features)
 
-        self.assertEqual(predictions.all(), new_predictions.all())
-        self.assertEqual(ranks.all(), new_ranks.all())
+        self.assertTrue((predictions == new_predictions).all())
+        self.assertTrue((ranks == new_ranks).all())

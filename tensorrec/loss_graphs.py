@@ -5,12 +5,17 @@ import tensorflow as tf
 class AbstractLossGraph(object):
     __metaclass__ = abc.ABCMeta
 
-    # Parameters for loss usage
+    # If True, dense prediction results will be passed to the loss function
     is_dense = False
 
+    # If True, randomly sampled predictions will be passed to the loss function
+    is_sample_based = False
+    # If True, and if is_sample_based is True, predictions will be sampled with replacement
+    is_sampled_with_replacement = False
+
     @abc.abstractmethod
-    def loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions, tf_rankings,
-                   tf_alignment):
+    def connect_loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions,
+                           tf_rankings, tf_alignment, tf_sample_predictions, tf_sample_alignments):
         """
         This method is responsible for consuming a number of possible nodes from the graph and calculating loss from
         those nodes.
@@ -26,6 +31,10 @@ class AbstractLossGraph(object):
         The item ranks as a Tensor of shape [n_users, n_items]
         :param tf_alignment: tf.Tensor
         The item alignments as a Tensor of shape [n_users, n_items]
+        :param tf_sample_predictions: tf.Tensor
+        The recommendation scores of a sample of items of shape [n_users, n_sampled_items]
+        :param tf_sample_alignments: tf.Tensor
+        The alignments of a sample of items of shape [n_users, n_sampled_items]
         :return: tf.Tensor
         The loss value.
         """
@@ -37,7 +46,7 @@ class RMSELossGraph(AbstractLossGraph):
     This loss function returns the root mean square error between the predictions and the true interactions.
     Interactions can be any positive or negative values, and this loss function is sensitive to magnitude.
     """
-    def loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
+    def connect_loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
         return tf.sqrt(tf.reduce_mean(tf.square(tf_interactions_serial - tf_prediction_serial)))
 
 
@@ -49,7 +58,7 @@ class RMSEDenseLossGraph(AbstractLossGraph):
     """
     is_dense = True
 
-    def loss_graph(self, tf_interactions, tf_prediction, **kwargs):
+    def connect_loss_graph(self, tf_interactions, tf_prediction, **kwargs):
         error = tf.sparse_add(tf_interactions, -1.0 * tf_prediction)
         return tf.sqrt(tf.reduce_mean(tf.square(error)))
 
@@ -58,10 +67,45 @@ class SeparationLossGraph(AbstractLossGraph):
     """
     This loss function models the explicit positive and negative interaction predictions as normal distributions and
     returns the probability of overlap between the two distributions.
-    Interactions can be any positive or negative values, but this loss function ignored the magnitude of the
-    interaction -- interactions are grouped in to {i < 0} and {i > 0}.
+    Interactions can be any positive or negative values, but this loss function ignores the magnitude of the
+    interaction -- interactions are grouped in to {i <= 0} and {i > 0}.
     """
-    def loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
+    def connect_loss_graph(self, tf_prediction_serial, tf_interactions_serial, **kwargs):
+
+        tf_positive_mask = tf.greater(tf_interactions_serial, 0.0)
+        tf_negative_mask = tf.less_equal(tf_interactions_serial, 0.0)
+
+        tf_positive_predictions = tf.boolean_mask(tf_prediction_serial, tf_positive_mask)
+        tf_negative_predictions = tf.boolean_mask(tf_prediction_serial, tf_negative_mask)
+
+        tf_pos_mean, tf_pos_var = tf.nn.moments(tf_positive_predictions, axes=[0])
+        tf_neg_mean, tf_neg_var = tf.nn.moments(tf_negative_predictions, axes=[0])
+
+        tf_overlap_distribution = tf.contrib.distributions.Normal(loc=(tf_neg_mean - tf_pos_mean),
+                                                                  scale=tf.sqrt(tf_neg_var + tf_pos_var))
+
+        loss = 1.0 - tf_overlap_distribution.cdf(0.0)
+        return loss
+
+
+class SeparationDenseLossGraph(AbstractLossGraph):
+    """
+    This loss function models all positive and negative interaction predictions as normal distributions and
+    returns the probability of overlap between the two distributions. This loss function includes non-interacted items
+    as negative interactions.
+    Interactions can be any positive or negative values, but this loss function ignores the magnitude of the
+    interaction -- interactions are grouped in to {i <= 0} and {i > 0}.
+    """
+    is_dense = True
+
+    def connect_loss_graph(self, tf_prediction, tf_interactions, **kwargs):
+
+        interactions_shape = tf.shape(tf_interactions)
+        tf_interactions_serial = tf.reshape(tf.sparse_tensor_to_dense(tf_interactions),
+                                            shape=[interactions_shape[0] * interactions_shape[1]])
+
+        prediction_shape = tf.shape(tf_prediction)
+        tf_prediction_serial = tf.reshape(tf_prediction, shape=[prediction_shape[0] * prediction_shape[1]])
 
         tf_positive_mask = tf.greater(tf_interactions_serial, 0.0)
         tf_negative_mask = tf.less_equal(tf_interactions_serial, 0.0)
@@ -85,28 +129,45 @@ class WMRBLossGraph(AbstractLossGraph):
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
     is_dense = True
+    is_sample_based = True
 
-    def loss_graph(self, tf_interactions, tf_prediction, **kwargs):
+    def connect_loss_graph(self, tf_prediction, tf_interactions, tf_sample_predictions, **kwargs):
 
+        # WMRB expects [-1, 1] bounded predictions
+        bounded_prediction = tf.nn.tanh(tf_prediction)
+        bounded_sample_prediction = tf.nn.tanh(tf_sample_predictions)
+
+        return self.weighted_margin_rank_batch(tf_prediction=bounded_prediction,
+                                               tf_interactions=tf_interactions,
+                                               tf_sample_predictions=bounded_sample_prediction)
+
+    @classmethod
+    def weighted_margin_rank_batch(cls, tf_prediction, tf_interactions, tf_sample_predictions):
         positive_interaction_mask = tf.greater(tf_interactions.values, 0.0)
         positive_interaction_indices = tf.boolean_mask(tf_interactions.indices,
                                                        positive_interaction_mask)
+
+        # [ n_positive_interactions ]
         positive_predictions = tf.gather_nd(tf_prediction, indices=positive_interaction_indices)
 
         n_items = tf.cast(tf.shape(tf_prediction)[1], dtype=tf.float32)
-        predictions_sum_per_user = tf.reduce_sum(tf_prediction, axis=1)
-        mapped_predictions_sum_per_user = tf.gather(params=predictions_sum_per_user,
-                                                    indices=tf.transpose(positive_interaction_indices)[0])
+        n_sampled_items = tf.cast(tf.shape(tf_sample_predictions)[1], dtype=tf.float32)
 
-        # TODO smart irrelevant item indicator -- using n_items is an approximation for sparse interactions
-        irrelevant_item_indicator = n_items # noqa
+        # [ n_positive_interactions, n_sampled_items ]
+        mapped_predictions_sample_per_interaction = tf.gather(params=tf_sample_predictions,
+                                                              indices=tf.transpose(positive_interaction_indices)[0])
 
-        sampled_margin_rank = (n_items - (n_items * positive_predictions)
-                               + mapped_predictions_sum_per_user + irrelevant_item_indicator)
+        # [ n_positive_interactions, n_sampled_items ]
+        summation_term = tf.maximum(1.0
+                                    - tf.expand_dims(positive_predictions, axis=1)
+                                    + mapped_predictions_sample_per_interaction,
+                                    0.0)
 
-        # JKirk - I am leaving out the log term due to experimental results
-        # loss = tf.log(sampled_margin_rank + 1.0)
-        return sampled_margin_rank
+        # [ n_positive_interactions, 1 ]
+        sampled_margin_rank = (n_items / n_sampled_items) * tf.reduce_sum(summation_term, axis=0)
+
+        loss = tf.log(sampled_margin_rank + 1.0)
+        return loss
 
 
 class WMRBAlignmentLossGraph(WMRBLossGraph):
@@ -115,6 +176,7 @@ class WMRBAlignmentLossGraph(WMRBLossGraph):
     Ranks items based on alignment, in place of prediction.
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
-    def loss_graph(self, tf_interactions, tf_alignment, **kwargs):
-        return super(WMRBAlignmentLossGraph, self).loss_graph(tf_interactions=tf_interactions,
-                                                              tf_prediction=tf_alignment)
+    def connect_loss_graph(self, tf_alignment, tf_interactions, tf_sample_alignments, **kwargs):
+        return self.weighted_margin_rank_batch(tf_prediction=tf_alignment,
+                                               tf_interactions=tf_interactions,
+                                               tf_sample_predictions=tf_sample_alignments)

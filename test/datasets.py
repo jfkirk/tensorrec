@@ -4,11 +4,12 @@ import scipy.sparse as sp
 from lightfm import datasets
 
 
-def get_movielens_100k(min_positive_score=4):
+def get_movielens_100k(min_positive_score=4, negative_value=0):
     movielens_100k_dict = datasets.fetch_movielens(indicator_features=True, genre_features=True)
 
     def flip_ratings(ratings_matrix):
-        ratings_matrix.data = np.array([1 if rating >= min_positive_score else -1 for rating in ratings_matrix.data])
+        ratings_matrix.data = np.array([1 if rating >= min_positive_score else negative_value
+                                        for rating in ratings_matrix.data])
         return ratings_matrix
 
     test_interactions = flip_ratings(movielens_100k_dict['test'])

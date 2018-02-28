@@ -8,9 +8,11 @@ import tensorflow as tf
 
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
 from .recommendation_graphs import (project_biases, prediction_dense, prediction_serial, split_sparse_tensor_indices,
-                                    bias_prediction_dense, bias_prediction_serial, rank_predictions, alignment)
+                                    bias_prediction_dense, bias_prediction_serial, rank_predictions, alignment,
+                                    gather_sampled_item_predictions)
 from .representation_graphs import linear_representation_graph
 from .session_management import get_session
+from .util import sample_items
 
 
 class TensorRec(object):
@@ -50,7 +52,7 @@ class TensorRec(object):
         self.n_components = n_components
         self.user_repr_graph_factory = user_repr_graph
         self.item_repr_graph_factory = item_repr_graph
-        self.loss_graph_factory = loss_graph
+        self.loss_graph = loss_graph
         self.biased = biased
 
         # A list of the attr names of every graph hook attr
@@ -66,6 +68,7 @@ class TensorRec(object):
             # Feed placeholders
             'tf_n_users', 'tf_n_items', 'tf_user_feature_indices', 'tf_user_feature_values', 'tf_item_feature_indices',
             'tf_item_feature_values', 'tf_interaction_indices', 'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
+            'tf_sampled_item_indices'
         ]
         self.graph_operation_hook_attr_names = [
             # AdamOptimizer
@@ -221,6 +224,7 @@ class TensorRec(object):
         self.tf_interaction_values = tf.placeholder('float', [None])
         self.tf_learning_rate = tf.placeholder('float', None)
         self.tf_alpha = tf.placeholder('float', None)
+        self.tf_sampled_item_indices = tf.placeholder('int64', [None, None])
 
         # Construct the features and interactions as sparse matrices
         tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
@@ -294,16 +298,25 @@ class TensorRec(object):
             'tf_prediction_serial': self.tf_prediction_serial,
             'tf_interactions_serial': tf_interactions_serial,
         }
-        if self.loss_graph_factory.is_dense:
+        if self.loss_graph.is_dense:
             loss_graph_kwargs.update({
                 'tf_prediction': self.tf_prediction,
                 'tf_interactions': tf_interactions,
                 'tf_rankings': self.tf_rankings,
                 'tf_alignment': self.tf_alignment,
             })
+        if self.loss_graph.is_sample_based:
+            tf_sample_predictions = gather_sampled_item_predictions(
+                tf_prediction=self.tf_prediction, tf_sampled_item_indices=self.tf_sampled_item_indices
+            )
+            tf_sample_alignments = gather_sampled_item_predictions(
+                tf_prediction=self.tf_alignment, tf_sampled_item_indices=self.tf_sampled_item_indices
+            )
+            loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions,
+                                      'tf_sample_alignments': tf_sample_alignments})
 
         # Build loss graph
-        self.tf_basic_loss = self.loss_graph_factory().loss_graph(**loss_graph_kwargs)
+        self.tf_basic_loss = self.loss_graph().connect_loss_graph(**loss_graph_kwargs)
 
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
@@ -318,7 +331,7 @@ class TensorRec(object):
             self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
 
     def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.00001,
-            verbose=False, out_sample_interactions=None, user_batch_size=None):
+            verbose=False, out_sample_interactions=None, user_batch_size=None, n_sampled_items=None):
         """
         Constructs the TensorRec graph and fits the model.
         :param interactions: scipy.sparse matrix
@@ -340,6 +353,9 @@ class TensorRec(object):
         If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         :param user_batch_size: int or None
         The maximum number of users per batch, or None for all users.
+        :param n_sampled_items: int or None
+        The number of items to sample per user for use in loss functions. Must be non-None if
+        self.loss_graph.is_sample_based is True.
         """
 
         # Pass-through to fit_partial
@@ -351,10 +367,12 @@ class TensorRec(object):
                          alpha=alpha,
                          verbose=verbose,
                          out_sample_interactions=out_sample_interactions,
-                         user_batch_size=user_batch_size)
+                         user_batch_size=user_batch_size,
+                         n_sampled_items=n_sampled_items)
 
     def fit_partial(self, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
-                    alpha=0.00001, verbose=False, out_sample_interactions=None, user_batch_size=None):
+                    alpha=0.00001, verbose=False, out_sample_interactions=None, user_batch_size=None,
+                    n_sampled_items=None):
         """
         Constructs the TensorRec graph and fits the model.
         :param interactions: scipy.sparse matrix
@@ -376,9 +394,17 @@ class TensorRec(object):
         If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         :param user_batch_size: int or None
         The maximum number of users per batch, or None for all users.
+        :param n_sampled_items: int or None
+        The number of items to sample per user for use in loss functions. Must be non-None if
+        self.loss_graph.is_sample_based is True.
         """
 
         session = get_session()
+
+        # Arg checking
+        if self.loss_graph.is_sample_based:
+            if (n_sampled_items is None) or (n_sampled_items <= 0):
+                raise ValueError("n_sampled_items must be an integer >0")
 
         # Check if the graph has been constructed by checking the dense prediction node
         # If it hasn't been constructed, initialize it
@@ -403,6 +429,14 @@ class TensorRec(object):
 
         for epoch in range(epochs):
             for batch, feed_dict in enumerate(batched_feed_dicts):
+
+                # Handle random item sampling, if applicable
+                if self.loss_graph.is_sample_based:
+                    sampled_item_indices = sample_items(n_users=feed_dict[self.tf_n_users],
+                                                        n_items=feed_dict[self.tf_n_items],
+                                                        n_sampled_items=n_sampled_items,
+                                                        replace=self.loss_graph.is_sampled_with_replacement)
+                    feed_dict[self.tf_sampled_item_indices] = sampled_item_indices
 
                 # TODO find something more elegant than these cascaded ifs
                 if not verbose:

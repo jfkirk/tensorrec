@@ -62,8 +62,8 @@ def alignment(tf_user_representation, tf_item_representation):
     :param tf_item_representation:
     :return:
     """
-    normalized_users = tf.nn.l2_normalize(tf_user_representation, 0)
-    normalized_items = tf.nn.l2_normalize(tf_item_representation, 0)
+    normalized_users = tf.nn.l2_normalize(tf_user_representation, 1)
+    normalized_items = tf.nn.l2_normalize(tf_item_representation, 1)
     return tf.matmul(normalized_users, normalized_items, transpose_b=True)
 
 
@@ -92,6 +92,24 @@ def bias_prediction_serial(tf_prediction_serial, tf_projected_user_biases, tf_pr
     gathered_user_biases = tf.gather(tf_projected_user_biases, tf_x_user)
     gathered_item_biases = tf.gather(tf_projected_item_biases, tf_x_item)
     return tf_prediction_serial + gathered_user_biases + gathered_item_biases
+
+
+def gather_sampled_item_predictions(tf_prediction, tf_sampled_item_indices):
+    """
+    Gathers the predictions for the given sampled items.
+    :param tf_prediction:
+    :param tf_sampled_item_indices:
+    :return:
+    """
+    prediction_shape = tf.shape(tf_prediction)
+    flattened_prediction = tf.reshape(tf_prediction, shape=[prediction_shape[0] * prediction_shape[1]])
+
+    indices_shape = tf.shape(tf_sampled_item_indices)
+    flattened_indices = tf.reshape(tf_sampled_item_indices, shape=[indices_shape[0] * indices_shape[1]])
+
+    gathered_predictions = tf.gather(params=flattened_prediction, indices=flattened_indices)
+    reshaped_gathered_predictions = tf.reshape(gathered_predictions, shape=indices_shape)
+    return reshaped_gathered_predictions
 
 
 def rank_predictions(tf_prediction):

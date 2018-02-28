@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from tensorrec import TensorRec
 from tensorrec.loss_graphs import (
-    RMSELossGraph, RMSEDenseLossGraph, SeparationLossGraph, WMRBLossGraph, WMRBAlignmentLossGraph
+    RMSELossGraph, RMSEDenseLossGraph, WMRBLossGraph, WMRBAlignmentLossGraph
 )
 from tensorrec.util import generate_dummy_data_with_indicator
 
@@ -30,26 +30,18 @@ class LossGraphsTestCase(TestCase):
         model = TensorRec(loss_graph=RMSEDenseLossGraph, biased=True)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
-    def test_separation_loss(self):
-        model = TensorRec(loss_graph=SeparationLossGraph)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
-
-    def test_separation_loss_biased(self):
-        model = TensorRec(loss_graph=SeparationLossGraph, biased=True)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
-
     def test_wmrb_loss(self):
         model = TensorRec(loss_graph=WMRBLossGraph)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5, n_sampled_items=10)
 
     def test_wmrb_loss_biased(self):
         model = TensorRec(loss_graph=WMRBLossGraph, biased=True)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5, n_sampled_items=10)
 
     def test_wmrb_alignment_loss(self):
         model = TensorRec(loss_graph=WMRBAlignmentLossGraph)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5, n_sampled_items=10)
 
     def test_wmrb_alignment_loss_biased(self):
         model = TensorRec(loss_graph=WMRBAlignmentLossGraph, biased=True)
-        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5, n_sampled_items=10)
