@@ -1,5 +1,6 @@
 import inspect
 import logging
+import math
 import numpy as np
 import pickle
 from scipy import sparse as sp
@@ -12,7 +13,7 @@ from .recommendation_graphs import (project_biases, prediction_dense, prediction
                                     gather_sampled_item_predictions)
 from .representation_graphs import linear_representation_graph
 from .session_management import get_session
-from .util import sample_items
+from .util import sample_items, calculate_batched_alpha
 
 
 class TensorRec(object):
@@ -421,8 +422,12 @@ class TensorRec(object):
                                                            user_features=user_features,
                                                            item_features=item_features,
                                                            user_batch_size=user_batch_size,
-                                                           extra_feed_kwargs={self.tf_learning_rate: learning_rate,
-                                                                              self.tf_alpha: alpha})
+                                                           extra_feed_kwargs={self.tf_learning_rate: learning_rate})
+
+        # This scales down the alpha based on the number of batches and inserts the new alpha in all feed dicts
+        batched_alpha = calculate_batched_alpha(num_batches=len(batched_feed_dicts), alpha=alpha)
+        for feed_dict in batched_feed_dicts:
+            feed_dict[self.tf_alpha] = batched_alpha
 
         if verbose:
             logging.info('Beginning fitting')
