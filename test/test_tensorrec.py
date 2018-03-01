@@ -66,16 +66,32 @@ class TensorRecTestCase(TestCase):
 
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
 
-    def test_predict_alignment(self):
-        alignments = self.standard_model.predict_alignment(user_features=self.user_features,
-                                                           item_features=self.item_features)
+    def test_predict_dot_product(self):
+        predictions = self.standard_model.predict_dot_product(user_features=self.user_features,
+                                                              item_features=self.item_features)
 
-        self.assertEqual(alignments.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-        for x in range(alignments.shape[0]):
-            for y in range(alignments.shape[1]):
-                val = alignments[x][y]
+        self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+
+    def test_predict_cosine_distance(self):
+        cosines = self.standard_model.predict_cosine_distance(user_features=self.user_features,
+                                                              item_features=self.item_features)
+
+        self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+        for x in range(cosines.shape[0]):
+            for y in range(cosines.shape[1]):
+                val = cosines[x][y]
                 self.assertGreaterEqual(val, -1.0)
                 self.assertLessEqual(val, 1.0)
+
+    def test_predict_euclidian_distance(self):
+        cosines = self.standard_model.predict_euclidian_distance(user_features=self.user_features,
+                                                                 item_features=self.item_features)
+
+        self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+        for x in range(cosines.shape[0]):
+            for y in range(cosines.shape[1]):
+                val = cosines[x][y]
+                self.assertLessEqual(val, 0.0)
 
     def test_predict_rank(self):
         ranks = self.standard_model.predict_rank(user_features=self.user_features,
@@ -98,14 +114,6 @@ class TensorRecTestCase(TestCase):
     def test_predict_item_repr(self):
         item_repr = self.unbiased_model.predict_item_representation(self.item_features)
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
-
-    def test_predict_user_repr_biased_fails(self):
-        with self.assertRaises(NotImplementedError):
-            self.standard_model.predict_user_representation(self.user_features)
-
-    def test_predict_item_repr_biased_fails(self):
-        with self.assertRaises(NotImplementedError):
-            self.standard_model.predict_item_representation(self.item_features)
 
 
 class TensorRecWithIndicatorTestCase(TensorRecTestCase):

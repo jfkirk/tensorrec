@@ -72,3 +72,10 @@ def generate_dummy_data_with_indicator(num_users=15000, num_items=30000, interac
         interactions[random.randrange(num_users), random.randrange(num_items)] = -1
 
     return interactions, user_features, item_features
+
+
+def append_to_string_at_point(string, value, point):
+    for _ in range(0, (point - len(string))):
+        string += " "
+    string += "{}".format(value)
+    return string

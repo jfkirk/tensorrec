@@ -1,60 +1,55 @@
 from tensorrec import TensorRec
 from tensorrec.eval import fit_and_eval
-from tensorrec.loss_graphs import RMSEDenseLossGraph, SeparationLossGraph, SeparationDenseLossGraph, WMRBLossGraph, \
-    WMRBAlignmentLossGraph
+from tensorrec.loss_graphs import (
+    RMSELossGraph, RMSEDenseLossGraph, SeparationLossGraph, SeparationDenseLossGraph, WMRBLossGraph
+)
+from tensorrec.prediction_graphs import (
+    DotProductPredictionGraph, CosineDistancePredictionGraph, EuclidianDistancePredictionGraph
+)
+from tensorrec.util import append_to_string_at_point
+
 from test.datasets import get_movielens_100k
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
-train_interactions, test_interactions, user_features, item_features = get_movielens_100k(negative_value=0)
+train_interactions, test_interactions, user_features, item_features, _ = get_movielens_100k(negative_value=-1.0)
 
 epochs = 300
 alpha = 0.00001
 n_components = 10
-biased = False
+biased = True
 verbose = True
-learning_rate = .1
+learning_rate = .01
 
 n_sampled_items = int(item_features.shape[0] * .01)
 
 fit_kwargs = {'epochs': epochs, 'alpha': alpha, 'verbose': verbose, 'learning_rate': learning_rate,
               'n_sampled_items': n_sampled_items}
 
-model_baseline = TensorRec(n_components=n_components, biased=biased)
-rmse_result = fit_and_eval(model_baseline, user_features, item_features, train_interactions, test_interactions,
-                           fit_kwargs)
-print("RMSE: \t\t%s, \t%s" % rmse_result)
+res_strings = []
 
-model_baseline = TensorRec(n_components=n_components, biased=biased, loss_graph=RMSEDenseLossGraph)
-rmse_dense_result = fit_and_eval(model_baseline, user_features, item_features, train_interactions, test_interactions,
-                                 fit_kwargs)
-print("RMSEDense: \t%s, \t%s" % rmse_dense_result)
+header = "Loss Graph"
+header = append_to_string_at_point(header, 'Prediction Graph', 30)
+header = append_to_string_at_point(header, 'Recall at 30', 66)
+header = append_to_string_at_point(header, 'Precision at 5', 88)
+res_strings.append(header)
 
-model_baseline = TensorRec(n_components=n_components, biased=biased, loss_graph=SeparationLossGraph)
-sep_result = fit_and_eval(model_baseline, user_features, item_features, train_interactions, test_interactions,
-                          fit_kwargs)
-print("Separation: \t%s, \t%s" % sep_result)
+for loss_graph in (RMSELossGraph, RMSEDenseLossGraph, SeparationLossGraph, SeparationDenseLossGraph, WMRBLossGraph):
+    for pred_graph in (DotProductPredictionGraph, CosineDistancePredictionGraph, EuclidianDistancePredictionGraph):
 
-model_baseline = TensorRec(n_components=n_components, biased=biased, loss_graph=SeparationDenseLossGraph)
-sep_dense_result = fit_and_eval(model_baseline, user_features, item_features, train_interactions, test_interactions,
-                                fit_kwargs)
-print("SepDense: \t%s, \t%s" % sep_dense_result)
+        model = TensorRec(n_components=n_components, biased=biased, loss_graph=loss_graph(),
+                          prediction_graph=pred_graph())
+        result = fit_and_eval(model, user_features, item_features, train_interactions, test_interactions, fit_kwargs)
 
-model_wmrb = TensorRec(n_components=n_components, biased=biased, loss_graph=WMRBLossGraph)
-wmrb_result = fit_and_eval(model_wmrb, user_features, item_features, train_interactions, test_interactions,
-                           fit_kwargs)
-print("WMRB: \t\t%s, \t%s" % wmrb_result)
+        res_string = "{}".format(loss_graph.__name__)
+        res_string = append_to_string_at_point(res_string, pred_graph.__name__, 30)
+        res_string = append_to_string_at_point(res_string, ": {}".format(result[0]), 64)
+        res_string = append_to_string_at_point(res_string, result[1], 88)
 
-model_wmrb = TensorRec(n_components=n_components, biased=biased, loss_graph=WMRBAlignmentLossGraph)
-wmrb_alignment_result = fit_and_eval(model_wmrb, user_features, item_features, train_interactions, test_interactions,
-                                     fit_kwargs)
-print("WMRBAlignment: \t%s, \t%s" % wmrb_alignment_result)
+        print(res_string)
+        res_strings.append(res_string)
 
 print('--------------------------------------------------')
-print("RMSE: \t\t%s, \t%s" % rmse_result)
-print("RMSEDense: \t%s, \t%s" % rmse_dense_result)
-print("Separation: \t%s, \t%s" % sep_result)
-print("SepDense: \t%s, \t%s" % sep_dense_result)
-print("WMRB: \t\t%s, \t%s" % wmrb_result)
-print("WMRBAlignment: \t%s, \t%s" % wmrb_alignment_result)
+for res_string in res_strings:
+    print(res_string)

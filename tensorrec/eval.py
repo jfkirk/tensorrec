@@ -79,18 +79,19 @@ def f1_score_at_k(model, test_interactions, k=10, user_features=None, item_featu
     return f1_score
 
 
-def fit_and_eval(model, user_features, item_features, train_interactions, test_interactions, fit_kwargs):
+def fit_and_eval(model, user_features, item_features, train_interactions, test_interactions, fit_kwargs, recall_k=30,
+                 precision_k=5):
 
     model.fit(user_features=user_features, item_features=item_features,
               interactions=train_interactions, **fit_kwargs)
     p_at_k = precision_at_k(model, test_interactions,
                             user_features=user_features,
                             item_features=item_features,
-                            k=100)
+                            k=precision_k)
     r_at_k = recall_at_k(model, test_interactions,
                          user_features=user_features,
                          item_features=item_features,
-                         k=100)
+                         k=recall_k)
 
     return np.mean(r_at_k), np.mean(p_at_k)
 

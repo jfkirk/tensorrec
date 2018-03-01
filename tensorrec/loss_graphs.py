@@ -15,7 +15,7 @@ class AbstractLossGraph(object):
 
     @abc.abstractmethod
     def connect_loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions,
-                           tf_rankings, tf_alignment, tf_sample_predictions, tf_sample_alignments):
+                           tf_rankings, tf_sample_predictions):
         """
         This method is responsible for consuming a number of possible nodes from the graph and calculating loss from
         those nodes.
@@ -29,12 +29,8 @@ class AbstractLossGraph(object):
         The sample interactions as a SparseTensor of shape [n_users, n_items]
         :param tf_rankings: tf.Tensor
         The item ranks as a Tensor of shape [n_users, n_items]
-        :param tf_alignment: tf.Tensor
-        The item alignments as a Tensor of shape [n_users, n_items]
         :param tf_sample_predictions: tf.Tensor
         The recommendation scores of a sample of items of shape [n_users, n_sampled_items]
-        :param tf_sample_alignments: tf.Tensor
-        The alignments of a sample of items of shape [n_users, n_sampled_items]
         :return: tf.Tensor
         The loss value.
         """
@@ -168,15 +164,3 @@ class WMRBLossGraph(AbstractLossGraph):
 
         loss = tf.log(sampled_margin_rank + 1.0)
         return loss
-
-
-class WMRBAlignmentLossGraph(WMRBLossGraph):
-    """
-    Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
-    Ranks items based on alignment, in place of prediction.
-    Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
-    """
-    def connect_loss_graph(self, tf_alignment, tf_interactions, tf_sample_alignments, **kwargs):
-        return self.weighted_margin_rank_batch(tf_prediction=tf_alignment,
-                                               tf_interactions=tf_interactions,
-                                               tf_sample_predictions=tf_sample_alignments)
