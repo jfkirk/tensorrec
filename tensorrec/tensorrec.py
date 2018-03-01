@@ -1,4 +1,3 @@
-import inspect
 import logging
 import numpy as np
 import pickle
@@ -7,9 +6,9 @@ import six
 import tensorflow as tf
 
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
-from .recommendation_graphs import (project_biases, prediction_dense, prediction_serial, split_sparse_tensor_indices,
-                                    bias_prediction_dense, bias_prediction_serial, rank_predictions, alignment,
-                                    gather_sampled_item_predictions)
+from .prediction_graphs import AbstractPredictionGraph, DotProductPredictionGraph, CosineDistancePredictionGraph
+from .recommendation_graphs import (project_biases, split_sparse_tensor_indices, bias_prediction_dense,
+                                    bias_prediction_serial, rank_predictions, gather_sampled_item_predictions)
 from .representation_graphs import linear_representation_graph
 from .session_management import get_session
 from .util import sample_items, calculate_batched_alpha
@@ -20,7 +19,8 @@ class TensorRec(object):
     def __init__(self, n_components=100,
                  user_repr_graph=linear_representation_graph,
                  item_repr_graph=linear_representation_graph,
-                 loss_graph=RMSELossGraph,
+                 prediction_graph=DotProductPredictionGraph(),
+                 loss_graph=RMSELossGraph(),
                  biased=True):
         """
         A TensorRec recommendation model.
@@ -44,15 +44,16 @@ class TensorRec(object):
             raise ValueError("All arguments to TensorRec() must be non-None")
         if n_components < 1:
             raise ValueError("n_components must be >= 1")
-        if not inspect.isclass(loss_graph):
-            raise ValueError("loss_graph must be a class that inherits AbstractLossGraph")
-        if not issubclass(loss_graph, AbstractLossGraph):
+        if not isinstance(prediction_graph, AbstractPredictionGraph):
+            raise ValueError("prediction_graph must inherit AbstractPredictionGraph")
+        if not isinstance(loss_graph, AbstractLossGraph):
             raise ValueError("loss_graph must inherit AbstractLossGraph")
 
         self.n_components = n_components
         self.user_repr_graph_factory = user_repr_graph
         self.item_repr_graph_factory = item_repr_graph
-        self.loss_graph = loss_graph
+        self.prediction_graph_factory = prediction_graph
+        self.loss_graph_factory = loss_graph
         self.biased = biased
 
         # A list of the attr names of every graph hook attr
@@ -60,7 +61,7 @@ class TensorRec(object):
 
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
-            'tf_alignment',
+            'tf_predict_dot_product', 'tf_predict_cosine_distance',
 
             # Training nodes
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
@@ -71,8 +72,10 @@ class TensorRec(object):
             'tf_sampled_item_indices'
         ]
         self.graph_operation_hook_attr_names = [
+
             # AdamOptimizer
             'tf_optimizer',
+
         ]
         self._clear_graph_hook_attrs()
 
@@ -251,20 +254,19 @@ class TensorRec(object):
         tf_weights.extend(user_weights)
         tf_weights.extend(item_weights)
 
-        # Prediction = user_repr * item_repr + user_bias + item_bias
-        # For the parallel prediction case, repr matrices can be multiplied together and the projected biases can be
-        # broadcast across the resultant matrix
-        self.tf_prediction = prediction_dense(tf_user_representation=self.tf_user_representation,
-                                              tf_item_representation=self.tf_item_representation)
+        # Connect the configurable prediction graphs
+        self.tf_prediction = self.prediction_graph_factory.connect_dense_prediction_graph(
+            tf_user_representation=self.tf_user_representation,
+            tf_item_representation=self.tf_item_representation
+        )
 
         tf_x_user, tf_x_item = split_sparse_tensor_indices(tf_sparse_tensor=tf_interactions, n_dimensions=2)
-        self.tf_prediction_serial = prediction_serial(tf_user_representation=self.tf_user_representation,
-                                                      tf_item_representation=self.tf_item_representation,
-                                                      tf_x_user=tf_x_user,
-                                                      tf_x_item=tf_x_item)
-
-        self.tf_alignment = alignment(tf_user_representation=self.tf_user_representation,
-                                      tf_item_representation=self.tf_item_representation)
+        self.tf_prediction_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
+            tf_user_representation=self.tf_user_representation,
+            tf_item_representation=self.tf_item_representation,
+            tf_x_user=tf_x_user,
+            tf_x_item=tf_x_item,
+        )
 
         # Add biases, if this is a biased estimator
         if self.biased:
@@ -289,7 +291,17 @@ class TensorRec(object):
                                                                tf_x_item=tf_x_item)
 
         tf_interactions_serial = tf_interactions.values
+
+        # Construct API nodes
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
+        self.tf_predict_dot_product = DotProductPredictionGraph().connect_dense_prediction_graph(
+            tf_user_representation=self.tf_user_representation,
+            tf_item_representation=self.tf_item_representation,
+        )
+        self.tf_predict_cosine_distance = CosineDistancePredictionGraph().connect_dense_prediction_graph(
+            tf_user_representation=self.tf_user_representation,
+            tf_item_representation=self.tf_item_representation,
+        )
 
         # Compose loss function args
         # This composition is for execution safety: it prevents loss functions that are incorrectly configured from
@@ -298,25 +310,20 @@ class TensorRec(object):
             'tf_prediction_serial': self.tf_prediction_serial,
             'tf_interactions_serial': tf_interactions_serial,
         }
-        if self.loss_graph.is_dense:
+        if self.loss_graph_factory.is_dense:
             loss_graph_kwargs.update({
                 'tf_prediction': self.tf_prediction,
                 'tf_interactions': tf_interactions,
                 'tf_rankings': self.tf_rankings,
-                'tf_alignment': self.tf_alignment,
             })
-        if self.loss_graph.is_sample_based:
+        if self.loss_graph_factory.is_sample_based:
             tf_sample_predictions = gather_sampled_item_predictions(
                 tf_prediction=self.tf_prediction, tf_sampled_item_indices=self.tf_sampled_item_indices
             )
-            tf_sample_alignments = gather_sampled_item_predictions(
-                tf_prediction=self.tf_alignment, tf_sampled_item_indices=self.tf_sampled_item_indices
-            )
-            loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions,
-                                      'tf_sample_alignments': tf_sample_alignments})
+            loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions})
 
         # Build loss graph
-        self.tf_basic_loss = self.loss_graph().connect_loss_graph(**loss_graph_kwargs)
+        self.tf_basic_loss = self.loss_graph_factory.connect_loss_graph(**loss_graph_kwargs)
 
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
@@ -355,7 +362,7 @@ class TensorRec(object):
         The maximum number of users per batch, or None for all users.
         :param n_sampled_items: int or None
         The number of items to sample per user for use in loss functions. Must be non-None if
-        self.loss_graph.is_sample_based is True.
+        self.loss_graph_factory.is_sample_based is True.
         """
 
         # Pass-through to fit_partial
@@ -396,13 +403,13 @@ class TensorRec(object):
         The maximum number of users per batch, or None for all users.
         :param n_sampled_items: int or None
         The number of items to sample per user for use in loss functions. Must be non-None if
-        self.loss_graph.is_sample_based is True.
+        self.loss_graph_factory.is_sample_based is True.
         """
 
         session = get_session()
 
         # Arg checking
-        if self.loss_graph.is_sample_based:
+        if self.loss_graph_factory.is_sample_based:
             if (n_sampled_items is None) or (n_sampled_items <= 0):
                 raise ValueError("n_sampled_items must be an integer >0")
         if (n_sampled_items is not None) and (not self.loss_graph.is_sample_based):
@@ -437,11 +444,11 @@ class TensorRec(object):
             for batch, feed_dict in enumerate(batched_feed_dicts):
 
                 # Handle random item sampling, if applicable
-                if self.loss_graph.is_sample_based:
+                if self.loss_graph_factory.is_sample_based:
                     sampled_item_indices = sample_items(n_users=feed_dict[self.tf_n_users],
                                                         n_items=feed_dict[self.tf_n_items],
                                                         n_sampled_items=n_sampled_items,
-                                                        replace=self.loss_graph.is_sampled_with_replacement)
+                                                        replace=self.loss_graph_factory.is_sampled_with_replacement)
                     feed_dict[self.tf_sampled_item_indices] = sampled_item_indices
 
                 # TODO find something more elegant than these cascaded ifs
@@ -481,10 +488,9 @@ class TensorRec(object):
 
         return predictions
 
-    def predict_alignment(self, user_features, item_features):
+    def predict_dot_product(self, user_features, item_features):
         """
-        Predict alignment for the given users and items. Alignment is the cosine of the angle between the user and item
-        representations.
+        Predicts the latent dot product between the given users and items.
         :param user_features: scipy.sparse matrix
         A matrix of user features of shape [n_users, n_user_features].
         :param item_features: scipy.sparse matrix
@@ -494,9 +500,22 @@ class TensorRec(object):
         feed_dict = self._create_feed_dict(interactions_matrix=None,
                                            user_features_matrix=user_features,
                                            item_features_matrix=item_features)
+        predictions = self.tf_predict_dot_product.eval(session=get_session(), feed_dict=feed_dict)
+        return predictions
 
-        predictions = self.tf_alignment.eval(session=get_session(), feed_dict=feed_dict)
-
+    def predict_cosine_distance(self, user_features, item_features):
+        """
+        Predicts the latent cosine distance between the given users and items.
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :return: TBD
+        """
+        feed_dict = self._create_feed_dict(interactions_matrix=None,
+                                           user_features_matrix=user_features,
+                                           item_features_matrix=item_features)
+        predictions = self.tf_predict_cosine_distance.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
 
     def predict_rank(self, user_features, item_features):

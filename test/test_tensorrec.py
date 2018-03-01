@@ -66,14 +66,20 @@ class TensorRecTestCase(TestCase):
 
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
 
-    def test_predict_alignment(self):
-        alignments = self.standard_model.predict_alignment(user_features=self.user_features,
-                                                           item_features=self.item_features)
+    def test_predict_dot_product(self):
+        predictions = self.standard_model.predict_dot_product(user_features=self.user_features,
+                                                              item_features=self.item_features)
 
-        self.assertEqual(alignments.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-        for x in range(alignments.shape[0]):
-            for y in range(alignments.shape[1]):
-                val = alignments[x][y]
+        self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+
+    def test_predict_cosine_distance(self):
+        cosines = self.standard_model.predict_cosine_distance(user_features=self.user_features,
+                                                              item_features=self.item_features)
+
+        self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+        for x in range(cosines.shape[0]):
+            for y in range(cosines.shape[1]):
+                val = cosines[x][y]
                 self.assertGreaterEqual(val, -1.0)
                 self.assertLessEqual(val, 1.0)
 
