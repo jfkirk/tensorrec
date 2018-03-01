@@ -78,7 +78,7 @@ def normalized_discounted_cumulative_gain(model, test_interactions, k=10,
                                           item_features=None,
                                           preserve_rows=False):
     """
-    Calculate Normalize Discounted Cumulative Gain @K.
+    Calculate Normalized Discounted Cumulative Gain @K.
     :param model: prediction model
     :param test_interactions: test interactions
     :param k:
