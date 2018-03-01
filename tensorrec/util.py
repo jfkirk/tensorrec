@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import random
 import scipy.sparse as sp
@@ -8,6 +9,16 @@ def sample_items(n_items, n_users, n_sampled_items, replace):
         np.random.choice(a=n_items, size=n_sampled_items, replace=replace) + (user_count * n_users)
         for user_count in range(n_users)
     ])
+
+
+def calculate_batched_alpha(num_batches, alpha):
+    if num_batches < 1:
+        raise ValueError('num_batches must be >=1, num_batches={}'.format(num_batches))
+    elif num_batches > 1:
+        batched_alpha = alpha / (math.e * math.log(num_batches))
+    else:
+        batched_alpha = alpha
+    return batched_alpha
 
 
 def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.00045, num_user_features=200,
