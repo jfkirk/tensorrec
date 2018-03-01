@@ -115,14 +115,6 @@ class TensorRecTestCase(TestCase):
         item_repr = self.unbiased_model.predict_item_representation(self.item_features)
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
-    def test_predict_user_repr_biased_fails(self):
-        with self.assertRaises(NotImplementedError):
-            self.standard_model.predict_user_representation(self.user_features)
-
-    def test_predict_item_repr_biased_fails(self):
-        with self.assertRaises(NotImplementedError):
-            self.standard_model.predict_item_representation(self.item_features)
-
 
 class TensorRecWithIndicatorTestCase(TensorRecTestCase):
 
