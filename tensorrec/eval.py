@@ -59,6 +59,77 @@ def recall_at_k(model, test_interactions, k=10, user_features=None, item_feature
     return hit / retrieved
 
 
+def _idcg(hits, k=10, ctype="binary"):
+
+    if ctype == "binary":
+        arg = min(hits, k+1)
+        idgc = np.sum(1/np.log2(np.arange(arg) + 2))  # arange index from 0
+    elif ctype == "scalar":
+        sorted = hits[np.argsort(-hits)][:min(len(hits), k)]
+        idgc = np.sum(sorted/np.log2(np.arange(len(sorted)) + 2))
+    else:
+        raise ValueError("Invalid IDCG calculation type")
+
+    return idgc
+
+
+def normalized_discounted_cumulative_gain(model, test_interactions, k=10,
+                                          user_features=None,
+                                          item_features=None,
+                                          preserve_rows=False):
+    """
+    Calculate Normalize Discounted Cumulative Gain @K.
+    :param model: prediction model
+    :param test_interactions: test interactions
+    :param k:
+    :param user_features:
+    :param item_features:
+    :param preserve_rows: If true, return NDCG per row. If false, return mean NDCG
+    :return:
+    """
+
+    predicted_ranks = model.predict_rank(user_features=user_features,
+                                         item_features=item_features)
+
+    positive_test_interactions = test_interactions > 0
+    ranks_of_relevant = sp.csr_matrix(predicted_ranks *
+                                      positive_test_interactions.A)
+
+    k_mask = np.less(ranks_of_relevant.data, k + 1)
+    ror_at_k = np.maximum(np.multiply(ranks_of_relevant.data, k_mask), 1)
+
+    relevance = sp.csr_matrix(
+        test_interactions.A *
+        positive_test_interactions.A
+    )
+
+    relevance_at_k = (2**np.multiply(relevance.data, k_mask)) - 1
+    ranks_of_relevant.data = relevance_at_k/np.log2(ror_at_k + 1)  # ranks at 1
+
+    dcg = ranks_of_relevant.sum(axis=1).flatten()
+
+    if np.max(test_interactions.A) == 1:
+        # If the data is binary, we can save the ideal ranking sort
+        idcg = np.apply_along_axis(_idcg,
+                                   0,
+                                   positive_test_interactions.sum(axis=1).flatten()[0],
+                                   ctype="binary"
+                                   )
+    else:
+        idcg = np.apply_along_axis(_idcg,
+                                   0,
+                                   relevance,
+                                   ctype="scalar"
+                                   )
+
+    ndcg = dcg/idcg
+
+    if preserve_rows:
+        return ndcg.flatten()
+    else:
+        return np.nanmean(ndcg.flatten())
+
+
 def f1_score_at_k(model, test_interactions, k=10, user_features=None, item_features=None, preserve_rows=False):
     # TODO: Refactor to calculate more quickly
     p_at_k = precision_at_k(model=model,
