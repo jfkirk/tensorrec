@@ -569,10 +569,6 @@ class TensorRec(object):
         :return: np.ndarray
         The latent user representations in an ndarray of shape [n_users, n_components]
         """
-        if self.biased:
-            raise NotImplementedError('predict_user_representation() is not supported with biased models.'
-                                      'Try TensorRec(biased=False)')
-
         feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
         user_repr = self.tf_user_representation.eval(session=get_session(), feed_dict=feed_dict)
         return user_repr
@@ -585,10 +581,6 @@ class TensorRec(object):
         :return: np.ndarray
         The latent item representations in an ndarray of shape [n_items, n_components]
         """
-        if self.biased:
-            raise NotImplementedError('predict_item_representation() is not supported with biased models.'
-                                      'Try TensorRec(biased=False)')
-
         feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
         item_repr = self.tf_item_representation.eval(session=get_session(), feed_dict=feed_dict)
         return item_repr
