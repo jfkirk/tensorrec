@@ -70,3 +70,48 @@ class CosineDistancePredictionGraph(AbstractPredictionGraph):
         gathered_user_reprs = tf.gather(normalized_users, tf_x_user)
         gathered_item_reprs = tf.gather(normalized_items, tf_x_item)
         return tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
+
+
+class EuclidianDistancePredictionGraph(AbstractPredictionGraph):
+    """
+    This prediction function calculates the prediction as the negative euclidian distance between the user and
+    item representations.
+    Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))
+    """
+
+    epsilon = 1e-16
+
+    def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
+
+        # [ n_users, 1 ]
+        r_user = tf.reduce_sum(tf_user_representation ** 2, 1, keep_dims=True)
+
+        # [ n_items, 1 ]
+        r_item = tf.reduce_sum(tf_item_representation ** 2, 1, keep_dims=True)
+
+        # [ n_users, n_items ]
+        distance = (r_user
+                    - 2.0 * tf.matmul(tf_user_representation, tf_item_representation, transpose_b=True)
+                    + tf.transpose(r_item))
+
+        # For numeric stability
+        distance = tf.maximum(distance, self.epsilon)
+
+        return -1.0 * tf.sqrt(distance)
+
+    def connect_serial_prediction_graph(self, tf_user_representation, tf_item_representation, tf_x_user, tf_x_item):
+
+        # [ n_interactions, n_components ]
+        gathered_user_reprs = tf.gather(tf_user_representation, tf_x_user)
+        gathered_item_reprs = tf.gather(tf_item_representation, tf_x_item)
+
+        # [ n_interactions, n_components ]
+        delta = tf.pow(gathered_user_reprs - gathered_item_reprs, 2)
+
+        # [ n_interactions, 1 ]
+        distance = tf.reduce_sum(delta, axis=1)
+
+        # For numeric stability
+        distance = tf.maximum(distance, self.epsilon)
+
+        return -1.0 * tf.sqrt(distance)

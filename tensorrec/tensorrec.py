@@ -6,7 +6,9 @@ import six
 import tensorflow as tf
 
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
-from .prediction_graphs import AbstractPredictionGraph, DotProductPredictionGraph, CosineDistancePredictionGraph
+from .prediction_graphs import (
+    AbstractPredictionGraph, DotProductPredictionGraph, CosineDistancePredictionGraph, EuclidianDistancePredictionGraph
+)
 from .recommendation_graphs import (project_biases, split_sparse_tensor_indices, bias_prediction_dense,
                                     bias_prediction_serial, rank_predictions, gather_sampled_item_predictions)
 from .representation_graphs import linear_representation_graph
@@ -61,7 +63,7 @@ class TensorRec(object):
 
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
-            'tf_predict_dot_product', 'tf_predict_cosine_distance',
+            'tf_predict_dot_product', 'tf_predict_cosine_distance', 'tf_predict_euclidian_distance',
 
             # Training nodes
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
@@ -302,6 +304,10 @@ class TensorRec(object):
             tf_user_representation=self.tf_user_representation,
             tf_item_representation=self.tf_item_representation,
         )
+        self.tf_predict_euclidian_distance = EuclidianDistancePredictionGraph().connect_dense_prediction_graph(
+            tf_user_representation=self.tf_user_representation,
+            tf_item_representation=self.tf_item_representation,
+        )
 
         # Compose loss function args
         # This composition is for execution safety: it prevents loss functions that are incorrectly configured from
@@ -519,6 +525,22 @@ class TensorRec(object):
                                            user_features_matrix=user_features,
                                            item_features_matrix=item_features)
         predictions = self.tf_predict_cosine_distance.eval(session=get_session(), feed_dict=feed_dict)
+        return predictions
+
+    def predict_euclidian_distance(self, user_features, item_features):
+        """
+        Predicts the latent euclidian distance between the given users and items.
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :return: np.ndarray
+        The predictions in an ndarray of shape [n_users, n_items]
+        """
+        feed_dict = self._create_feed_dict(interactions_matrix=None,
+                                           user_features_matrix=user_features,
+                                           item_features_matrix=item_features)
+        predictions = self.tf_predict_euclidian_distance.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
 
     def predict_rank(self, user_features, item_features):
