@@ -412,7 +412,7 @@ class TensorRec(object):
         if self.loss_graph_factory.is_sample_based:
             if (n_sampled_items is None) or (n_sampled_items <= 0):
                 raise ValueError("n_sampled_items must be an integer >0")
-        if (n_sampled_items is not None) and (not self.loss_graph.is_sample_based):
+        if (n_sampled_items is not None) and (not self.loss_graph_factory.is_sample_based):
             logging.warning('n_sampled_items was specified, but the loss graph is not sample-based')
 
         # Check if the graph has been constructed by checking the dense prediction node
