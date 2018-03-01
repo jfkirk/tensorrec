@@ -478,7 +478,8 @@ class TensorRec(object):
         A matrix of user features of shape [n_users, n_user_features].
         :param item_features: scipy.sparse matrix
         A matrix of item features of shape [n_items, n_item_features].
-        :return: TBD
+        :return: np.ndarray
+        The predictions in an ndarray of shape [n_users, n_items]
         """
         feed_dict = self._create_feed_dict(interactions_matrix=None,
                                            user_features_matrix=user_features,
@@ -495,7 +496,8 @@ class TensorRec(object):
         A matrix of user features of shape [n_users, n_user_features].
         :param item_features: scipy.sparse matrix
         A matrix of item features of shape [n_items, n_item_features].
-        :return: TBD
+        :return: np.ndarray
+        The dot products in an ndarray of shape [n_users, n_items]
         """
         feed_dict = self._create_feed_dict(interactions_matrix=None,
                                            user_features_matrix=user_features,
@@ -510,7 +512,8 @@ class TensorRec(object):
         A matrix of user features of shape [n_users, n_user_features].
         :param item_features: scipy.sparse matrix
         A matrix of item features of shape [n_items, n_item_features].
-        :return: TBD
+        :return: np.ndarray
+        The predictions in an ndarray of shape [n_users, n_items]
         """
         feed_dict = self._create_feed_dict(interactions_matrix=None,
                                            user_features_matrix=user_features,
@@ -525,7 +528,8 @@ class TensorRec(object):
         A matrix of user features of shape [n_users, n_user_features].
         :param item_features: scipy.sparse matrix
         A matrix of item features of shape [n_items, n_item_features].
-        :return: TBD
+        :return: np.ndarray
+        The ranks in an ndarray of shape [n_users, n_items]
         """
         feed_dict = self._create_feed_dict(interactions_matrix=None,
                                            user_features_matrix=user_features,
@@ -537,10 +541,11 @@ class TensorRec(object):
 
     def predict_user_representation(self, user_features):
         """
-        Predict representation vectors for the given users.
+        Predict latent representation vectors for the given users.
         :param user_features: scipy.sparse matrix
         A matrix of user features of shape [n_users, n_user_features].
-        :return: TBD
+        :return: np.ndarray
+        The latent user representations in an ndarray of shape [n_users, n_components]
         """
         if self.biased:
             raise NotImplementedError('predict_user_representation() is not supported with biased models.'
@@ -555,7 +560,8 @@ class TensorRec(object):
         Predict representation vectors for the given items.
         :param item_features: scipy.sparse matrix
         A matrix of item features of shape [n_items, n_item_features].
-        :return: TBD
+        :return: np.ndarray
+        The latent item representations in an ndarray of shape [n_items, n_components]
         """
         if self.biased:
             raise NotImplementedError('predict_item_representation() is not supported with biased models.'
