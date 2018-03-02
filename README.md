@@ -77,34 +77,34 @@ import tensorflow as tf
 import tensorrec
 
 # Define a custom representation function graph
-def tanh_representation_graph(tf_features, n_components, n_features, node_name_ending):
-    """
-    This representation function embeds the user/item features by passing them through a single tanh layer.
-    :param tf_features: tf.SparseTensor
-    The user/item features as a SparseTensor of dimensions [n_users/items, n_features]
-    :param n_components: int
-    The dimensionality of the resulting representation.
-    :param n_features: int
-    The number of features in tf_features
-    :param node_name_ending: String
-    Either 'user' or 'item'
-    :return:
-    A tuple of (tf.Tensor, list) where the first value is the resulting representation in n_components
-    dimensions and the second value is a list containing all tf.Variables which should be subject to
-    regularization.
-    """
-    tf_tanh_weights = tf.Variable(tf.random_normal([n_features, n_components],
-                                                   stddev=.5),
-                                  name='tanh_weights_%s' % node_name_ending)
+class TanhRepresentationGraph(tensorrec.representation_graphs.AbstractRepresentationGraph):
+    def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+        """
+        This representation function embeds the user/item features by passing them through a single tanh layer.
+        :param tf_features: tf.SparseTensor
+        The user/item features as a SparseTensor of dimensions [n_users/items, n_features]
+        :param n_components: int
+        The dimensionality of the resulting representation.
+        :param n_features: int
+        The number of features in tf_features
+        :param node_name_ending: String
+        Either 'user' or 'item'
+        :return:
+        A tuple of (tf.Tensor, list) where the first value is the resulting representation in n_components
+        dimensions and the second value is a list containing all tf.Variables which should be subject to
+        regularization.
+        """
+        tf_tanh_weights = tf.Variable(tf.random_normal([n_features, n_components], stddev=.5),
+                                      name='tanh_weights_%s' % node_name_ending)
 
-    tf_repr = tf.nn.tanh(tf.sparse_tensor_dense_matmul(tf_features, tf_tanh_weights))
+        tf_repr = tf.nn.tanh(tf.sparse_tensor_dense_matmul(tf_features, tf_tanh_weights))
 
-    # Return repr layer and variables
-    return tf_repr, [tf_tanh_weights]
+        # Return repr layer and variables
+        return tf_repr, [tf_tanh_weights]
 
 # Build a model with the custom representation function
-model = tensorrec.TensorRec(user_repr_graph=tanh_representation_graph,
-                            item_repr_graph=tanh_representation_graph)
+model = tensorrec.TensorRec(user_repr_graph=TanhRepresentationGraph(),
+                            item_repr_graph=TanhRepresentationGraph())
 
 # Generate some dummy data
 interactions, user_features, item_features = tensorrec.util.generate_dummy_data(num_users=100,
