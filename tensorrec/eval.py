@@ -59,21 +59,14 @@ def recall_at_k(model, test_interactions, k=10, user_features=None, item_feature
     return hit / retrieved
 
 
-def _idcg(hits, k=10, ctype="binary"):
+def _idcg(hits, k=10):
 
-    if ctype == "binary":
-        arg = min(hits, k+1)
-        idgc = np.sum(1/np.log2(np.arange(arg) + 2))  # arange index from 0
-    elif ctype == "scalar":
-        sorted = hits[np.argsort(-hits)][:min(len(hits), k)]
-        idgc = np.sum(sorted/np.log2(np.arange(len(sorted)) + 2))
-    else:
-        raise ValueError("Invalid IDCG calculation type")
-
+    sorted = hits[np.argsort(-hits)][:min(len(hits), k)]
+    idgc = np.sum(sorted/np.log2(np.arange(len(sorted)) + 2))
     return idgc
 
 
-def normalized_discounted_cumulative_gain(model, test_interactions, k=10,
+def ndcg_at_k(model, test_interactions, k=10,
                                           user_features=None,
                                           item_features=None,
                                           preserve_rows=False):
@@ -95,32 +88,19 @@ def normalized_discounted_cumulative_gain(model, test_interactions, k=10,
     ranks_of_relevant = sp.csr_matrix(predicted_ranks *
                                       positive_test_interactions.A)
 
-    k_mask = np.less(ranks_of_relevant.data, k + 1)
-    ror_at_k = np.maximum(np.multiply(ranks_of_relevant.data, k_mask), 1)
-
     relevance = sp.csr_matrix(
         test_interactions.A *
         positive_test_interactions.A
     )
 
+    k_mask = np.less(ranks_of_relevant.data, k + 1)
+    ror_at_k = np.maximum(np.multiply(ranks_of_relevant.data, k_mask), 1)
+
     relevance_at_k = (2**np.multiply(relevance.data, k_mask)) - 1
     ranks_of_relevant.data = relevance_at_k/np.log2(ror_at_k + 1)  # ranks at 1
 
     dcg = ranks_of_relevant.sum(axis=1).flatten()
-
-    if np.max(test_interactions.A) == 1:
-        # If the data is binary, we can save the ideal ranking sort
-        idcg = np.apply_along_axis(_idcg,
-                                   0,
-                                   positive_test_interactions.sum(axis=1).flatten()[0],
-                                   ctype="binary"
-                                   )
-    else:
-        idcg = np.apply_along_axis(_idcg,
-                                   0,
-                                   relevance,
-                                   ctype="scalar"
-                                   )
+    idcg = np.apply_along_axis(_idcg, 1, relevance.A)
 
     ndcg = dcg/idcg
 
