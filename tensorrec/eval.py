@@ -59,6 +59,57 @@ def recall_at_k(model, test_interactions, k=10, user_features=None, item_feature
     return hit / retrieved
 
 
+def _idcg(hits, k=10):
+
+    sorted = hits[np.argsort(-hits)][:min(len(hits), k)]
+    idgc = np.sum(sorted/np.log2(np.arange(len(sorted)) + 2))
+    return idgc
+
+
+def ndcg_at_k(model, test_interactions, k=10,
+                                          user_features=None,
+                                          item_features=None,
+                                          preserve_rows=False):
+    """
+    Calculate Normalized Discounted Cumulative Gain @K.
+    :param model: prediction model
+    :param test_interactions: test interactions
+    :param k:
+    :param user_features:
+    :param item_features:
+    :param preserve_rows: If true, return NDCG per row. If false, return mean NDCG
+    :return:
+    """
+
+    predicted_ranks = model.predict_rank(user_features=user_features,
+                                         item_features=item_features)
+
+    positive_test_interactions = test_interactions > 0
+    ranks_of_relevant = sp.csr_matrix(predicted_ranks *
+                                      positive_test_interactions.A)
+
+    relevance = sp.csr_matrix(
+        test_interactions.A *
+        positive_test_interactions.A
+    )
+
+    k_mask = np.less(ranks_of_relevant.data, k + 1)
+    ror_at_k = np.maximum(np.multiply(ranks_of_relevant.data, k_mask), 1)
+
+    relevance_at_k = (2**np.multiply(relevance.data, k_mask)) - 1
+    ranks_of_relevant.data = relevance_at_k/np.log2(ror_at_k + 1)  # ranks at 1
+
+    dcg = ranks_of_relevant.sum(axis=1).flatten()
+    idcg = np.apply_along_axis(_idcg, 1, relevance.A)
+
+    ndcg = dcg/idcg
+
+    if preserve_rows:
+        return ndcg.flatten()
+    else:
+        return np.nanmean(ndcg.flatten())
+
+
 def f1_score_at_k(model, test_interactions, k=10, user_features=None, item_features=None, preserve_rows=False):
     # TODO: Refactor to calculate more quickly
     p_at_k = precision_at_k(model=model,
