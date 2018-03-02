@@ -99,15 +99,15 @@ class EvalTestCase(TestCase):
 
         # note different than on page calculation, they use linear
         shuffle(wiki_idcg)
-        exponential_calc = _idcg(wiki_idcg, ctype="scalar")
+        exponential_calc = _idcg(wiki_idcg)
         self.assertAlmostEqual(exponential_calc, 9.07359, 3)
 
-        ordered_calc = _idcg(ordered, ctype="scalar")
+        ordered_calc = _idcg(ordered)
         self.assertEqual(ordered_calc, exponential_calc)
 
         binary = np.array([1, 1, 1, 1, 0, 0])
         # By hand
         terms = [e/(np.log2(i+2)) for i, e in enumerate(list(binary))]
         est_idcg = np.sum(terms)
-        hits = np.sum(binary)
+        hits = binary
         self.assertEqual(_idcg(hits), est_idcg)
