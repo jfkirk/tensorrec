@@ -11,7 +11,7 @@ from .prediction_graphs import (
 )
 from .recommendation_graphs import (project_biases, split_sparse_tensor_indices, bias_prediction_dense,
                                     bias_prediction_serial, rank_predictions, gather_sampled_item_predictions)
-from .representation_graphs import linear_representation_graph
+from .representation_graphs import AbstractRepresentationGraph, LinearRepresentationGraph
 from .session_management import get_session
 from .util import sample_items, calculate_batched_alpha
 
@@ -19,8 +19,8 @@ from .util import sample_items, calculate_batched_alpha
 class TensorRec(object):
 
     def __init__(self, n_components=100,
-                 user_repr_graph=linear_representation_graph,
-                 item_repr_graph=linear_representation_graph,
+                 user_repr_graph=LinearRepresentationGraph(),
+                 item_repr_graph=LinearRepresentationGraph(),
                  prediction_graph=DotProductPredictionGraph(),
                  loss_graph=RMSELossGraph(),
                  biased=True):
@@ -42,10 +42,15 @@ class TensorRec(object):
         """
 
         # Arg-check
-        if (n_components is None) or (user_repr_graph is None) or (item_repr_graph is None) or (loss_graph is None):
+        if (n_components is None) or (user_repr_graph is None) or (item_repr_graph is None) \
+                or (prediction_graph is None) or (loss_graph is None):
             raise ValueError("All arguments to TensorRec() must be non-None")
         if n_components < 1:
             raise ValueError("n_components must be >= 1")
+        if not isinstance(user_repr_graph, AbstractRepresentationGraph):
+            raise ValueError("user_repr_graph must inherit AbstractRepresentationGraph")
+        if not isinstance(item_repr_graph, AbstractRepresentationGraph):
+            raise ValueError("item_repr_graph must inherit AbstractRepresentationGraph")
         if not isinstance(prediction_graph, AbstractPredictionGraph):
             raise ValueError("prediction_graph must inherit AbstractPredictionGraph")
         if not isinstance(loss_graph, AbstractLossGraph):
@@ -241,15 +246,15 @@ class TensorRec(object):
 
         # Build the representations
         self.tf_user_representation, user_weights = \
-            self.user_repr_graph_factory(tf_features=tf_user_features,
-                                         n_components=self.n_components,
-                                         n_features=n_user_features,
-                                         node_name_ending='user')
+            self.user_repr_graph_factory.connect_representation_graph(tf_features=tf_user_features,
+                                                                      n_components=self.n_components,
+                                                                      n_features=n_user_features,
+                                                                      node_name_ending='user')
         self.tf_item_representation, item_weights = \
-            self.item_repr_graph_factory(tf_features=tf_item_features,
-                                         n_components=self.n_components,
-                                         n_features=n_item_features,
-                                         node_name_ending='item')
+            self.item_repr_graph_factory.connect_representation_graph(tf_features=tf_item_features,
+                                                                      n_components=self.n_components,
+                                                                      n_features=n_item_features,
+                                                                      node_name_ending='item')
 
         # Collect the weights for normalization
         tf_weights = []
