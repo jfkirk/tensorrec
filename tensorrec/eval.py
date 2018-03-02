@@ -59,17 +59,37 @@ def recall_at_k(model, test_interactions, k=10, user_features=None, item_feature
     return hit / retrieved
 
 
-def _idcg(hits, k=10):
+def _setup_ndcg(predicted_ranks, test_interactions, k=10):
 
-    sorted = hits[np.argsort(-hits)][:min(len(hits), k)]
-    idgc = np.sum(sorted/np.log2(np.arange(len(sorted)) + 2))
+    pos_inter = test_interactions > 0
+    ror = sp.csr_matrix(predicted_ranks * pos_inter.A)
+
+    relevance = sp.csr_matrix(test_interactions.A * pos_inter.A)
+
+    k_mask = np.less(ror.data, k + 1)
+    ror_at_k = np.maximum(np.multiply(ror.data, k_mask), 1)
+
+    return relevance, k_mask, ror, ror_at_k
+
+
+def _idcg(hits, k=10):
+    sorted_hits = hits[np.argsort(-hits)][:min(len(hits), k)]
+    idgc = np.sum((2**sorted_hits-1)/np.log2(np.arange(len(sorted_hits)) + 2))
     return idgc
 
 
+def _dcg(relevance, k_mask, ror_at_k, ror):
+    numer = (2**np.multiply(relevance.data, k_mask)) - 1
+    denom = np.log2(ror_at_k + 1)
+    ror.data = numer/denom  # ranks at 1
+    dcg = ror.sum(axis=1).flatten()
+
+    return dcg
+
+
 def ndcg_at_k(model, test_interactions, k=10,
-                                          user_features=None,
-                                          item_features=None,
-                                          preserve_rows=False):
+              user_features=None, item_features=None,
+              preserve_rows=False):
     """
     Calculate Normalized Discounted Cumulative Gain @K.
     :param model: prediction model
@@ -84,22 +104,11 @@ def ndcg_at_k(model, test_interactions, k=10,
     predicted_ranks = model.predict_rank(user_features=user_features,
                                          item_features=item_features)
 
-    positive_test_interactions = test_interactions > 0
-    ranks_of_relevant = sp.csr_matrix(predicted_ranks *
-                                      positive_test_interactions.A)
+    relevance, k_mask, ranks_of_relevant, ror_at_k = _setup_ndcg(predicted_ranks,
+                                                                 test_interactions,
+                                                                 k)
 
-    relevance = sp.csr_matrix(
-        test_interactions.A *
-        positive_test_interactions.A
-    )
-
-    k_mask = np.less(ranks_of_relevant.data, k + 1)
-    ror_at_k = np.maximum(np.multiply(ranks_of_relevant.data, k_mask), 1)
-
-    relevance_at_k = (2**np.multiply(relevance.data, k_mask)) - 1
-    ranks_of_relevant.data = relevance_at_k/np.log2(ror_at_k + 1)  # ranks at 1
-
-    dcg = ranks_of_relevant.sum(axis=1).flatten()
+    dcg = _dcg(relevance, k_mask, ror_at_k, ranks_of_relevant)
     idcg = np.apply_along_axis(_idcg, 1, relevance.A)
 
     ndcg = dcg/idcg
