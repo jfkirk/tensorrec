@@ -156,5 +156,4 @@ class EvalTestCase(TestCase):
         # about .96 but since we use Burges 2005 formulation
         # it will be a little different
         v = func_dcg/_idcg(np.array([3, 3, 1, 0, 2]))
-        print v.item(0)
         self.assertAlmostEqual(v.item(0), .979762, 3)
