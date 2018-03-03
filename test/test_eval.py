@@ -66,26 +66,26 @@ class EvalTestCase(TestCase):
 
     def test_ndcg_at_k(self):
 
-        ndcg10 = ndcg_at_k(model=self.model,
-                           test_interactions=self.interactions,
-                           k=10,
-                           user_features=self.user_features,
-                           item_features=self.item_features,
-                           preserve_rows=False)
+        ndcg10 = np.mean(ndcg_at_k(model=self.model,
+                                   test_interactions=self.interactions,
+                                   k=10,
+                                   user_features=self.user_features,
+                                   item_features=self.item_features,
+                                   preserve_rows=False))
 
-        ndcg20 = ndcg_at_k(model=self.model,
-                           test_interactions=self.interactions,
-                           k=20,
-                           user_features=self.user_features,
-                           item_features=self.item_features,
-                           preserve_rows=False)
+        ndcg20 = np.mean(ndcg_at_k(model=self.model,
+                                   test_interactions=self.interactions,
+                                   k=20,
+                                   user_features=self.user_features,
+                                   item_features=self.item_features,
+                                   preserve_rows=False))
 
-        ndcg5 = ndcg_at_k(model=self.model,
-                          test_interactions=self.interactions,
-                          k=5,
-                          user_features=self.user_features,
-                          item_features=self.item_features,
-                          preserve_rows=False)
+        ndcg5 = np.mean(ndcg_at_k(model=self.model,
+                                  test_interactions=self.interactions,
+                                  k=5,
+                                  user_features=self.user_features,
+                                  item_features=self.item_features,
+                                  preserve_rows=False))
 
         self.assertIsNotNone(ndcg10)
         self.assertGreaterEqual(ndcg10, ndcg5)
