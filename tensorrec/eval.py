@@ -129,7 +129,7 @@ def ndcg_at_k(model, test_interactions, k=10,
                                                                  k)
 
     dcg = np.asarray(_dcg(relevance, k_mask, ror_at_k, ranks_of_relevant))[0]
-    idcg = np.apply_along_axis(_idcg, 1, relevance.A)[0]
+    idcg = np.apply_along_axis(_idcg, 1, relevance.A)
 
     ndcg = dcg/idcg
 
