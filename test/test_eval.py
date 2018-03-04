@@ -71,21 +71,21 @@ class EvalTestCase(TestCase):
                                    k=10,
                                    user_features=self.user_features,
                                    item_features=self.item_features,
-                                   preserve_rows=False))
+                                   preserve_rows=True))
 
         ndcg20 = np.mean(ndcg_at_k(model=self.model,
                                    test_interactions=self.interactions,
                                    k=20,
                                    user_features=self.user_features,
                                    item_features=self.item_features,
-                                   preserve_rows=False))
+                                   preserve_rows=True))
 
         ndcg5 = np.mean(ndcg_at_k(model=self.model,
                                   test_interactions=self.interactions,
                                   k=5,
                                   user_features=self.user_features,
                                   item_features=self.item_features,
-                                  preserve_rows=False))
+                                  preserve_rows=True))
 
         self.assertIsNotNone(ndcg10)
         self.assertGreaterEqual(ndcg10, ndcg5)
