@@ -7,6 +7,19 @@ class AbstractRepresentationGraph(object):
 
     @abc.abstractmethod
     def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+        """
+        This method is responsible for connecting the user/item features to their respective latent representations.
+        :param tf_features: tf.SparseTensor
+        The user/item features as a SparseTensor of shape [ n_users, n_features ]
+        :param n_components: int
+        The size of the latent representation per user/item.
+        :param n_features: int
+        The size of the input features per user/item.
+        :param node_name_ending: str
+        A string, either 'user' or 'item', which can be added to TensorFlow node names for clarity.
+        :return: tf.Tensor
+        The user/item representation as a Tensor of shape [ n_users, n_components ]
+        """
         pass
 
 
@@ -17,9 +30,13 @@ class LinearRepresentationGraph(AbstractRepresentationGraph):
     """
 
     def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+
+        # Weights are normalized before building the variable
+        raw_weights = tf.random_normal([n_features, n_components], stddev=1.0)
+        normalized_weights = tf.nn.l2_normalize(raw_weights, 1)
+
         # Create variable nodes
-        tf_linear_weights = tf.Variable(tf.random_normal([n_features, n_components], stddev=.5),
-                                        name='linear_weights_{}'.format(node_name_ending))
+        tf_linear_weights = tf.Variable(normalized_weights, name='linear_weights_{}'.format(node_name_ending))
         tf_repr = tf.sparse_tensor_dense_matmul(tf_features, tf_linear_weights)
 
         # Return repr layer and variables
@@ -59,3 +76,38 @@ class ReLURepresentationGraph(AbstractRepresentationGraph):
 
         # Return repr layer and variables
         return tf_repr, [tf_relu_weights, tf_linear_weights, tf_relu_biases]
+
+
+class AbstractKerasRepresentationGraph(AbstractRepresentationGraph):
+    """
+    This abstract RepresentationGraph allows you to use Keras layers as a representation function by overriding the
+    create_layers() method.
+    """
+    __metaclass__ = abc.ABCMeta
+
+    def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+        layers = self.create_layers(n_features=n_features, n_components=n_components)
+
+        weights = []
+        last_layer = tf_features
+
+        # Iterate through layers, connecting each one and extracting weights/biases
+        for layer in layers:
+            last_layer = layer(last_layer)
+            if hasattr(layer, 'weights'):
+                weights.extend(layer.weights)
+
+        return last_layer, weights
+
+    @abc.abstractmethod
+    def create_layers(self, n_features, n_components):
+        """
+        Returns a list of Keras layers.
+        :param n_features: int
+        The input size of the first Keras layer.
+        :param n_components: int
+        The output size of the final Keras layer.
+        :return: list
+        A list of Keras layers.
+        """
+        pass
