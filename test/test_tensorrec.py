@@ -72,9 +72,9 @@ class TensorRecTestCase(TestCase):
 
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
 
-    def test_predict_cosine_distance(self):
-        cosines = self.standard_model.predict_cosine_distance(user_features=self.user_features,
-                                                              item_features=self.item_features)
+    def test_predict_cosine_similarity(self):
+        cosines = self.standard_model.predict_cosine_similarity(user_features=self.user_features,
+                                                                item_features=self.item_features)
 
         self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
         for x in range(cosines.shape[0]):
@@ -83,9 +83,9 @@ class TensorRecTestCase(TestCase):
                 self.assertGreaterEqual(val, -1.0)
                 self.assertLessEqual(val, 1.0)
 
-    def test_predict_euclidian_distance(self):
-        cosines = self.standard_model.predict_euclidian_distance(user_features=self.user_features,
-                                                                 item_features=self.item_features)
+    def test_predict_euclidian_similarity(self):
+        cosines = self.standard_model.predict_euclidian_similarity(user_features=self.user_features,
+                                                                   item_features=self.item_features)
 
         self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
         for x in range(cosines.shape[0]):

@@ -7,7 +7,8 @@ import tensorflow as tf
 
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
 from .prediction_graphs import (
-    AbstractPredictionGraph, DotProductPredictionGraph, CosineDistancePredictionGraph, EuclidianDistancePredictionGraph
+    AbstractPredictionGraph, DotProductPredictionGraph, CosineSimilarityPredictionGraph,
+    EuclidianSimilarityPredictionGraph
 )
 from .recommendation_graphs import (project_biases, split_sparse_tensor_indices, bias_prediction_dense,
                                     bias_prediction_serial, rank_predictions, gather_sampled_item_predictions)
@@ -23,7 +24,9 @@ class TensorRec(object):
                  item_repr_graph=LinearRepresentationGraph(),
                  prediction_graph=DotProductPredictionGraph(),
                  loss_graph=RMSELossGraph(),
-                 biased=True):
+                 biased=True,
+                 normalize_users=False,
+                 normalize_items=False):
         """
         A TensorRec recommendation model.
         :param n_components: Integer
@@ -37,8 +40,12 @@ class TensorRec(object):
         :param loss_graph: AbstractLossGraph
         A class which inherits AbstractLossGraph which contains a method to calculate the loss function.
         See tensorrec.loss_graphs for examples.
-        :param biased: Boolean
+        :param biased: bool
         If True, a bias value will be calculated for every user feature and item feature.
+        :param normalize_users: bool
+        If True, every row of the user features will be l2 normalized.
+        :param normalize_items: bool
+        If True, every row of the item features will be l2 normalized.
         """
 
         # Arg-check
@@ -62,13 +69,15 @@ class TensorRec(object):
         self.prediction_graph_factory = prediction_graph
         self.loss_graph_factory = loss_graph
         self.biased = biased
+        self.normalize_users = normalize_users
+        self.normalize_items = normalize_items
 
         # A list of the attr names of every graph hook attr
         self.graph_tensor_hook_attr_names = [
 
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
-            'tf_predict_dot_product', 'tf_predict_cosine_distance', 'tf_predict_euclidian_distance',
+            'tf_predict_dot_product', 'tf_predict_cosine_similarity', 'tf_predict_euclidian_similarity',
 
             # Training nodes
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
@@ -121,8 +130,10 @@ class TensorRec(object):
         if not sp.issparse(item_features_matrix):
             raise Exception('Item features must be a scipy sparse matrix')
 
-        n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix)
-        n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix)
+        n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix,
+                                                                                  normalize_rows=self.normalize_users)
+        n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix,
+                                                                                  normalize_rows=self.normalize_items)
 
         feed_dict = {self.tf_n_users: n_users,
                      self.tf_n_items: n_items,
@@ -146,7 +157,8 @@ class TensorRec(object):
         if not sp.issparse(user_features_matrix):
             raise Exception('User features must be a scipy sparse matrix')
 
-        n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix)
+        n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix,
+                                                                                  normalize_rows=self.normalize_users)
 
         feed_dict = {self.tf_n_users: n_users,
                      self.tf_user_feature_indices: user_feature_indices,
@@ -162,7 +174,8 @@ class TensorRec(object):
         if not sp.issparse(item_features_matrix):
             raise Exception('Item features must be a scipy sparse matrix')
 
-        n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix)
+        n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix,
+                                                                                  normalize_rows=self.normalize_items)
 
         feed_dict = {self.tf_n_items: n_items,
                      self.tf_item_feature_indices: item_feature_indices,
@@ -173,7 +186,13 @@ class TensorRec(object):
 
         return feed_dict
 
-    def _process_matrix(self, features_matrix):
+    def _process_matrix(self, features_matrix, normalize_rows=False):
+
+        if normalize_rows:
+            if not isinstance(features_matrix, sp.csr_matrix):
+                features_matrix = sp.csr_matrix(features_matrix)
+            mag = np.sqrt(features_matrix.power(2).sum(axis=1))
+            features_matrix = features_matrix.multiply(1.0 / mag)
 
         if not isinstance(features_matrix, sp.coo_matrix):
             features_matrix = sp.coo_matrix(features_matrix)
@@ -305,11 +324,11 @@ class TensorRec(object):
             tf_user_representation=self.tf_user_representation,
             tf_item_representation=self.tf_item_representation,
         )
-        self.tf_predict_cosine_distance = CosineDistancePredictionGraph().connect_dense_prediction_graph(
+        self.tf_predict_cosine_similarity = CosineSimilarityPredictionGraph().connect_dense_prediction_graph(
             tf_user_representation=self.tf_user_representation,
             tf_item_representation=self.tf_item_representation,
         )
-        self.tf_predict_euclidian_distance = EuclidianDistancePredictionGraph().connect_dense_prediction_graph(
+        self.tf_predict_euclidian_similarity = EuclidianSimilarityPredictionGraph().connect_dense_prediction_graph(
             tf_user_representation=self.tf_user_representation,
             tf_item_representation=self.tf_item_representation,
         )
@@ -516,9 +535,9 @@ class TensorRec(object):
         predictions = self.tf_predict_dot_product.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
 
-    def predict_cosine_distance(self, user_features, item_features):
+    def predict_cosine_similarity(self, user_features, item_features):
         """
-        Predicts the latent cosine distance between the given users and items.
+        Predicts the latent cosine similarity between the given users and items.
         :param user_features: scipy.sparse matrix
         A matrix of user features of shape [n_users, n_user_features].
         :param item_features: scipy.sparse matrix
@@ -529,12 +548,12 @@ class TensorRec(object):
         feed_dict = self._create_feed_dict(interactions_matrix=None,
                                            user_features_matrix=user_features,
                                            item_features_matrix=item_features)
-        predictions = self.tf_predict_cosine_distance.eval(session=get_session(), feed_dict=feed_dict)
+        predictions = self.tf_predict_cosine_similarity.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
 
-    def predict_euclidian_distance(self, user_features, item_features):
+    def predict_euclidian_similarity(self, user_features, item_features):
         """
-        Predicts the latent euclidian distance between the given users and items.
+        Predicts the latent euclidian similarity between the given users and items.
         :param user_features: scipy.sparse matrix
         A matrix of user features of shape [n_users, n_user_features].
         :param item_features: scipy.sparse matrix
@@ -545,7 +564,7 @@ class TensorRec(object):
         feed_dict = self._create_feed_dict(interactions_matrix=None,
                                            user_features_matrix=user_features,
                                            item_features_matrix=item_features)
-        predictions = self.tf_predict_euclidian_distance.eval(session=get_session(), feed_dict=feed_dict)
+        predictions = self.tf_predict_euclidian_similarity.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
 
     def predict_rank(self, user_features, item_features):

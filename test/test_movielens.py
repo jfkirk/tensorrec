@@ -19,7 +19,10 @@ class MovieLensTestCase(TestCase):
         train_interactions, test_interactions, user_features, item_features, _ = self.movielens_100k
 
         model = TensorRec()
-        model.fit(interactions=train_interactions, user_features=user_features, item_features=item_features)
+        model.fit(interactions=train_interactions,
+                  user_features=user_features,
+                  item_features=item_features,
+                  epochs=5)
         predictions = model.predict(user_features=user_features,
                                     item_features=item_features)
 
