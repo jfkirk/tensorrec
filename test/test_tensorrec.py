@@ -116,7 +116,7 @@ class TensorRecTestCase(TestCase):
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
 
-class TensorRecWithIndicatorTestCase(TensorRecTestCase):
+class TensorRecNormalizedTestCase(TensorRecTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -124,8 +124,11 @@ class TensorRecWithIndicatorTestCase(TensorRecTestCase):
             num_users=10, num_items=20, interaction_density=.5
         )
 
-        cls.standard_model = TensorRec(n_components=10)
+        cls.standard_model = TensorRec(n_components=10, normalize_items=True, normalize_users=True)
         cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+        cls.unbiased_model = TensorRec(n_components=10, normalize_items=True, normalize_users=True, biased=False)
+        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
 
 class TensorRecSavingTestCase(TestCase):
