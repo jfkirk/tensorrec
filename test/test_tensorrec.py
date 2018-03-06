@@ -72,9 +72,9 @@ class TensorRecTestCase(TestCase):
 
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
 
-    def test_predict_cosine_distance(self):
-        cosines = self.standard_model.predict_cosine_distance(user_features=self.user_features,
-                                                              item_features=self.item_features)
+    def test_predict_cosine_similarity(self):
+        cosines = self.standard_model.predict_cosine_similarity(user_features=self.user_features,
+                                                                item_features=self.item_features)
 
         self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
         for x in range(cosines.shape[0]):
@@ -83,9 +83,9 @@ class TensorRecTestCase(TestCase):
                 self.assertGreaterEqual(val, -1.0)
                 self.assertLessEqual(val, 1.0)
 
-    def test_predict_euclidian_distance(self):
-        cosines = self.standard_model.predict_euclidian_distance(user_features=self.user_features,
-                                                                 item_features=self.item_features)
+    def test_predict_euclidian_similarity(self):
+        cosines = self.standard_model.predict_euclidian_similarity(user_features=self.user_features,
+                                                                   item_features=self.item_features)
 
         self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
         for x in range(cosines.shape[0]):
@@ -116,7 +116,7 @@ class TensorRecTestCase(TestCase):
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
 
-class TensorRecWithIndicatorTestCase(TensorRecTestCase):
+class TensorRecNormalizedTestCase(TensorRecTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -124,8 +124,11 @@ class TensorRecWithIndicatorTestCase(TensorRecTestCase):
             num_users=10, num_items=20, interaction_density=.5
         )
 
-        cls.standard_model = TensorRec(n_components=10)
+        cls.standard_model = TensorRec(n_components=10, normalize_items=True, normalize_users=True)
         cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+        cls.unbiased_model = TensorRec(n_components=10, normalize_items=True, normalize_users=True, biased=False)
+        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
 
 class TensorRecSavingTestCase(TestCase):

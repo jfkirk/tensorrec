@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from tensorrec import TensorRec
 from tensorrec.prediction_graphs import (
-    DotProductPredictionGraph, CosineDistancePredictionGraph, EuclidianDistancePredictionGraph
+    DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclidianSimilarityPredictionGraph
 )
 from tensorrec.session_management import get_session
 from tensorrec.util import generate_dummy_data_with_indicator
@@ -22,18 +22,18 @@ class PredictionGraphsTestCase(TestCase):
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
     def test_cos_distance(self):
-        model = TensorRec(prediction_graph=CosineDistancePredictionGraph())
+        model = TensorRec(prediction_graph=CosineSimilarityPredictionGraph())
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
 
-class CosineDistanceTestCase(TestCase):
+class CosineSimilarityTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.session = get_session()
 
     def test_dense_prediction(self):
-        graph = CosineDistancePredictionGraph()
+        graph = CosineSimilarityPredictionGraph()
         array_1 = np.array([
             [1.0, 1.0],
             [10.0, 10.0],
@@ -55,7 +55,7 @@ class CosineDistanceTestCase(TestCase):
         self.assertTrue(np.allclose(result, expected_result))
 
     def test_serial_prediction(self):
-        graph = CosineDistancePredictionGraph()
+        graph = CosineSimilarityPredictionGraph()
         array_1 = np.array([
             [1.0, 1.0],
             [10.0, 10.0],
@@ -81,14 +81,14 @@ class CosineDistanceTestCase(TestCase):
         self.assertTrue(np.allclose(result, expected_result))
 
 
-class EuclidianDistanceTestCase(TestCase):
+class EuclidianSimilarityTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.session = get_session()
 
     def test_dense_prediction(self):
-        graph = EuclidianDistancePredictionGraph()
+        graph = EuclidianSimilarityPredictionGraph()
         array_1 = np.array([
             [1.0, 1.0],
             [2.0, 2.0],
@@ -111,7 +111,7 @@ class EuclidianDistanceTestCase(TestCase):
         self.assertTrue(np.allclose(result, expected_result))
 
     def test_serial_prediction(self):
-        graph = EuclidianDistancePredictionGraph()
+        graph = EuclidianSimilarityPredictionGraph()
         array_1 = np.array([
             [1.0, 1.0],
             [2.0, 2.0],

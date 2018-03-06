@@ -7,7 +7,7 @@ from tensorrec.loss_graphs import (
     RMSELossGraph, RMSEDenseLossGraph, SeparationLossGraph, SeparationDenseLossGraph, WMRBLossGraph
 )
 from tensorrec.prediction_graphs import (
-    DotProductPredictionGraph, CosineDistancePredictionGraph, EuclidianDistancePredictionGraph
+    DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclidianSimilarityPredictionGraph
 )
 from tensorrec.util import append_to_string_at_point
 
@@ -34,14 +34,14 @@ res_strings = []
 
 header = "Loss Graph"
 header = append_to_string_at_point(header, 'Prediction Graph', 30)
-header = append_to_string_at_point(header, 'ItemRepr Graph', 64)
+header = append_to_string_at_point(header, 'ItemRepr Graph', 66)
 header = append_to_string_at_point(header, 'Recall at 30', 100)
 header = append_to_string_at_point(header, 'Precision at 5', 122)
 header = append_to_string_at_point(header, 'NDCG at 30', 146)
 res_strings.append(header)
 
 for loss_graph in (RMSELossGraph, RMSEDenseLossGraph, SeparationLossGraph, SeparationDenseLossGraph, WMRBLossGraph):
-    for pred_graph in (DotProductPredictionGraph, CosineDistancePredictionGraph, EuclidianDistancePredictionGraph):
+    for pred_graph in (DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclidianSimilarityPredictionGraph):
         for repr_graph in (LinearRepresentationGraph,):
 
             model = TensorRec(n_components=n_components, biased=biased,
@@ -54,7 +54,7 @@ for loss_graph in (RMSELossGraph, RMSEDenseLossGraph, SeparationLossGraph, Separ
 
             res_string = "{}".format(loss_graph.__name__)
             res_string = append_to_string_at_point(res_string, pred_graph.__name__, 30)
-            res_string = append_to_string_at_point(res_string, repr_graph.__name__, 64)
+            res_string = append_to_string_at_point(res_string, repr_graph.__name__, 66)
             res_string = append_to_string_at_point(res_string, ": {}".format(result[0]), 98)
             res_string = append_to_string_at_point(res_string, result[1], 122)
             res_string = append_to_string_at_point(res_string, result[2], 146)

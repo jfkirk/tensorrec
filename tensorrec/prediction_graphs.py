@@ -53,7 +53,7 @@ class DotProductPredictionGraph(AbstractPredictionGraph):
         return tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
 
 
-class CosineDistancePredictionGraph(AbstractPredictionGraph):
+class CosineSimilarityPredictionGraph(AbstractPredictionGraph):
     """
     This prediction function calculates the prediction as the cosine between the user and item representations.
     Prediction = cos(user_repr, item_repr)
@@ -72,7 +72,7 @@ class CosineDistancePredictionGraph(AbstractPredictionGraph):
         return tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
 
 
-class EuclidianDistancePredictionGraph(AbstractPredictionGraph):
+class EuclidianSimilarityPredictionGraph(AbstractPredictionGraph):
     """
     This prediction function calculates the prediction as the negative euclidian distance between the user and
     item representations.
