@@ -14,23 +14,36 @@ class AbstractLossGraph(object):
     is_sampled_with_replacement = False
 
     @abc.abstractmethod
-    def connect_loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_prediction, tf_interactions,
-                           tf_rankings, tf_sample_predictions):
+    def connect_loss_graph(self, tf_prediction_serial, tf_interactions_serial, tf_interactions, tf_n_users, tf_n_items,
+                           tf_prediction, tf_rankings, tf_sample_predictions, tf_n_sampled_items):
         """
         This method is responsible for consuming a number of possible nodes from the graph and calculating loss from
         those nodes.
+
+        The following parameters are always passed in
         :param tf_prediction_serial: tf.Tensor
         The recommendation scores as a Tensor of shape [n_samples, 1]
         :param tf_interactions_serial: tf.Tensor
         The sample interactions corresponding to tf_prediction_serial as a Tensor of shape [n_samples, 1]
-        :param tf_prediction: tf.Tensor
-        The recommendation scores as a Tensor of shape [n_users, n_items]
         :param tf_interactions: tf.SparseTensor
         The sample interactions as a SparseTensor of shape [n_users, n_items]
+        :param tf_n_users: tf.placeholder
+        The number of users in tf_interactions
+        :param tf_n_items: tf.placeholder
+        The number of items in tf_interactions
+
+        The following parameters are passed in if is_dense is True
+        :param tf_prediction: tf.Tensor
+        The recommendation scores as a Tensor of shape [n_users, n_items]
         :param tf_rankings: tf.Tensor
         The item ranks as a Tensor of shape [n_users, n_items]
+
+        The following parameters are passed in if is_sample_based is True
         :param tf_sample_predictions: tf.Tensor
         The recommendation scores of a sample of items of shape [n_users, n_sampled_items]
+        :param tf_n_sampled_items: tf.placeholder
+        The number of items per user in tf_sample_predictions
+
         :return: tf.Tensor
         The loss value.
         """
@@ -124,30 +137,34 @@ class WMRBLossGraph(AbstractLossGraph):
     Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
     Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
     """
-    is_dense = True
     is_sample_based = True
 
-    def connect_loss_graph(self, tf_prediction, tf_interactions, tf_sample_predictions, **kwargs):
+    def connect_loss_graph(self, tf_prediction_serial, tf_interactions, tf_sample_predictions, tf_n_items,
+                           tf_n_sampled_items, **kwargs):
 
         # WMRB expects [-1, 1] bounded predictions
-        bounded_prediction = tf.nn.tanh(tf_prediction)
+        bounded_prediction = tf.nn.tanh(tf_prediction_serial)
         bounded_sample_prediction = tf.nn.tanh(tf_sample_predictions)
 
-        return self.weighted_margin_rank_batch(tf_prediction=bounded_prediction,
+        return self.weighted_margin_rank_batch(tf_prediction_serial=bounded_prediction,
                                                tf_interactions=tf_interactions,
-                                               tf_sample_predictions=bounded_sample_prediction)
+                                               tf_sample_predictions=bounded_sample_prediction,
+                                               tf_n_items=tf_n_items,
+                                               tf_n_sampled_items=tf_n_sampled_items)
 
     @classmethod
-    def weighted_margin_rank_batch(cls, tf_prediction, tf_interactions, tf_sample_predictions):
+    def weighted_margin_rank_batch(cls, tf_prediction_serial, tf_interactions, tf_sample_predictions, tf_n_items,
+                                   tf_n_sampled_items):
         positive_interaction_mask = tf.greater(tf_interactions.values, 0.0)
         positive_interaction_indices = tf.boolean_mask(tf_interactions.indices,
                                                        positive_interaction_mask)
 
         # [ n_positive_interactions ]
-        positive_predictions = tf.gather_nd(tf_prediction, indices=positive_interaction_indices)
+        positive_predictions = tf.boolean_mask(tf_prediction_serial,
+                                               positive_interaction_mask)
 
-        n_items = tf.cast(tf.shape(tf_prediction)[1], dtype=tf.float32)
-        n_sampled_items = tf.cast(tf.shape(tf_sample_predictions)[1], dtype=tf.float32)
+        n_items = tf.cast(tf_n_items, dtype=tf.float32)
+        n_sampled_items = tf.cast(tf_n_sampled_items, dtype=tf.float32)
 
         # [ n_positive_interactions, n_sampled_items ]
         mapped_predictions_sample_per_interaction = tf.gather(params=tf_sample_predictions,

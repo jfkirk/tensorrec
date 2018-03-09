@@ -361,11 +361,13 @@ class TensorRec(object):
         loss_graph_kwargs = {
             'tf_prediction_serial': self.tf_prediction_serial,
             'tf_interactions_serial': tf_interactions_serial,
+            'tf_interactions': tf_interactions,
+            'tf_n_users': self.tf_n_users,
+            'tf_n_items': self.tf_n_items,
         }
         if self.loss_graph_factory.is_dense:
             loss_graph_kwargs.update({
                 'tf_prediction': self.tf_prediction,
-                'tf_interactions': tf_interactions,
                 'tf_rankings': self.tf_rankings,
             })
         if self.loss_graph_factory.is_sample_based:
@@ -374,7 +376,8 @@ class TensorRec(object):
                 tf_n_sampled_items=self.tf_n_sampled_items,
                 tf_n_users=self.tf_n_users,
             )
-            loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions})
+            loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions,
+                                      'tf_n_sampled_items': self.tf_n_sampled_items})
 
         # Build loss graph
         self.tf_basic_loss = self.loss_graph_factory.connect_loss_graph(**loss_graph_kwargs)
