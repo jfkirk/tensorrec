@@ -269,12 +269,6 @@ class TensorRec(object):
         tf_interactions = tf.SparseTensor(self.tf_interaction_indices, self.tf_interaction_values,
                                           [self.tf_n_users, self.tf_n_items])
 
-        tf_sample_values_shape = [tf.shape(self.tf_sample_indices)[0]]
-        tf_sample_values = tf.ones(shape=tf_sample_values_shape)
-        tf_sample = tf.sparse_reorder(tf.SparseTensor(indices=self.tf_sample_indices,
-                                                      values=tf_sample_values,
-                                                      dense_shape=[self.tf_n_users, self.tf_n_items]))
-
         # Build the representations
         self.tf_user_representation, user_weights = \
             self.user_repr_graph_factory.connect_representation_graph(tf_features=tf_user_features,
@@ -306,7 +300,9 @@ class TensorRec(object):
             tf_x_item=tf_x_item,
         )
 
-        tf_x_user_sample, tf_x_item_sample = split_sparse_tensor_indices(tf_sparse_tensor=tf_sample, n_dimensions=2)
+        tf_transposed_sample_indices = tf.transpose(self.tf_sample_indices)
+        tf_x_user_sample = tf_transposed_sample_indices[0]
+        tf_x_item_sample = tf_transposed_sample_indices[1]
         tf_sample_predictions = self.prediction_graph_factory.connect_serial_prediction_graph(
             tf_user_representation=self.tf_user_representation,
             tf_item_representation=self.tf_item_representation,
