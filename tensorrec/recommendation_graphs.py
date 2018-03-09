@@ -57,22 +57,17 @@ def bias_prediction_serial(tf_prediction_serial, tf_projected_user_biases, tf_pr
     return tf_prediction_serial + gathered_user_biases + gathered_item_biases
 
 
-def gather_sampled_item_predictions(tf_prediction, tf_sampled_item_indices):
+def densify_sampled_item_predictions(tf_sample_predictions, tf_n_sampled_items, tf_n_users):
     """
-    Gathers the predictions for the given sampled items.
-    :param tf_prediction:
-    :param tf_sampled_item_indices:
+    Turns the serial predictions of the sample items in to a dense matrix of shape [ n_users, n_sampled_items ]
+    :param tf_sample_predictions:
+    :param tf_n_sampled_items:
+    :param tf_n_users:
     :return:
     """
-    prediction_shape = tf.shape(tf_prediction)
-    flattened_prediction = tf.reshape(tf_prediction, shape=[prediction_shape[0] * prediction_shape[1]])
-
-    indices_shape = tf.shape(tf_sampled_item_indices)
-    flattened_indices = tf.reshape(tf_sampled_item_indices, shape=[indices_shape[0] * indices_shape[1]])
-
-    gathered_predictions = tf.gather(params=flattened_prediction, indices=flattened_indices)
-    reshaped_gathered_predictions = tf.reshape(gathered_predictions, shape=indices_shape)
-    return reshaped_gathered_predictions
+    densified_shape = tf.stack([tf_n_users, tf_n_sampled_items])
+    densified_predictions = tf.reshape(tf_sample_predictions, shape=densified_shape)
+    return densified_predictions
 
 
 def rank_predictions(tf_prediction):
