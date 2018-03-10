@@ -1,7 +1,7 @@
 from tensorrec import TensorRec
 from tensorrec.eval import fit_and_eval
 from tensorrec.representation_graphs import (
-    LinearRepresentationGraph,
+    LinearRepresentationGraph, ReLURepresentationGraph
 )
 from tensorrec.loss_graphs import (
     RMSELossGraph, RMSEDenseLossGraph, SeparationLossGraph, SeparationDenseLossGraph, WMRBLossGraph
@@ -42,7 +42,7 @@ res_strings.append(header)
 
 for loss_graph in (RMSELossGraph, RMSEDenseLossGraph, SeparationLossGraph, SeparationDenseLossGraph, WMRBLossGraph):
     for pred_graph in (DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclidianSimilarityPredictionGraph):
-        for repr_graph in (LinearRepresentationGraph,):
+        for repr_graph in (LinearRepresentationGraph, ReLURepresentationGraph):
 
             model = TensorRec(n_components=n_components, biased=biased,
                               loss_graph=loss_graph(),

@@ -11,7 +11,7 @@ from PIL import Image
 
 from tensorrec import TensorRec
 from tensorrec.eval import precision_at_k, recall_at_k
-from tensorrec.loss_graphs import SeparationDenseLossGraph
+from tensorrec.loss_graphs import WMRBLossGraph
 from tensorrec.prediction_graphs import CosineSimilarityPredictionGraph
 
 from test.datasets import get_movielens_100k
@@ -36,7 +36,7 @@ fit_kwargs = {'epochs': 1, 'alpha': alpha, 'verbose': verbose, 'learning_rate': 
 
 model = TensorRec(n_components=n_components,
                   biased=biased,
-                  loss_graph=SeparationDenseLossGraph(),
+                  loss_graph=WMRBLossGraph(),
                   prediction_graph=CosineSimilarityPredictionGraph())
 
 movies_to_plot = np.random.choice(a=item_features.shape[0], size=100, replace=False)

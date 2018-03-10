@@ -16,14 +16,7 @@ For more information, and for an outline of this project, please read [this blog
 TensorRec can be installed via pip:
 ```pip install tensorrec```
 
-## TODO
-Immediate plans for development of TensorRec include:
-1. Documentation of TensorRec class and methods
-2. Implementation of WARP loss, or an alternate pairwise loss solution
-3. Implementation of more evaluation methods (AUC, F score, etc)
-4. Integration of publicly available data sets (MovieLens, etc)
-
-## Example: Input data
+## Input data
 
 The following examples show what user/item features and interactions would look like in a TensorRec system meant to recommend business consulting projects (items) to consultants (users).
 
@@ -43,7 +36,7 @@ The data is represented in matrices. TensorRec can consume these matrices as any
 
 Images from [Medium](https://medium.com/product-at-catalant-technologies/using-lightfm-to-recommend-projects-to-consultants-44084df7321c)
 
-## Example: Basic usage
+### Example: Basic usage
 ```python
 import numpy as np
 import tensorrec
@@ -71,7 +64,34 @@ r_at_k = tensorrec.eval.recall_at_k(model, interactions,
 print(np.mean(r_at_k))
 ```
 
-## Example: Defining custom representation function
+## Prediction Graphs
+TensorRec allows you to define the algorithm that will be used to compute recommendation scores from a pair of latent representations of your users and items. You can define a custom prediction function yourself, or you can use a pre-made prediction function that comes with TensorRec in tensorrec.prediction_graphs. 
+
+#### DotProductPredictionGraph
+This prediction function calculates the prediction as the dot product between the user and item representations.
+`Prediction = user_repr * item_repr`
+
+#### CosineSimilarityPredictionGraph
+This prediction function calculates the prediction as the cosine between the user and item representations.
+`Prediction = cos(user_repr, item_repr)`
+
+#### EuclidianSimilarityPredictionGraph
+This prediction function calculates the prediction as the negative euclidian distance between the user and item representations.
+`Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))`
+
+## Representation Graphs
+TensorRec allows you to define the algorithm that will be used to compute latent representations (also known as embeddings) of your users and items. You can define a custom representation function yourself, or you can use a pre-made representation function that comes with TensorRec in `tensorrec.representation_graphs`.
+
+#### LinearRepresentationGraph
+Calculates the representation by passing the features through a linear embedding.
+
+#### ReLURepresentationGraph
+Calculates the repesentations by passing the features through a single-layer ReLU neural network.
+
+#### AbstractKerasRepresentationGraph
+This abstract RepresentationGraph allows you to use Keras layers as a representation function by overriding the `create_layers()` method. An example of this can be found in `examples/keras_example.py`.
+
+### Example: Defining custom representation function
 ```python
 import tensorflow as tf
 import tensorrec
@@ -115,7 +135,30 @@ interactions, user_features, item_features = tensorrec.util.generate_dummy_data(
 model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 ```
 
-## Example: Defining custom loss function
+## Loss Graphs
+TensorRec allows you to define the algorithm that will be used to compute loss for a set of recommendation predictions. You can define a custom loss function yourself, or you can use a pre-made loss function that comes with TensorRec in `tensorrec.loss_graphs`.
+
+#### RMSELossGraph
+This loss function returns the root mean square error between the predictions and the true interactions. 
+Interactions can be any positive or negative values, and this loss function is sensitive to magnitude.
+
+#### RMSEDenseLossGraph:
+This loss function returns the root mean square error between the predictions and the true interactions, including all non-interacted values as 0s. 
+Interactions can be any positive or negative values, and this loss function is sensitive to magnitude.
+
+#### SeparationLossGraph
+This loss function models the explicit positive and negative interaction predictions as normal distributions and returns the probability of overlap between the two distributions. 
+Interactions can be any positive or negative values, but this loss function ignores the magnitude of the interaction -- interactions are grouped in to `{i <= 0}` and `{i > 0}`.
+
+#### SeparationDenseLossGraph
+This loss function models all positive and negative interaction predictions as normal distributions and returns the probability of overlap between the two distributions. This loss function includes non-interacted items as negative interactions. 
+Interactions can be any positive or negative values, but this loss function ignores the magnitude of the interaction -- interactions are grouped in to `{i <= 0}` and `{i > 0}`.
+
+#### WMRBLossGraph
+Approximation of [WMRB: Learning to Rank in a Scalable Batch Training Approach](http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf)
+Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
+
+### Example: Defining custom loss function
 ```python
 import tensorflow as tf
 import tensorrec
