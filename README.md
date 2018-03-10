@@ -65,7 +65,8 @@ print(np.mean(r_at_k))
 ```
 
 ## Prediction Graphs
-TensorRec allows you to define the algorithm that will be used to compute recommendation scores from a pair of latent representations of your users and items. You can define a custom prediction function yourself, or you can use a pre-made prediction function that comes with TensorRec in tensorrec.prediction_graphs. 
+TensorRec allows you to define the algorithm that will be used to compute recommendation scores from a pair of latent representations of your users and items.  
+You can define a custom prediction function yourself, or you can use a pre-made prediction function that comes with TensorRec in [tensorrec.prediction_graphs](tensorrec/prediction_graphs.py). 
 
 #### DotProductPredictionGraph
 This prediction function calculates the prediction as the dot product between the user and item representations.  
@@ -80,7 +81,7 @@ This prediction function calculates the prediction as the negative euclidian dis
 `Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))`
 
 ## Representation Graphs
-TensorRec allows you to define the algorithm that will be used to compute latent representations (also known as embeddings) of your users and items. You can define a custom representation function yourself, or you can use a pre-made representation function that comes with TensorRec in `tensorrec.representation_graphs`.
+TensorRec allows you to define the algorithm that will be used to compute latent representations (also known as embeddings) of your users and items. You can define a custom representation function yourself, or you can use a pre-made representation function that comes with TensorRec in [tensorrec.representation_graphs](tensorrec/representation_graphs.py).
 
 #### LinearRepresentationGraph
 Calculates the representation by passing the features through a linear embedding.
@@ -138,7 +139,7 @@ model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 
 ## Loss Graphs
 TensorRec allows you to define the algorithm that will be used to compute loss for a set of recommendation predictions.  
-You can define a custom loss function yourself, or you can use a pre-made loss function that comes with TensorRec in `tensorrec.loss_graphs`.
+You can define a custom loss function yourself, or you can use a pre-made loss function that comes with TensorRec in [tensorrec.loss_graphs](tensorrec/loss_graphs.py).
 
 #### RMSELossGraph
 This loss function returns the root mean square error between the predictions and the true interactions.  
