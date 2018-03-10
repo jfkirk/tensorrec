@@ -68,15 +68,15 @@ print(np.mean(r_at_k))
 TensorRec allows you to define the algorithm that will be used to compute recommendation scores from a pair of latent representations of your users and items. You can define a custom prediction function yourself, or you can use a pre-made prediction function that comes with TensorRec in tensorrec.prediction_graphs. 
 
 #### DotProductPredictionGraph
-This prediction function calculates the prediction as the dot product between the user and item representations.
+This prediction function calculates the prediction as the dot product between the user and item representations.  
 `Prediction = user_repr * item_repr`
 
 #### CosineSimilarityPredictionGraph
-This prediction function calculates the prediction as the cosine between the user and item representations.
+This prediction function calculates the prediction as the cosine between the user and item representations.  
 `Prediction = cos(user_repr, item_repr)`
 
 #### EuclidianSimilarityPredictionGraph
-This prediction function calculates the prediction as the negative euclidian distance between the user and item representations.
+This prediction function calculates the prediction as the negative euclidian distance between the user and item representations.  
 `Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))`
 
 ## Representation Graphs
@@ -89,7 +89,8 @@ Calculates the representation by passing the features through a linear embedding
 Calculates the repesentations by passing the features through a single-layer ReLU neural network.
 
 #### AbstractKerasRepresentationGraph
-This abstract RepresentationGraph allows you to use Keras layers as a representation function by overriding the `create_layers()` method. An example of this can be found in `examples/keras_example.py`.
+This abstract RepresentationGraph allows you to use Keras layers as a representation function by overriding the `create_layers()` method.  
+An example of this can be found in `examples/keras_example.py`.
 
 ### Example: Defining custom representation function
 ```python
@@ -136,26 +137,27 @@ model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 ```
 
 ## Loss Graphs
-TensorRec allows you to define the algorithm that will be used to compute loss for a set of recommendation predictions. You can define a custom loss function yourself, or you can use a pre-made loss function that comes with TensorRec in `tensorrec.loss_graphs`.
+TensorRec allows you to define the algorithm that will be used to compute loss for a set of recommendation predictions.  
+You can define a custom loss function yourself, or you can use a pre-made loss function that comes with TensorRec in `tensorrec.loss_graphs`.
 
 #### RMSELossGraph
-This loss function returns the root mean square error between the predictions and the true interactions. 
+This loss function returns the root mean square error between the predictions and the true interactions.  
 Interactions can be any positive or negative values, and this loss function is sensitive to magnitude.
 
 #### RMSEDenseLossGraph:
-This loss function returns the root mean square error between the predictions and the true interactions, including all non-interacted values as 0s. 
+This loss function returns the root mean square error between the predictions and the true interactions, including all non-interacted values as 0s.  
 Interactions can be any positive or negative values, and this loss function is sensitive to magnitude.
 
 #### SeparationLossGraph
-This loss function models the explicit positive and negative interaction predictions as normal distributions and returns the probability of overlap between the two distributions. 
+This loss function models the explicit positive and negative interaction predictions as normal distributions and returns the probability of overlap between the two distributions.  
 Interactions can be any positive or negative values, but this loss function ignores the magnitude of the interaction -- interactions are grouped in to `{i <= 0}` and `{i > 0}`.
 
 #### SeparationDenseLossGraph
-This loss function models all positive and negative interaction predictions as normal distributions and returns the probability of overlap between the two distributions. This loss function includes non-interacted items as negative interactions. 
+This loss function models all positive and negative interaction predictions as normal distributions and returns the probability of overlap between the two distributions. This loss function includes non-interacted items as negative interactions.  
 Interactions can be any positive or negative values, but this loss function ignores the magnitude of the interaction -- interactions are grouped in to `{i <= 0}` and `{i > 0}`.
 
 #### WMRBLossGraph
-Approximation of [WMRB: Learning to Rank in a Scalable Batch Training Approach](http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf)
+Approximation of [WMRB: Learning to Rank in a Scalable Batch Training Approach](http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf) . 
 Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
 
 ### Example: Defining custom loss function
