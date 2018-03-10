@@ -5,10 +5,14 @@ import scipy.sparse as sp
 
 
 def sample_items(n_items, n_users, n_sampled_items, replace):
-    return np.array([
-        np.random.choice(a=n_items, size=n_sampled_items, replace=replace) + (user_count * n_users)
-        for user_count in range(n_users)
-    ])
+    items_per_user = [np.random.choice(a=n_items, size=n_sampled_items, replace=replace) for _ in range(n_users)]
+
+    sample_indices = []
+    for user, users_items in enumerate(items_per_user):
+        for item in users_items:
+            sample_indices.append((user, item))
+
+    return sample_indices
 
 
 def calculate_batched_alpha(num_batches, alpha):

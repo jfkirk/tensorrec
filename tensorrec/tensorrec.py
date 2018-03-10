@@ -11,7 +11,7 @@ from .prediction_graphs import (
     EuclidianSimilarityPredictionGraph
 )
 from .recommendation_graphs import (project_biases, split_sparse_tensor_indices, bias_prediction_dense,
-                                    bias_prediction_serial, rank_predictions, gather_sampled_item_predictions)
+                                    bias_prediction_serial, rank_predictions, densify_sampled_item_predictions)
 from .representation_graphs import AbstractRepresentationGraph, LinearRepresentationGraph
 from .session_management import get_session
 from .util import sample_items, calculate_batched_alpha
@@ -85,7 +85,7 @@ class TensorRec(object):
             # Feed placeholders
             'tf_n_users', 'tf_n_items', 'tf_user_feature_indices', 'tf_user_feature_values', 'tf_item_feature_indices',
             'tf_item_feature_values', 'tf_interaction_indices', 'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
-            'tf_sampled_item_indices'
+            'tf_sample_indices', 'tf_n_sampled_items'
         ]
         self.graph_operation_hook_attr_names = [
 
@@ -245,15 +245,19 @@ class TensorRec(object):
         # Initialize placeholder values for inputs
         self.tf_n_users = tf.placeholder('int64')
         self.tf_n_items = tf.placeholder('int64')
+        self.tf_n_sampled_items = tf.placeholder('int64')
+
+        # SparseTensor placeholders
         self.tf_user_feature_indices = tf.placeholder('int64', [None, 2])
         self.tf_user_feature_values = tf.placeholder('float', [None])
         self.tf_item_feature_indices = tf.placeholder('int64', [None, 2])
         self.tf_item_feature_values = tf.placeholder('float', [None])
         self.tf_interaction_indices = tf.placeholder('int64', [None, 2])
         self.tf_interaction_values = tf.placeholder('float', [None])
+
+        self.tf_sample_indices = tf.placeholder('int64', [None, None])
         self.tf_learning_rate = tf.placeholder('float', None)
         self.tf_alpha = tf.placeholder('float', None)
-        self.tf_sampled_item_indices = tf.placeholder('int64', [None, None])
 
         # Construct the features and interactions as sparse matrices
         tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
@@ -294,6 +298,16 @@ class TensorRec(object):
             tf_x_item=tf_x_item,
         )
 
+        tf_transposed_sample_indices = tf.transpose(self.tf_sample_indices)
+        tf_x_user_sample = tf_transposed_sample_indices[0]
+        tf_x_item_sample = tf_transposed_sample_indices[1]
+        tf_sample_predictions_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
+            tf_user_representation=self.tf_user_representation,
+            tf_item_representation=self.tf_item_representation,
+            tf_x_user=tf_x_user_sample,
+            tf_x_item=tf_x_item_sample,
+        )
+
         # Add biases, if this is a biased estimator
         if self.biased:
             tf_user_feature_biases, tf_projected_user_biases = project_biases(
@@ -315,6 +329,12 @@ class TensorRec(object):
                                                                tf_projected_item_biases=tf_projected_item_biases,
                                                                tf_x_user=tf_x_user,
                                                                tf_x_item=tf_x_item)
+
+            tf_sample_predictions_serial = bias_prediction_serial(tf_prediction_serial=tf_sample_predictions_serial,
+                                                                  tf_projected_user_biases=tf_projected_user_biases,
+                                                                  tf_projected_item_biases=tf_projected_item_biases,
+                                                                  tf_x_user=tf_x_user_sample,
+                                                                  tf_x_item=tf_x_item_sample)
 
         tf_interactions_serial = tf_interactions.values
 
@@ -339,18 +359,23 @@ class TensorRec(object):
         loss_graph_kwargs = {
             'tf_prediction_serial': self.tf_prediction_serial,
             'tf_interactions_serial': tf_interactions_serial,
+            'tf_interactions': tf_interactions,
+            'tf_n_users': self.tf_n_users,
+            'tf_n_items': self.tf_n_items,
         }
         if self.loss_graph_factory.is_dense:
             loss_graph_kwargs.update({
                 'tf_prediction': self.tf_prediction,
-                'tf_interactions': tf_interactions,
                 'tf_rankings': self.tf_rankings,
             })
         if self.loss_graph_factory.is_sample_based:
-            tf_sample_predictions = gather_sampled_item_predictions(
-                tf_prediction=self.tf_prediction, tf_sampled_item_indices=self.tf_sampled_item_indices
+            tf_sample_predictions = densify_sampled_item_predictions(
+                tf_sample_predictions_serial=tf_sample_predictions_serial,
+                tf_n_sampled_items=self.tf_n_sampled_items,
+                tf_n_users=self.tf_n_users,
             )
-            loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions})
+            loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions,
+                                      'tf_n_sampled_items': self.tf_n_sampled_items})
 
         # Build loss graph
         self.tf_basic_loss = self.loss_graph_factory.connect_loss_graph(**loss_graph_kwargs)
@@ -475,11 +500,12 @@ class TensorRec(object):
 
                 # Handle random item sampling, if applicable
                 if self.loss_graph_factory.is_sample_based:
-                    sampled_item_indices = sample_items(n_users=feed_dict[self.tf_n_users],
-                                                        n_items=feed_dict[self.tf_n_items],
-                                                        n_sampled_items=n_sampled_items,
-                                                        replace=self.loss_graph_factory.is_sampled_with_replacement)
-                    feed_dict[self.tf_sampled_item_indices] = sampled_item_indices
+                    sample_indices = sample_items(n_users=feed_dict[self.tf_n_users],
+                                                  n_items=feed_dict[self.tf_n_items],
+                                                  n_sampled_items=n_sampled_items,
+                                                  replace=self.loss_graph_factory.is_sampled_with_replacement)
+                    feed_dict[self.tf_sample_indices] = sample_indices
+                    feed_dict[self.tf_n_sampled_items] = n_sampled_items
 
                 # TODO find something more elegant than these cascaded ifs
                 if not verbose:
