@@ -108,7 +108,7 @@ class RecommendationGraphsTestCase(TestCase):
     def test_densify_sampled_item_predictions(self):
         input_data = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
         result = densify_sampled_item_predictions(
-            tf_sample_predictions=input_data,
+            tf_sample_predictions_serial=input_data,
             tf_n_sampled_items=4,
             tf_n_users=3,
         ).eval(session=self.session)
