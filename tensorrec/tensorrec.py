@@ -259,8 +259,6 @@ class TensorRec(object):
         self.tf_learning_rate = tf.placeholder('float', None)
         self.tf_alpha = tf.placeholder('float', None)
 
-        # from nose.tools import set_trace;set_trace()
-
         # Construct the features and interactions as sparse matrices
         tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
                                            [self.tf_n_users, n_user_features])
@@ -303,7 +301,7 @@ class TensorRec(object):
         tf_transposed_sample_indices = tf.transpose(self.tf_sample_indices)
         tf_x_user_sample = tf_transposed_sample_indices[0]
         tf_x_item_sample = tf_transposed_sample_indices[1]
-        tf_sample_predictions = self.prediction_graph_factory.connect_serial_prediction_graph(
+        tf_sample_predictions_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
             tf_user_representation=self.tf_user_representation,
             tf_item_representation=self.tf_item_representation,
             tf_x_user=tf_x_user_sample,
@@ -332,11 +330,11 @@ class TensorRec(object):
                                                                tf_x_user=tf_x_user,
                                                                tf_x_item=tf_x_item)
 
-            tf_sample_predictions = bias_prediction_serial(tf_prediction_serial=tf_sample_predictions,
-                                                           tf_projected_user_biases=tf_projected_user_biases,
-                                                           tf_projected_item_biases=tf_projected_item_biases,
-                                                           tf_x_user=tf_x_user_sample,
-                                                           tf_x_item=tf_x_item_sample)
+            tf_sample_predictions_serial = bias_prediction_serial(tf_prediction_serial=tf_sample_predictions_serial,
+                                                                  tf_projected_user_biases=tf_projected_user_biases,
+                                                                  tf_projected_item_biases=tf_projected_item_biases,
+                                                                  tf_x_user=tf_x_user_sample,
+                                                                  tf_x_item=tf_x_item_sample)
 
         tf_interactions_serial = tf_interactions.values
 
@@ -372,7 +370,7 @@ class TensorRec(object):
             })
         if self.loss_graph_factory.is_sample_based:
             tf_sample_predictions = densify_sampled_item_predictions(
-                tf_sample_predictions=tf_sample_predictions,
+                tf_sample_predictions_serial=tf_sample_predictions_serial,
                 tf_n_sampled_items=self.tf_n_sampled_items,
                 tf_n_users=self.tf_n_users,
             )

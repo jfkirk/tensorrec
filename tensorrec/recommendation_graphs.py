@@ -57,16 +57,16 @@ def bias_prediction_serial(tf_prediction_serial, tf_projected_user_biases, tf_pr
     return tf_prediction_serial + gathered_user_biases + gathered_item_biases
 
 
-def densify_sampled_item_predictions(tf_sample_predictions, tf_n_sampled_items, tf_n_users):
+def densify_sampled_item_predictions(tf_sample_predictions_serial, tf_n_sampled_items, tf_n_users):
     """
     Turns the serial predictions of the sample items in to a dense matrix of shape [ n_users, n_sampled_items ]
-    :param tf_sample_predictions:
+    :param tf_sample_predictions_serial:
     :param tf_n_sampled_items:
     :param tf_n_users:
     :return:
     """
     densified_shape = tf.stack([tf_n_users, tf_n_sampled_items])
-    densified_predictions = tf.reshape(tf_sample_predictions, shape=densified_shape)
+    densified_predictions = tf.reshape(tf_sample_predictions_serial, shape=densified_shape)
     return densified_predictions
 
 
