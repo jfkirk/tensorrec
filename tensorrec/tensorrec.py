@@ -78,7 +78,6 @@ class TensorRec(object):
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
             'tf_predict_dot_product', 'tf_predict_cosine_similarity', 'tf_predict_euclidian_similarity',
-            'tf_projected_user_biases', 'tf_projected_item_biases',
 
             # Training nodes
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
@@ -88,6 +87,10 @@ class TensorRec(object):
             'tf_item_feature_values', 'tf_interaction_indices', 'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
             'tf_sample_indices', 'tf_n_sampled_items'
         ]
+        if self.biased:
+            self.graph_tensor_hook_attr_names += [
+                'tf_projected_user_biases', 'tf_projected_item_biases',
+            ]
         self.graph_operation_hook_attr_names = [
 
             # AdamOptimizer
@@ -391,8 +394,7 @@ class TensorRec(object):
         # Get node names for each graph hook
         for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
             hook = self.__getattribute__(graph_tensor_hook_attr_name)
-            if hook is not None:
-                self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
+            self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
         for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
             hook = self.__getattribute__(graph_operation_hook_attr_name)
             self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
