@@ -78,6 +78,7 @@ class TensorRec(object):
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
             'tf_predict_dot_product', 'tf_predict_cosine_similarity', 'tf_predict_euclidian_similarity',
+            'tf_projected_user_biases', 'tf_projected_item_biases',
 
             # Training nodes
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
@@ -310,31 +311,34 @@ class TensorRec(object):
 
         # Add biases, if this is a biased estimator
         if self.biased:
-            tf_user_feature_biases, tf_projected_user_biases = project_biases(
+            tf_user_feature_biases, self.tf_projected_user_biases = project_biases(
                 tf_features=tf_user_features, n_features=n_user_features
             )
-            tf_item_feature_biases, tf_projected_item_biases = project_biases(
+            tf_item_feature_biases, self.tf_projected_item_biases = project_biases(
                 tf_features=tf_item_features, n_features=n_item_features
             )
 
             tf_weights.append(tf_user_feature_biases)
             tf_weights.append(tf_item_feature_biases)
 
-            self.tf_prediction = bias_prediction_dense(tf_prediction=self.tf_prediction,
-                                                       tf_projected_user_biases=tf_projected_user_biases,
-                                                       tf_projected_item_biases=tf_projected_item_biases)
+            self.tf_prediction = bias_prediction_dense(
+                tf_prediction=self.tf_prediction,
+                tf_projected_user_biases=self.tf_projected_user_biases,
+                tf_projected_item_biases=self.tf_projected_item_biases)
 
-            self.tf_prediction_serial = bias_prediction_serial(tf_prediction_serial=self.tf_prediction_serial,
-                                                               tf_projected_user_biases=tf_projected_user_biases,
-                                                               tf_projected_item_biases=tf_projected_item_biases,
-                                                               tf_x_user=tf_x_user,
-                                                               tf_x_item=tf_x_item)
+            self.tf_prediction_serial = bias_prediction_serial(
+                tf_prediction_serial=self.tf_prediction_serial,
+                tf_projected_user_biases=self.tf_projected_user_biases,
+                tf_projected_item_biases=self.tf_projected_item_biases,
+                tf_x_user=tf_x_user,
+                tf_x_item=tf_x_item)
 
-            tf_sample_predictions_serial = bias_prediction_serial(tf_prediction_serial=tf_sample_predictions_serial,
-                                                                  tf_projected_user_biases=tf_projected_user_biases,
-                                                                  tf_projected_item_biases=tf_projected_item_biases,
-                                                                  tf_x_user=tf_x_user_sample,
-                                                                  tf_x_item=tf_x_item_sample)
+            tf_sample_predictions_serial = bias_prediction_serial(
+                tf_prediction_serial=tf_sample_predictions_serial,
+                tf_projected_user_biases=self.tf_projected_user_biases,
+                tf_projected_item_biases=self.tf_projected_item_biases,
+                tf_x_user=tf_x_user_sample,
+                tf_x_item=tf_x_item_sample)
 
         tf_interactions_serial = tf_interactions.values
 
@@ -387,7 +391,8 @@ class TensorRec(object):
         # Get node names for each graph hook
         for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
             hook = self.__getattribute__(graph_tensor_hook_attr_name)
-            self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
+            if hook is not None:
+                self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
         for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
             hook = self.__getattribute__(graph_operation_hook_attr_name)
             self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
@@ -634,6 +639,18 @@ class TensorRec(object):
         feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
         item_repr = self.tf_item_representation.eval(session=get_session(), feed_dict=feed_dict)
         return item_repr
+
+    def predict_user_bias(self, user_features):
+        # TODO: docstring
+        feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
+        predictions = self.tf_projected_user_biases.eval(session=get_session(), feed_dict=feed_dict)
+        return predictions
+
+    def predict_item_bias(self, item_features):
+        # TODO: docstring
+        feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
+        predictions = self.tf_projected_item_biases.eval(session=get_session(), feed_dict=feed_dict)
+        return predictions
 
     def save_model(self, directory_path):
         """

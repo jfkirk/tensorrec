@@ -115,6 +115,14 @@ class TensorRecTestCase(TestCase):
         item_repr = self.unbiased_model.predict_item_representation(self.item_features)
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
+    def test_predict_user_bias(self):
+        user_bias = self.standard_model.predict_user_bias(self.user_features)
+        print(user_bias)  # TODO what are expected values?
+
+    def test_predict_item_bias(self):
+        item_bias = self.standard_model.predict_item_bias(self.item_features)
+        print(item_bias)  # TODO what are expected values?
+
 
 class TensorRecNormalizedTestCase(TensorRecTestCase):
 
