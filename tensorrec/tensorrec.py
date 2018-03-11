@@ -78,7 +78,6 @@ class TensorRec(object):
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
             'tf_predict_dot_product', 'tf_predict_cosine_similarity', 'tf_predict_euclidian_similarity',
-            'tf_projected_user_biases', 'tf_projected_item_biases',
 
             # Training nodes
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
@@ -87,6 +86,9 @@ class TensorRec(object):
             'tf_n_users', 'tf_n_items', 'tf_user_feature_indices', 'tf_user_feature_values', 'tf_item_feature_indices',
             'tf_item_feature_values', 'tf_interaction_indices', 'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
             'tf_sample_indices', 'tf_n_sampled_items'
+        ]
+        self.biased_graph_tensor_hook_attr_names = [
+            'tf_projected_user_biases', 'tf_projected_item_biases',
         ]
         self.graph_operation_hook_attr_names = [
 
@@ -99,6 +101,7 @@ class TensorRec(object):
         # A map of every graph hook attr name to the node name after construction
         # Tensors and operations are stored separated because they are handled differently by TensorFlow
         self.graph_tensor_hook_node_names = {}
+        self.biased_graph_tensor_hook_node_names = {}
         self.graph_operation_hook_node_names = {}
 
     def _clear_graph_hook_attrs(self):
@@ -106,6 +109,9 @@ class TensorRec(object):
             self.__setattr__(graph_tensor_hook_attr_name, None)
         for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
             self.__setattr__(graph_operation_hook_attr_name, None)
+        if self.biased:
+            for biased_graph_tensor_hook_attr_name in self.biased_graph_tensor_hook_attr_names:
+                self.__setattr__(biased_graph_tensor_hook_attr_name, None)
 
     def _attach_graph_hook_attrs(self):
         session = get_session()
@@ -119,6 +125,13 @@ class TensorRec(object):
             graph_operation_hook_node_name = self.graph_operation_hook_node_names[graph_operation_hook_attr_name]
             node = session.graph.get_operation_by_name(name=graph_operation_hook_node_name)
             self.__setattr__(graph_operation_hook_attr_name, node)
+
+        if self.biased:
+            for biased_graph_tensor_hook_attr_name in self.biased_graph_tensor_hook_attr_names:
+                biased_graph_tensor_hook_node_name = self.biased_graph_tensor_hook_node_names[
+                    biased_graph_tensor_hook_attr_name]
+                node = session.graph.get_tensor_by_name(name=biased_graph_tensor_hook_node_name)
+                self.__setattr__(biased_graph_tensor_hook_attr_name, node)
 
     def _create_feed_dict(self, interactions_matrix, user_features_matrix, item_features_matrix,
                           extra_feed_kwargs=None):
@@ -391,11 +404,14 @@ class TensorRec(object):
         # Get node names for each graph hook
         for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
             hook = self.__getattribute__(graph_tensor_hook_attr_name)
-            if hook is not None:
-                self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
+            self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
         for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
             hook = self.__getattribute__(graph_operation_hook_attr_name)
             self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
+        if self.biased:
+            for biased_graph_tensor_hook_attr_name in self.biased_graph_tensor_hook_attr_names:
+                hook = self.__getattribute__(biased_graph_tensor_hook_attr_name)
+                self.biased_graph_tensor_hook_node_names[biased_graph_tensor_hook_attr_name] = hook.name
 
     def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.00001,
             verbose=False, out_sample_interactions=None, user_batch_size=None, n_sampled_items=None):
