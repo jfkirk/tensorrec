@@ -644,12 +644,16 @@ class TensorRec(object):
 
     def predict_user_bias(self, user_features):
         # TODO: docstring
+        if not self.biased:
+            raise NotImplementedError('Cannot predict user bias for unbiased model')
         feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
         predictions = self.tf_projected_user_biases.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
 
     def predict_item_bias(self, item_features):
         # TODO: docstring
+        if not self.biased:
+            raise NotImplementedError('Cannot predict item bias for unbiased model')
         feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
         predictions = self.tf_projected_item_biases.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
