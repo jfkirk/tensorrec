@@ -8,6 +8,7 @@ import tensorflow as tf
 from tensorrec import TensorRec
 from tensorrec.util import generate_dummy_data_with_indicator, generate_dummy_data
 from tensorrec.session_management import set_session
+from test.datasets import get_movielens_100k
 
 
 class TensorRecTestCase(TestCase):
@@ -127,13 +128,27 @@ class TensorRecTestCase(TestCase):
             self.unbiased_model.predict_item_bias,
             self.item_features)
 
+
+class TensorRecMovielensPrediction(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.movielens_100k = get_movielens_100k()
+        train_interactions, test_interactions, cls.user_features, cls.item_features, _ = cls.movielens_100k
+        cls.model = TensorRec()
+        cls.model.fit(
+            interactions=train_interactions,
+            user_features=cls.user_features,
+            item_features=cls.item_features,
+            epochs=5)
+
     def test_predict_user_bias(self):
-        user_bias = self.standard_model.predict_user_bias(self.user_features)
-        print(user_bias)  # TODO what are expected values?
+        user_bias = self.model.predict_user_bias(self.user_features)
+        self.assertTrue(any(user_bias))  # Make sure it isn't all 0s
 
     def test_predict_item_bias(self):
-        item_bias = self.standard_model.predict_item_bias(self.item_features)
-        print(item_bias)  # TODO what are expected values?
+        item_bias = self.model.predict_item_bias(self.item_features)
+        self.assertTrue(any(item_bias))  # Make sure it isn't all 0s
 
 
 class TensorRecNormalizedTestCase(TensorRecTestCase):
