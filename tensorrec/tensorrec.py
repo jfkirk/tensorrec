@@ -31,14 +31,18 @@ class TensorRec(object):
         A TensorRec recommendation model.
         :param n_components: Integer
         The dimension of a single output of the representation function. Must be >= 1.
-        :param user_repr_graph: Method
-        A method which creates TensorFlow nodes to calculate the user representation.
+        :param user_repr_graph: AbstractRepresentationGraph
+        An object which inherits AbstractRepresentationGraph that contains a method to calculate user representations.
         See tensorrec.representation_graphs for examples.
-        :param item_repr_graph: Method
-        A method which creates TensorFlow nodes to calculate the item representation.
+        :param item_repr_graph: AbstractRepresentationGraph
+        An object which inherits AbstractRepresentationGraph that contains a method to calculate item representations.
         See tensorrec.representation_graphs for examples.
+        :param prediction_graph: AbstractPredictionGraph
+        An object which inherits AbstractPredictionGraph that contains a method to calculate predictions from a pair of
+        user/item reprs.
+        See tensorrec.prediction_graphs for examples.
         :param loss_graph: AbstractLossGraph
-        A class which inherits AbstractLossGraph which contains a method to calculate the loss function.
+        An object which inherits AbstractLossGraph that contains a method to calculate the loss function.
         See tensorrec.loss_graphs for examples.
         :param biased: bool
         If True, a bias value will be calculated for every user feature and item feature.
