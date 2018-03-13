@@ -647,7 +647,13 @@ class TensorRec(object):
         return item_repr
 
     def predict_user_bias(self, user_features):
-        # TODO: docstring
+        """
+        Predict bias values for the given users.
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :return: np.ndarray
+        The user biases in an ndarray of shape [n_users]
+        """
         if not self.biased:
             raise NotImplementedError('Cannot predict user bias for unbiased model')
         feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
@@ -655,7 +661,13 @@ class TensorRec(object):
         return predictions
 
     def predict_item_bias(self, item_features):
-        # TODO: docstring
+        """
+        Predict bias values for the given items.
+        :param item_features: scipy.sparse matrix
+        A matrix of item features of shape [n_items, n_item_features].
+        :return: np.ndarray
+        The item biases in an ndarray of shape [n_items]
+        """
         if not self.biased:
             raise NotImplementedError('Cannot predict item bias for unbiased model')
         feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)

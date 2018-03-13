@@ -110,11 +110,13 @@ class SeparationDenseLossGraph(AbstractLossGraph):
     def connect_loss_graph(self, tf_prediction, tf_interactions, **kwargs):
 
         interactions_shape = tf.shape(tf_interactions)
+        int_serial_shape = tf.cast([interactions_shape[0] * interactions_shape[1]], tf.int32)
         tf_interactions_serial = tf.reshape(tf.sparse_tensor_to_dense(tf_interactions),
-                                            shape=[interactions_shape[0] * interactions_shape[1]])
+                                            shape=int_serial_shape)
 
         prediction_shape = tf.shape(tf_prediction)
-        tf_prediction_serial = tf.reshape(tf_prediction, shape=[prediction_shape[0] * prediction_shape[1]])
+        pred_serial_shape = tf.cast([prediction_shape[0] * prediction_shape[1]], tf.int32)
+        tf_prediction_serial = tf.reshape(tf_prediction, shape=pred_serial_shape)
 
         tf_positive_mask = tf.greater(tf_interactions_serial, 0.0)
         tf_negative_mask = tf.less_equal(tf_interactions_serial, 0.0)

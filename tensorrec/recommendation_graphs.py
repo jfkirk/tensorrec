@@ -65,7 +65,7 @@ def densify_sampled_item_predictions(tf_sample_predictions_serial, tf_n_sampled_
     :param tf_n_users:
     :return:
     """
-    densified_shape = tf.stack([tf_n_users, tf_n_sampled_items])
+    densified_shape = tf.cast(tf.stack([tf_n_users, tf_n_sampled_items]), tf.int32)
     densified_predictions = tf.reshape(tf_sample_predictions_serial, shape=densified_shape)
     return densified_predictions
 
