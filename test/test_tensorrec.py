@@ -128,7 +128,8 @@ class TensorRecTestCase(TestCase):
             self.item_features)
 
 
-class TensorRecMovielensPrediction(TestCase):
+class TensorRecBiasedPrediction(TestCase):
+    # TODO: Collapse these into TensorRecTestCase once the fit bug is fixed
 
     @classmethod
     def setUpClass(cls):
