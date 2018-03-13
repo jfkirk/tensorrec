@@ -115,6 +115,40 @@ class TensorRecTestCase(TestCase):
         item_repr = self.unbiased_model.predict_item_representation(self.item_features)
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
 
+    def test_predict_user_bias_unbiased_model(self):
+        self.assertRaises(
+            NotImplementedError,
+            self.unbiased_model.predict_user_bias,
+            self.user_features)
+
+    def test_predict_item_bias_unbiased_model(self):
+        self.assertRaises(
+            NotImplementedError,
+            self.unbiased_model.predict_item_bias,
+            self.item_features)
+
+
+class TensorRecBiasedPrediction(TestCase):
+    # TODO: Collapse these into TensorRecTestCase once the fit bug is fixed
+
+    @classmethod
+    def setUpClass(cls):
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
+            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
+            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+        )
+
+        cls.standard_model = TensorRec(n_components=10)
+        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+    def test_predict_user_bias(self):
+        user_bias = self.standard_model.predict_user_bias(self.user_features)
+        self.assertTrue(any(user_bias))  # Make sure it isn't all 0s
+
+    def test_predict_item_bias(self):
+        item_bias = self.standard_model.predict_item_bias(self.item_features)
+        self.assertTrue(any(item_bias))  # Make sure it isn't all 0s
+
 
 class TensorRecNormalizedTestCase(TensorRecTestCase):
 

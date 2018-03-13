@@ -91,6 +91,10 @@ class TensorRec(object):
             'tf_item_feature_values', 'tf_interaction_indices', 'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
             'tf_sample_indices', 'tf_n_sampled_items'
         ]
+        if self.biased:
+            self.graph_tensor_hook_attr_names += [
+                'tf_projected_user_biases', 'tf_projected_item_biases',
+            ]
         self.graph_operation_hook_attr_names = [
 
             # AdamOptimizer
@@ -314,31 +318,34 @@ class TensorRec(object):
 
         # Add biases, if this is a biased estimator
         if self.biased:
-            tf_user_feature_biases, tf_projected_user_biases = project_biases(
+            tf_user_feature_biases, self.tf_projected_user_biases = project_biases(
                 tf_features=tf_user_features, n_features=n_user_features
             )
-            tf_item_feature_biases, tf_projected_item_biases = project_biases(
+            tf_item_feature_biases, self.tf_projected_item_biases = project_biases(
                 tf_features=tf_item_features, n_features=n_item_features
             )
 
             tf_weights.append(tf_user_feature_biases)
             tf_weights.append(tf_item_feature_biases)
 
-            self.tf_prediction = bias_prediction_dense(tf_prediction=self.tf_prediction,
-                                                       tf_projected_user_biases=tf_projected_user_biases,
-                                                       tf_projected_item_biases=tf_projected_item_biases)
+            self.tf_prediction = bias_prediction_dense(
+                tf_prediction=self.tf_prediction,
+                tf_projected_user_biases=self.tf_projected_user_biases,
+                tf_projected_item_biases=self.tf_projected_item_biases)
 
-            self.tf_prediction_serial = bias_prediction_serial(tf_prediction_serial=self.tf_prediction_serial,
-                                                               tf_projected_user_biases=tf_projected_user_biases,
-                                                               tf_projected_item_biases=tf_projected_item_biases,
-                                                               tf_x_user=tf_x_user,
-                                                               tf_x_item=tf_x_item)
+            self.tf_prediction_serial = bias_prediction_serial(
+                tf_prediction_serial=self.tf_prediction_serial,
+                tf_projected_user_biases=self.tf_projected_user_biases,
+                tf_projected_item_biases=self.tf_projected_item_biases,
+                tf_x_user=tf_x_user,
+                tf_x_item=tf_x_item)
 
-            tf_sample_predictions_serial = bias_prediction_serial(tf_prediction_serial=tf_sample_predictions_serial,
-                                                                  tf_projected_user_biases=tf_projected_user_biases,
-                                                                  tf_projected_item_biases=tf_projected_item_biases,
-                                                                  tf_x_user=tf_x_user_sample,
-                                                                  tf_x_item=tf_x_item_sample)
+            tf_sample_predictions_serial = bias_prediction_serial(
+                tf_prediction_serial=tf_sample_predictions_serial,
+                tf_projected_user_biases=self.tf_projected_user_biases,
+                tf_projected_item_biases=self.tf_projected_item_biases,
+                tf_x_user=tf_x_user_sample,
+                tf_x_item=tf_x_item_sample)
 
         tf_interactions_serial = tf_interactions.values
 
@@ -638,6 +645,22 @@ class TensorRec(object):
         feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
         item_repr = self.tf_item_representation.eval(session=get_session(), feed_dict=feed_dict)
         return item_repr
+
+    def predict_user_bias(self, user_features):
+        # TODO: docstring
+        if not self.biased:
+            raise NotImplementedError('Cannot predict user bias for unbiased model')
+        feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
+        predictions = self.tf_projected_user_biases.eval(session=get_session(), feed_dict=feed_dict)
+        return predictions
+
+    def predict_item_bias(self, item_features):
+        # TODO: docstring
+        if not self.biased:
+            raise NotImplementedError('Cannot predict item bias for unbiased model')
+        feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
+        predictions = self.tf_projected_item_biases.eval(session=get_session(), feed_dict=feed_dict)
+        return predictions
 
     def save_model(self, directory_path):
         """
