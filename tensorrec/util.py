@@ -2,10 +2,12 @@ import math
 import numpy as np
 import random
 import scipy.sparse as sp
+import tensorflow as tf
 
 
 def sample_items(n_items, n_users, n_sampled_items, replace):
-    items_per_user = [np.random.choice(a=n_items, size=n_sampled_items, replace=replace) for _ in range(n_users)]
+    items_per_user = [np.random.choice(a=n_items, size=n_sampled_items, replace=replace)
+                      for _ in range(n_users)]
 
     sample_indices = []
     for user, users_items in enumerate(items_per_user):
@@ -83,3 +85,7 @@ def append_to_string_at_point(string, value, point):
         string += " "
     string += "{}".format(value)
     return string
+
+
+def simple_tf_print(tensor, places=100):
+    return tf.Print(tensor, [tensor, tf.shape(tensor)], summarize=places)

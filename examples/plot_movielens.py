@@ -32,15 +32,17 @@ learning_rate = .01
 compress_images = False
 
 fit_kwargs = {'epochs': 1, 'alpha': alpha, 'verbose': verbose, 'learning_rate': learning_rate,
-              'n_sampled_items': int(item_features.shape[0] * .01)}
+              'n_sampled_items': int(item_features.shape[0] * .1)}
 
 model = TensorRec(n_components=n_components,
                   biased=biased,
                   loss_graph=WMRBLossGraph(),
-                  prediction_graph=CosineSimilarityPredictionGraph())
+                  prediction_graph=CosineSimilarityPredictionGraph(),
+                  normalize_users=True,
+                  normalize_items=True)
 
 movies_to_plot = np.random.choice(a=item_features.shape[0], size=100, replace=False)
-user_to_plot = np.random.choice(a=user_features.shape[0], size=200, replace=False)
+user_to_plot = np.random.choice(a=user_features.shape[0], size=400, replace=False)
 
 for epoch in range(epochs):
     model.fit_partial(interactions=train_interactions, user_features=user_features, item_features=item_features,
@@ -55,11 +57,12 @@ for epoch in range(epochs):
     ax.axvline(x=0, color='k')
     ax.scatter(*zip(*user_positions[user_to_plot]), color='r', s=1)
     ax.scatter(*zip(*movie_positions[movies_to_plot]))
+    ax.set_aspect('equal')
 
     for i, movie in enumerate(movies_to_plot):
         movie_name = item_titles[movie]
         movie_position = movie_positions[movie]
-        ax.annotate(movie_name, movie_position, fontsize='x-small')
+        ax.annotate(movie_name, movie_position[0:2], fontsize='x-small')
 
     file = '/tmp/tensorrec/movielens/epoch_{}.jpg'.format(epoch)
     plt.savefig(file)
