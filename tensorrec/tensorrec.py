@@ -305,6 +305,10 @@ class TensorRec(object):
         tastes_tf_predictions = []
         tastes_tf_prediction_serials = []
         tastes_tf_sample_prediction_serials = []
+        tastes_tf_dot_products = []
+        tastes_tf_cosine_sims = []
+        tastes_tf_euclidian_sims = []
+
         for taste in range(self.n_tastes):
             tf_user_representation, user_weights = \
                 self.user_repr_graph_factory.connect_representation_graph(tf_features=tf_user_features,
@@ -319,25 +323,38 @@ class TensorRec(object):
                 tf_user_representation=tf_user_representation,
                 tf_item_representation=self.tf_item_representation
             )
-
             tf_prediction_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
                 tf_user_representation=tf_user_representation,
                 tf_item_representation=self.tf_item_representation,
                 tf_x_user=tf_x_user,
                 tf_x_item=tf_x_item,
             )
-
             tf_sample_predictions_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
                 tf_user_representation=tf_user_representation,
                 tf_item_representation=self.tf_item_representation,
                 tf_x_user=tf_x_user_sample,
                 tf_x_item=tf_x_item_sample,
             )
+            tf_predict_dot_product = DotProductPredictionGraph().connect_dense_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation,
+            )
+            tf_predict_cosine_similarity = CosineSimilarityPredictionGraph().connect_dense_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation,
+            )
+            tf_predict_euclidian_similarity = EuclidianSimilarityPredictionGraph().connect_dense_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation,
+            )
 
             # Append to tastes
             tastes_tf_predictions.append(tf_prediction)
             tastes_tf_prediction_serials.append(tf_prediction_serial)
             tastes_tf_sample_prediction_serials.append(tf_sample_predictions_serial)
+            tastes_tf_dot_products.append(tf_predict_dot_product)
+            tastes_tf_cosine_sims.append(tf_predict_cosine_similarity)
+            tastes_tf_euclidian_sims.append(tf_predict_euclidian_similarity)
 
         self.tf_user_representation = tf.stack(tastes_tf_user_representations)
         self.tf_prediction = collapse_mixture_of_tastes(tastes_tf_predictions)
@@ -379,35 +396,9 @@ class TensorRec(object):
 
         # Construct API nodes
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
-
-        # Construct predictions per taste
-        tastes_dot_products = []
-        tastes_cosine_sims = []
-        tastes_euclidian_sims = []
-        for tf_user_representation in tastes_tf_user_representations:
-
-            # Build predictions for each taste
-            tf_predict_dot_product = DotProductPredictionGraph().connect_dense_prediction_graph(
-                tf_user_representation=tf_user_representation,
-                tf_item_representation=self.tf_item_representation,
-            )
-            tf_predict_cosine_similarity = CosineSimilarityPredictionGraph().connect_dense_prediction_graph(
-                tf_user_representation=tf_user_representation,
-                tf_item_representation=self.tf_item_representation,
-            )
-            tf_predict_euclidian_similarity = EuclidianSimilarityPredictionGraph().connect_dense_prediction_graph(
-                tf_user_representation=tf_user_representation,
-                tf_item_representation=self.tf_item_representation,
-            )
-
-            # Append to tastes
-            tastes_dot_products.append(tf_predict_dot_product)
-            tastes_cosine_sims.append(tf_predict_cosine_similarity)
-            tastes_euclidian_sims.append(tf_predict_euclidian_similarity)
-
-        self.tf_predict_dot_product = collapse_mixture_of_tastes(tastes_dot_products)
-        self.tf_predict_cosine_similarity = collapse_mixture_of_tastes(tastes_cosine_sims)
-        self.tf_predict_euclidian_similarity = collapse_mixture_of_tastes(tastes_euclidian_sims)
+        self.tf_predict_dot_product = collapse_mixture_of_tastes(tastes_tf_dot_products)
+        self.tf_predict_cosine_similarity = collapse_mixture_of_tastes(tastes_tf_cosine_sims)
+        self.tf_predict_euclidian_similarity = collapse_mixture_of_tastes(tastes_tf_euclidian_sims)
 
         # Compose loss function args
         # This composition is for execution safety: it prevents loss functions that are incorrectly configured from
