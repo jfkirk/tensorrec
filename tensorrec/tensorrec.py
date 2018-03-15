@@ -10,8 +10,10 @@ from .prediction_graphs import (
     AbstractPredictionGraph, DotProductPredictionGraph, CosineSimilarityPredictionGraph,
     EuclidianSimilarityPredictionGraph
 )
-from .recommendation_graphs import (project_biases, split_sparse_tensor_indices, bias_prediction_dense,
-                                    bias_prediction_serial, rank_predictions, densify_sampled_item_predictions)
+from .recommendation_graphs import (
+    project_biases, split_sparse_tensor_indices, bias_prediction_dense, bias_prediction_serial, rank_predictions,
+    densify_sampled_item_predictions, collapse_mixture_of_tastes
+)
 from .representation_graphs import AbstractRepresentationGraph, LinearRepresentationGraph
 from .session_management import get_session
 from .util import sample_items, calculate_batched_alpha
@@ -19,7 +21,9 @@ from .util import sample_items, calculate_batched_alpha
 
 class TensorRec(object):
 
-    def __init__(self, n_components=100,
+    def __init__(self,
+                 n_components=100,
+                 n_tastes=1,
                  user_repr_graph=LinearRepresentationGraph(),
                  item_repr_graph=LinearRepresentationGraph(),
                  prediction_graph=DotProductPredictionGraph(),
@@ -31,6 +35,8 @@ class TensorRec(object):
         A TensorRec recommendation model.
         :param n_components: Integer
         The dimension of a single output of the representation function. Must be >= 1.
+        :param n_tastes: Integer
+        The number of tastes/reprs to be calculated for each user. Must be >= 1.
         :param user_repr_graph: AbstractRepresentationGraph
         An object which inherits AbstractRepresentationGraph that contains a method to calculate user representations.
         See tensorrec.representation_graphs for examples.
@@ -53,11 +59,13 @@ class TensorRec(object):
         """
 
         # Arg-check
-        if (n_components is None) or (user_repr_graph is None) or (item_repr_graph is None) \
+        if (n_components is None) or (n_tastes is None) or (user_repr_graph is None) or (item_repr_graph is None) \
                 or (prediction_graph is None) or (loss_graph is None):
             raise ValueError("All arguments to TensorRec() must be non-None")
         if n_components < 1:
             raise ValueError("n_components must be >= 1")
+        if n_tastes < 1:
+            raise ValueError("n_tastes must be >= 1")
         if not isinstance(user_repr_graph, AbstractRepresentationGraph):
             raise ValueError("user_repr_graph must inherit AbstractRepresentationGraph")
         if not isinstance(item_repr_graph, AbstractRepresentationGraph):
@@ -68,6 +76,7 @@ class TensorRec(object):
             raise ValueError("loss_graph must inherit AbstractLossGraph")
 
         self.n_components = n_components
+        self.n_tastes = n_tastes
         self.user_repr_graph_factory = user_repr_graph
         self.item_repr_graph_factory = item_repr_graph
         self.prediction_graph_factory = prediction_graph
@@ -275,46 +284,65 @@ class TensorRec(object):
         tf_interactions = tf.SparseTensor(self.tf_interaction_indices, self.tf_interaction_values,
                                           [self.tf_n_users, self.tf_n_items])
 
-        # Build the representations
-        self.tf_user_representation, user_weights = \
-            self.user_repr_graph_factory.connect_representation_graph(tf_features=tf_user_features,
-                                                                      n_components=self.n_components,
-                                                                      n_features=n_user_features,
-                                                                      node_name_ending='user')
+        # Collect the weights for normalization
+        tf_weights = []
+
+        # Build the item representations
         self.tf_item_representation, item_weights = \
             self.item_repr_graph_factory.connect_representation_graph(tf_features=tf_item_features,
                                                                       n_components=self.n_components,
                                                                       n_features=n_item_features,
                                                                       node_name_ending='item')
-
-        # Collect the weights for normalization
-        tf_weights = []
-        tf_weights.extend(user_weights)
         tf_weights.extend(item_weights)
 
-        # Connect the configurable prediction graphs
-        self.tf_prediction = self.prediction_graph_factory.connect_dense_prediction_graph(
-            tf_user_representation=self.tf_user_representation,
-            tf_item_representation=self.tf_item_representation
-        )
-
         tf_x_user, tf_x_item = split_sparse_tensor_indices(tf_sparse_tensor=tf_interactions, n_dimensions=2)
-        self.tf_prediction_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
-            tf_user_representation=self.tf_user_representation,
-            tf_item_representation=self.tf_item_representation,
-            tf_x_user=tf_x_user,
-            tf_x_item=tf_x_item,
-        )
-
         tf_transposed_sample_indices = tf.transpose(self.tf_sample_indices)
         tf_x_user_sample = tf_transposed_sample_indices[0]
         tf_x_item_sample = tf_transposed_sample_indices[1]
-        tf_sample_predictions_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
-            tf_user_representation=self.tf_user_representation,
-            tf_item_representation=self.tf_item_representation,
-            tf_x_user=tf_x_user_sample,
-            tf_x_item=tf_x_item_sample,
-        )
+
+        # Build n_tastes user representations and predictions
+        tastes_tf_user_representations = []
+        tastes_tf_predictions = []
+        tastes_tf_prediction_serials = []
+        tastes_tf_sample_prediction_serials = []
+        for taste in range(self.n_tastes):
+            tf_user_representation, user_weights = \
+                self.user_repr_graph_factory.connect_representation_graph(tf_features=tf_user_features,
+                                                                          n_components=self.n_components,
+                                                                          n_features=n_user_features,
+                                                                          node_name_ending='user_{}'.format(taste))
+            tastes_tf_user_representations.append(tf_user_representation)
+            tf_weights.extend(user_weights)
+
+            # Connect the configurable prediction graphs for each taste
+            tf_prediction = self.prediction_graph_factory.connect_dense_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation
+            )
+
+            tf_prediction_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation,
+                tf_x_user=tf_x_user,
+                tf_x_item=tf_x_item,
+            )
+
+            tf_sample_predictions_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation,
+                tf_x_user=tf_x_user_sample,
+                tf_x_item=tf_x_item_sample,
+            )
+
+            # Append to tastes
+            tastes_tf_predictions.append(tf_prediction)
+            tastes_tf_prediction_serials.append(tf_prediction_serial)
+            tastes_tf_sample_prediction_serials.append(tf_sample_predictions_serial)
+
+        self.tf_user_representation = tf.stack(tastes_tf_user_representations)
+        self.tf_prediction = collapse_mixture_of_tastes(tastes_tf_predictions)
+        self.tf_prediction_serial = collapse_mixture_of_tastes(tastes_tf_prediction_serials)
+        tf_sample_predictions_serial = collapse_mixture_of_tastes(tastes_tf_sample_prediction_serials)
 
         # Add biases, if this is a biased estimator
         if self.biased:
@@ -351,18 +379,35 @@ class TensorRec(object):
 
         # Construct API nodes
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
-        self.tf_predict_dot_product = DotProductPredictionGraph().connect_dense_prediction_graph(
-            tf_user_representation=self.tf_user_representation,
-            tf_item_representation=self.tf_item_representation,
-        )
-        self.tf_predict_cosine_similarity = CosineSimilarityPredictionGraph().connect_dense_prediction_graph(
-            tf_user_representation=self.tf_user_representation,
-            tf_item_representation=self.tf_item_representation,
-        )
-        self.tf_predict_euclidian_similarity = EuclidianSimilarityPredictionGraph().connect_dense_prediction_graph(
-            tf_user_representation=self.tf_user_representation,
-            tf_item_representation=self.tf_item_representation,
-        )
+
+        # Construct predictions per taste
+        tastes_dot_products = []
+        tastes_cosine_sims = []
+        tastes_euclidian_sims = []
+        for tf_user_representation in tastes_tf_user_representations:
+
+            # Build predictions for each taste
+            tf_predict_dot_product = DotProductPredictionGraph().connect_dense_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation,
+            )
+            tf_predict_cosine_similarity = CosineSimilarityPredictionGraph().connect_dense_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation,
+            )
+            tf_predict_euclidian_similarity = EuclidianSimilarityPredictionGraph().connect_dense_prediction_graph(
+                tf_user_representation=tf_user_representation,
+                tf_item_representation=self.tf_item_representation,
+            )
+
+            # Append to tastes
+            tastes_dot_products.append(tf_predict_dot_product)
+            tastes_cosine_sims.append(tf_predict_cosine_similarity)
+            tastes_euclidian_sims.append(tf_predict_euclidian_similarity)
+
+        self.tf_predict_dot_product = collapse_mixture_of_tastes(tastes_dot_products)
+        self.tf_predict_cosine_similarity = collapse_mixture_of_tastes(tastes_cosine_sims)
+        self.tf_predict_euclidian_similarity = collapse_mixture_of_tastes(tastes_euclidian_sims)
 
         # Compose loss function args
         # This composition is for execution safety: it prevents loss functions that are incorrectly configured from
@@ -632,6 +677,11 @@ class TensorRec(object):
         """
         feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
         user_repr = self.tf_user_representation.eval(session=get_session(), feed_dict=feed_dict)
+
+        # If there is only one user repr per user, collapse from rank 3 to rank 2
+        if self.n_tastes == 1:
+            user_repr = np.sum(user_repr, axis=0)
+
         return user_repr
 
     def predict_item_representation(self, item_features):

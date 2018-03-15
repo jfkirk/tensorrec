@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from tensorrec.recommendation_graphs import (
     project_biases, split_sparse_tensor_indices, bias_prediction_dense, bias_prediction_serial,
-    densify_sampled_item_predictions, rank_predictions
+    densify_sampled_item_predictions, rank_predictions, collapse_mixture_of_tastes
 )
 from tensorrec.session_management import get_session
 
@@ -135,3 +135,17 @@ class RecommendationGraphsTestCase(TestCase):
             [2, 1, 4, 3],
         ], dtype=np.int)
         self.assertTrue((ranked == expected_ranks).all())
+
+    def test_collapse_mixture_of_tastes(self):
+        predictions = [
+            np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
+            np.array([4.0, 3.0, 2.0, 1.0], dtype=np.float32),
+            np.array([3.0, 4.0, 1.0, 2.0], dtype=np.float32),
+        ]
+
+        collapsed_predictions = collapse_mixture_of_tastes(predictions).eval(session=self.session)
+
+        expected_predictions = np.array([
+            [4.0, 4.0, 3.0, 4.0],
+        ], dtype=np.float32)
+        self.assertTrue((collapsed_predictions == expected_predictions).all())

@@ -80,3 +80,14 @@ def rank_predictions(tf_prediction):
     tf_prediction_item_size = tf.shape(tf_prediction)[1]
     tf_indices_of_ranks = tf.nn.top_k(tf_prediction, k=tf_prediction_item_size)[1]
     return tf.nn.top_k(-tf_indices_of_ranks, k=tf_prediction_item_size)[1] + 1
+
+
+def collapse_mixture_of_tastes(tastes_predictions):
+    """
+    Collapses a list of prediction nodes in to a single prediction node.
+    :param tastes_predictions:
+    :return:
+    """
+    stacked_tastes = tf.stack(tastes_predictions)
+    max_prediction = tf.reduce_max(stacked_tastes, axis=0)
+    return max_prediction
