@@ -35,9 +35,10 @@ header = "Loss Graph"
 header = append_to_string_at_point(header, 'Prediction Graph', 30)
 header = append_to_string_at_point(header, 'ItemRepr Graph', 66)
 header = append_to_string_at_point(header, 'Biased', 98)
-header = append_to_string_at_point(header, 'Recall at 30', 110)
-header = append_to_string_at_point(header, 'Precision at 5', 131)
-header = append_to_string_at_point(header, 'NDCG at 30', 154)
+header = append_to_string_at_point(header, 'N Tastes', 108)
+header = append_to_string_at_point(header, 'Recall at 30', 120)
+header = append_to_string_at_point(header, 'Precision at 5', 141)
+header = append_to_string_at_point(header, 'NDCG at 30', 164)
 res_strings.append(header)
 
 for biased in (True, False):
@@ -45,26 +46,29 @@ for biased in (True, False):
         for pred_graph in (DotProductPredictionGraph, CosineSimilarityPredictionGraph,
                            EuclidianSimilarityPredictionGraph):
             for repr_graph in (LinearRepresentationGraph, ReLURepresentationGraph):
+                for n_tastes in (1, 3):
 
-                model = TensorRec(n_components=n_components,
-                                  biased=biased,
-                                  loss_graph=loss_graph(),
-                                  prediction_graph=pred_graph(),
-                                  user_repr_graph=LinearRepresentationGraph(),
-                                  item_repr_graph=repr_graph())
-                result = fit_and_eval(model, user_features, item_features, train_interactions, test_interactions,
-                                      fit_kwargs)
+                    model = TensorRec(n_components=n_components,
+                                      n_tastes=n_tastes,
+                                      biased=biased,
+                                      loss_graph=loss_graph(),
+                                      prediction_graph=pred_graph(),
+                                      user_repr_graph=LinearRepresentationGraph(),
+                                      item_repr_graph=repr_graph())
+                    result = fit_and_eval(model, user_features, item_features, train_interactions, test_interactions,
+                                          fit_kwargs)
 
-                res_string = "{}".format(loss_graph.__name__)
-                res_string = append_to_string_at_point(res_string, pred_graph.__name__, 30)
-                res_string = append_to_string_at_point(res_string, repr_graph.__name__, 66)
-                res_string = append_to_string_at_point(res_string, biased, 98)
-                res_string = append_to_string_at_point(res_string, ": {}".format(result[0]), 108)
-                res_string = append_to_string_at_point(res_string, result[1], 131)
-                res_string = append_to_string_at_point(res_string, result[2], 154)
+                    res_string = "{}".format(loss_graph.__name__)
+                    res_string = append_to_string_at_point(res_string, pred_graph.__name__, 30)
+                    res_string = append_to_string_at_point(res_string, repr_graph.__name__, 66)
+                    res_string = append_to_string_at_point(res_string, biased, 98)
+                    res_string = append_to_string_at_point(res_string, n_tastes, 108)
+                    res_string = append_to_string_at_point(res_string, ": {}".format(result[0]), 118)
+                    res_string = append_to_string_at_point(res_string, result[1], 141)
+                    res_string = append_to_string_at_point(res_string, result[2], 164)
 
-                print(res_string)
-                res_strings.append(res_string)
+                    print(res_string)
+                    res_strings.append(res_string)
 
 print('--------------------------------------------------')
 for res_string in res_strings:

@@ -165,6 +165,28 @@ class TensorRecNormalizedTestCase(TensorRecTestCase):
         cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
 
+class TensorRecNTastesTestCase(TensorRecTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
+            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
+            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+        )
+
+        cls.standard_model = TensorRec(n_components=10, n_tastes=3)
+        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+        cls.unbiased_model = TensorRec(n_components=10, n_tastes=3, biased=False)
+        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+    def test_predict_user_repr(self):
+        user_repr = self.unbiased_model.predict_user_representation(self.user_features)
+
+        # 3 tastes, shape[0] users, 10 components
+        self.assertEqual(user_repr.shape, (3, self.user_features.shape[0], 10))
+
+
 class TensorRecSavingTestCase(TestCase):
 
     @classmethod
