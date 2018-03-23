@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import os
 import pickle
 from scipy import sparse as sp
 import six
@@ -723,13 +724,16 @@ class TensorRec(object):
         :return:
         """
 
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+
         saver = tf.train.Saver()
-        session_path = '{}/tensorrec_session.cpkt'.format(directory_path)
+        session_path = os.path.join(directory_path, 'tensorrec_session.cpkt')
         saver.save(sess=get_session(), save_path=session_path)
 
         # Break connections to the graph before saving the python object
         self._clear_graph_hook_attrs()
-        tensorrec_path = '{}/tensorrec.pkl'.format(directory_path)
+        tensorrec_path = os.path.join(directory_path, 'tensorrec.pkl')
         with open(tensorrec_path, 'wb') as file:
             pickle.dump(file=file, obj=self)
 
@@ -746,10 +750,10 @@ class TensorRec(object):
         """
 
         saver = tf.train.Saver()
-        session_path = '{}/tensorrec_session.cpkt'.format(directory_path)
+        session_path = os.path.join(directory_path, 'tensorrec_session.cpkt')
         saver.restore(sess=get_session(), save_path=session_path)
 
-        tensorrec_path = '{}/tensorrec.pkl'.format(directory_path)
+        tensorrec_path = os.path.join(directory_path, 'tensorrec.pkl')
         with open(tensorrec_path, 'rb') as file:
             model = pickle.load(file=file)
         model._attach_graph_hook_attrs()

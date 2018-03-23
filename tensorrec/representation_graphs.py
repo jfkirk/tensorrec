@@ -43,6 +43,21 @@ class LinearRepresentationGraph(AbstractRepresentationGraph):
         return tf_repr, [tf_linear_weights]
 
 
+class NormalizedLinearRepresentationGraph(LinearRepresentationGraph):
+    """
+    Calculates the representation by passing the features through a linear embedding. Embeddings are L2 normalized,
+    meaning all embeddings have equal magnitued. This can be useful as a user representation in mixture-of-tastes
+    models, preventing one taste from having a much larger magnitude than others and dominating the recommendations.
+    """
+
+    def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+        tf_repr, weights_list = super(NormalizedLinearRepresentationGraph, self).connect_representation_graph(
+            tf_features=tf_features, n_components=n_components, n_features=n_features, node_name_ending=node_name_ending
+        )
+        normalized_repr = tf.nn.l2_normalize(tf_repr, 1)
+        return normalized_repr, weights_list
+
+
 class ReLURepresentationGraph(AbstractRepresentationGraph):
     """
     Calculates the repesentations by passing the features through a single-layer ReLU neural network.

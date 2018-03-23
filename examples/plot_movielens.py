@@ -11,8 +11,8 @@ from PIL import Image
 
 from tensorrec import TensorRec
 from tensorrec.eval import precision_at_k, recall_at_k
-from tensorrec.loss_graphs import WMRBLossGraph
-from tensorrec.prediction_graphs import CosineSimilarityPredictionGraph
+from tensorrec.loss_graphs import BalancedWMRBLossGraph
+from tensorrec.prediction_graphs import DotProductPredictionGraph
 
 from test.datasets import get_movielens_100k
 
@@ -22,10 +22,10 @@ logging.getLogger().setLevel(logging.INFO)
 train_interactions, test_interactions, user_features, item_features, item_titles = \
     get_movielens_100k(negative_value=-1.0)
 
-epochs = 300
+epochs = 1000
 alpha = 0.0001
 n_components = 2
-biased = False
+biased = True
 verbose = True
 learning_rate = .01
 
@@ -36,8 +36,8 @@ fit_kwargs = {'epochs': 1, 'alpha': alpha, 'verbose': verbose, 'learning_rate': 
 
 model = TensorRec(n_components=n_components,
                   biased=biased,
-                  loss_graph=WMRBLossGraph(),
-                  prediction_graph=CosineSimilarityPredictionGraph(),
+                  loss_graph=BalancedWMRBLossGraph(),
+                  prediction_graph=DotProductPredictionGraph(),
                   normalize_users=True,
                   normalize_items=True)
 
@@ -50,13 +50,18 @@ for epoch in range(epochs):
 
     movie_positions = model.predict_item_representation(item_features)
     user_positions = model.predict_user_representation(user_features)
+    movie_sizes = model.predict_item_bias(item_features) * 10 + 1.0
+
+    # Handle multiple tastes, if applicable
+    if model.n_tastes > 1:
+        user_positions = user_positions[0]
 
     _, ax = plt.subplots()
     ax.grid(b=True, which='both')
     ax.axhline(y=0, color='k')
     ax.axvline(x=0, color='k')
     ax.scatter(*zip(*user_positions[user_to_plot]), color='r', s=1)
-    ax.scatter(*zip(*movie_positions[movies_to_plot]))
+    ax.scatter(*zip(*movie_positions[movies_to_plot]), s=movie_sizes)
     ax.set_aspect('equal')
 
     for i, movie in enumerate(movies_to_plot):

@@ -144,18 +144,13 @@ class WMRBLossGraph(AbstractLossGraph):
     def connect_loss_graph(self, tf_prediction_serial, tf_interactions, tf_sample_predictions, tf_n_items,
                            tf_n_sampled_items, **kwargs):
 
-        # WMRB expects [-1, 1] bounded predictions
-        bounded_prediction = tf.nn.tanh(tf_prediction_serial)
-        bounded_sample_prediction = tf.nn.tanh(tf_sample_predictions)
-
-        return self.weighted_margin_rank_batch(tf_prediction_serial=bounded_prediction,
+        return self.weighted_margin_rank_batch(tf_prediction_serial=tf_prediction_serial,
                                                tf_interactions=tf_interactions,
-                                               tf_sample_predictions=bounded_sample_prediction,
+                                               tf_sample_predictions=tf_sample_predictions,
                                                tf_n_items=tf_n_items,
                                                tf_n_sampled_items=tf_n_sampled_items)
 
-    @classmethod
-    def weighted_margin_rank_batch(cls, tf_prediction_serial, tf_interactions, tf_sample_predictions, tf_n_items,
+    def weighted_margin_rank_batch(self, tf_prediction_serial, tf_interactions, tf_sample_predictions, tf_n_items,
                                    tf_n_sampled_items):
         positive_interaction_mask = tf.greater(tf_interactions.values, 0.0)
         positive_interaction_indices = tf.boolean_mask(tf_interactions.indices,
@@ -180,6 +175,53 @@ class WMRBLossGraph(AbstractLossGraph):
 
         # [ n_positive_interactions ]
         sampled_margin_rank = (n_items / n_sampled_items) * tf.reduce_sum(summation_term, axis=1)
+
+        loss = tf.log(sampled_margin_rank + 1.0)
+        return loss
+
+
+class BalancedWMRBLossGraph(WMRBLossGraph):
+    """
+    This loss graph extends WMRB by making it sensitive to interaction magnitude and weighting the loss of each item by
+    1 / sum(interactions) per item.
+    Interactions can be any positive values. Negative interactions are ignored.
+    """
+    def weighted_margin_rank_batch(self, tf_prediction_serial, tf_interactions, tf_sample_predictions, tf_n_items,
+                                   tf_n_sampled_items):
+        positive_interaction_mask = tf.greater(tf_interactions.values, 0.0)
+        positive_interaction_indices = tf.boolean_mask(tf_interactions.indices,
+                                                       positive_interaction_mask)
+        positive_interaction_values = tf.boolean_mask(tf_interactions.values,
+                                                      positive_interaction_mask)
+
+        positive_interactions = tf.SparseTensor(indices=positive_interaction_indices,
+                                                values=positive_interaction_values,
+                                                dense_shape=tf_interactions.dense_shape)
+        listening_sum_per_item = tf.sparse_reduce_sum(positive_interactions, axis=0)
+        gathered_sums = tf.gather(params=listening_sum_per_item,
+                                  indices=tf.transpose(positive_interaction_indices)[1])
+
+        # [ n_positive_interactions ]
+        positive_predictions = tf.boolean_mask(tf_prediction_serial,
+                                               positive_interaction_mask)
+
+        n_items = tf.cast(tf_n_items, dtype=tf.float32)
+        n_sampled_items = tf.cast(tf_n_sampled_items, dtype=tf.float32)
+
+        # [ n_positive_interactions, n_sampled_items ]
+        mapped_predictions_sample_per_interaction = tf.gather(params=tf_sample_predictions,
+                                                              indices=tf.transpose(positive_interaction_indices)[0])
+
+        # [ n_positive_interactions, n_sampled_items ]
+        summation_term = tf.maximum(1.0
+                                    - tf.expand_dims(positive_predictions, axis=1)
+                                    + mapped_predictions_sample_per_interaction,
+                                    0.0)
+
+        # [ n_positive_interactions ]
+        sampled_margin_rank = ((n_items / n_sampled_items)
+                               * tf.reduce_sum(summation_term, axis=1)
+                               * positive_interaction_values / gathered_sums)
 
         loss = tf.log(sampled_margin_rank + 1.0)
         return loss
