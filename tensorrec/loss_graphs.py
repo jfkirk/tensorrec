@@ -137,7 +137,7 @@ class SeparationDenseLossGraph(AbstractLossGraph):
 class WMRBLossGraph(AbstractLossGraph):
     """
     Approximation of http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf
-    Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
+    Interactions can be any positive values, but magnitude is ignored. Negative interactions are ignored.
     """
     is_sample_based = True
 

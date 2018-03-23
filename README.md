@@ -166,7 +166,7 @@ Interactions can be any positive values, but magnitude is ignored. Negative inte
 
 #### BalancedWMRBLossGraph
 This loss graph extends WMRB by making it sensitive to interaction magnitude and weighting the loss of each item by `1 / sum(interactions)` per item.  
-Interactions can be any positive values. Negative interactions are also ignored.
+Interactions can be any positive values. Negative interactions are ignored.
 
 ### Example: Defining custom loss function
 ```python
