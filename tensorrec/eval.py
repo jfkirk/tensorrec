@@ -29,7 +29,7 @@ def precision_at_k(model, test_interactions, user_features, item_features, k=10,
     ranks = sp.csr_matrix(predicted_ranks * positive_test_interactions.A)
     ranks.data = np.less(ranks.data, (k + 1), ranks.data)
 
-    precision = np.squeeze(np.array(ranks.sum(axis=1))) / k
+    precision = np.squeeze(np.array(ranks.sum(axis=1))).astype(float) / k
 
     if not preserve_rows:
         precision = precision[positive_test_interactions.getnnz(axis=1) > 0]
@@ -69,7 +69,7 @@ def recall_at_k(model, test_interactions, user_features, item_features, k=10, pr
         hit = hit[positive_test_interactions.getnnz(axis=1) > 0]
         retrieved = retrieved[positive_test_interactions.getnnz(axis=1) > 0]
 
-    return hit / retrieved
+    return hit.astype(float) / retrieved.astype(float)
 
 
 def _setup_ndcg(predicted_ranks, test_interactions, k=10):
@@ -194,7 +194,21 @@ def fit_and_eval(model, user_features, item_features, train_interactions, test_i
                        item_features=item_features,
                        k=ndcg_k)
 
-    return np.mean(r_at_k), np.mean(p_at_k), np.mean(n_at_k)
+    p_at_k_insample = precision_at_k(model, train_interactions,
+                                     user_features=user_features,
+                                     item_features=item_features,
+                                     k=precision_k)
+    r_at_k_insample = recall_at_k(model, train_interactions,
+                                  user_features=user_features,
+                                  item_features=item_features,
+                                  k=recall_k)
+    n_at_k_insample = ndcg_at_k(model, train_interactions,
+                                user_features=user_features,
+                                item_features=item_features,
+                                k=ndcg_k)
+
+    return (np.mean(r_at_k), np.mean(p_at_k), np.mean(n_at_k), np.mean(r_at_k_insample), np.mean(p_at_k_insample),
+            np.mean(n_at_k_insample))
 
 
 def grid_check_model_on_dataset(train_interactions, test_interactions, user_features, item_features):

@@ -86,6 +86,9 @@ TensorRec allows you to define the algorithm that will be used to compute latent
 #### LinearRepresentationGraph
 Calculates the representation by passing the features through a linear embedding.
 
+#### NormalizedLinearRepresentationGraph
+Calculates the representation by passing the features through a linear embedding. Embeddings are L2 normalized, meaning all embeddings have equal magnitued. This can be useful as a user representation in mixture-of-tastes models, preventing one taste from having a much larger magnitude than others and dominating the recommendations.
+
 #### ReLURepresentationGraph
 Calculates the repesentations by passing the features through a single-layer ReLU neural network.
 
@@ -158,8 +161,12 @@ This loss function models all positive and negative interaction predictions as n
 Interactions can be any positive or negative values, but this loss function ignores the magnitude of the interaction -- interactions are grouped in to `{i <= 0}` and `{i > 0}`.
 
 #### WMRBLossGraph
-Approximation of [WMRB: Learning to Rank in a Scalable Batch Training Approach](http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf) . 
-Interactions can be any positive values, but magnitude is ignored. Negative interactions are also ignored.
+Approximation of [WMRB: Learning to Rank in a Scalable Batch Training Approach](http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf) .  
+Interactions can be any positive values, but magnitude is ignored. Negative interactions are ignored.
+
+#### BalancedWMRBLossGraph
+This loss graph extends WMRB by making it sensitive to interaction magnitude and weighting the loss of each item by `1 / sum(interactions)` per item.  
+Interactions can be any positive values. Negative interactions are ignored.
 
 ### Example: Defining custom loss function
 ```python

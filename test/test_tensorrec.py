@@ -6,8 +6,9 @@ from unittest import TestCase
 import tensorflow as tf
 
 from tensorrec import TensorRec
-from tensorrec.util import generate_dummy_data_with_indicator, generate_dummy_data
+from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph
 from tensorrec.session_management import set_session
+from tensorrec.util import generate_dummy_data_with_indicator, generate_dummy_data
 
 
 class TensorRecTestCase(TestCase):
@@ -174,10 +175,15 @@ class TensorRecNTastesTestCase(TensorRecTestCase):
             n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
 
-        cls.standard_model = TensorRec(n_components=10, n_tastes=3)
+        cls.standard_model = TensorRec(n_components=10,
+                                       n_tastes=3,
+                                       user_repr_graph=NormalizedLinearRepresentationGraph())
         cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
-        cls.unbiased_model = TensorRec(n_components=10, n_tastes=3, biased=False)
+        cls.unbiased_model = TensorRec(n_components=10,
+                                       n_tastes=3,
+                                       biased=False,
+                                       user_repr_graph=NormalizedLinearRepresentationGraph())
         cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
     def test_predict_user_repr(self):
