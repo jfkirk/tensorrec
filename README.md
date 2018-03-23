@@ -87,7 +87,7 @@ TensorRec allows you to define the algorithm that will be used to compute latent
 Calculates the representation by passing the features through a linear embedding.
 
 #### NormalizedLinearRepresentationGraph
-Calculates the representation by passing the features through a linear embedding. Embeddings are L2 normalized, meaning all embeddings have equal magnitued. This can be useful as a user representation in mixture-of-tastes models, preventing one taste from having a much larger magnitude than others and dominating the recommendations.
+Calculates the representation by passing the features through a linear embedding. Embeddings are L2 normalized, meaning all embeddings have equal magnitude. This can be useful as a user representation in mixture-of-tastes models, preventing one taste from having a much larger magnitude than others and dominating the recommendations.
 
 #### ReLURepresentationGraph
 Calculates the repesentations by passing the features through a single-layer ReLU neural network.
