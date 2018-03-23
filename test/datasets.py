@@ -149,13 +149,13 @@ def get_book_crossing(min_positive_score=7, min_interactions_per_book=5, user_in
             user_id = int(split_line[0])
             isin = split_line[1]
             rating = int(split_line[2])
-            score = 1 if rating >= min_positive_score else 0
+            rating = 1 if rating >= min_positive_score else 0
 
             # Skip 0 scores
-            if score == 0:
+            if rating == 0:
                 continue
 
-            ratings.append((user_id, isin, score))
+            ratings.append((user_id, isin, rating))
 
     book_metadata_raw = {}
     with open(paths['BX-Books.csv'], 'rb') as books_file:
