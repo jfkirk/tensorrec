@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from tensorrec.prediction_graphs import CosineSimilarityPredictionGraph
+from .prediction_graphs import CosineSimilarityPredictionGraph
 
 
 def project_biases(tf_features, n_features):
