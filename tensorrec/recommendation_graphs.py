@@ -1,7 +1,5 @@
 import tensorflow as tf
 
-from .prediction_graphs import CosineSimilarityPredictionGraph
-
 
 def project_biases(tf_features, n_features):
     """
@@ -95,6 +93,18 @@ def collapse_mixture_of_tastes(tastes_predictions):
     return max_prediction
 
 
+def relative_cosine(tf_tensor_1, tf_tensor_2):
+    """
+    Returns the cosine of every row in tensor_1 against every row in tensor_2.
+    :param tf_tensor_1:
+    :param tf_tensor_2:
+    :return:
+    """
+    normalized_t1 = tf.nn.l2_normalize(tf_tensor_1, 1)
+    normalized_t2 = tf.nn.l2_normalize(tf_tensor_2, 1)
+    return tf.matmul(normalized_t1, normalized_t2, transpose_b=True)
+
+
 def predict_similar_items(tf_item_representation, tf_similar_items_ids):
     """
     Calculates the cosine between the given item ids and all other items.
@@ -103,8 +113,8 @@ def predict_similar_items(tf_item_representation, tf_similar_items_ids):
     :return:
     """
     gathered_items = tf.gather(tf_item_representation, tf_similar_items_ids)
-    sims = CosineSimilarityPredictionGraph().connect_dense_prediction_graph(
-        tf_user_representation=gathered_items,
-        tf_item_representation=tf_item_representation
+    sims = relative_cosine(
+        tf_tensor_1=gathered_items,
+        tf_tensor_2=tf_item_representation
     )
     return sims
