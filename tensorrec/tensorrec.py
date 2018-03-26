@@ -13,7 +13,7 @@ from .prediction_graphs import (
 )
 from .recommendation_graphs import (
     project_biases, split_sparse_tensor_indices, bias_prediction_dense, bias_prediction_serial, rank_predictions,
-    densify_sampled_item_predictions, collapse_mixture_of_tastes
+    densify_sampled_item_predictions, collapse_mixture_of_tastes, predict_similar_items
 )
 from .representation_graphs import AbstractRepresentationGraph, LinearRepresentationGraph
 from .session_management import get_session
@@ -92,6 +92,7 @@ class TensorRec(object):
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
             'tf_predict_dot_product', 'tf_predict_cosine_similarity', 'tf_predict_euclidian_similarity',
+            'tf_predict_similar_items', 'tf_rank_similar_items',
 
             # Training nodes
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
@@ -99,7 +100,7 @@ class TensorRec(object):
             # Feed placeholders
             'tf_n_users', 'tf_n_items', 'tf_user_feature_indices', 'tf_user_feature_values', 'tf_item_feature_indices',
             'tf_item_feature_values', 'tf_interaction_indices', 'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
-            'tf_sample_indices', 'tf_n_sampled_items'
+            'tf_sample_indices', 'tf_n_sampled_items', 'tf_similar_items_ids'
         ]
         if self.biased:
             self.graph_tensor_hook_attr_names += [
@@ -272,6 +273,7 @@ class TensorRec(object):
         self.tf_item_feature_values = tf.placeholder('float', [None])
         self.tf_interaction_indices = tf.placeholder('int64', [None, 2])
         self.tf_interaction_values = tf.placeholder('float', [None])
+        self.tf_similar_items_ids = tf.placeholder('int64', [None])
 
         self.tf_sample_indices = tf.placeholder('int64', [None, None])
         self.tf_learning_rate = tf.placeholder('float', None)
@@ -400,6 +402,9 @@ class TensorRec(object):
         self.tf_predict_dot_product = collapse_mixture_of_tastes(tastes_tf_dot_products)
         self.tf_predict_cosine_similarity = collapse_mixture_of_tastes(tastes_tf_cosine_sims)
         self.tf_predict_euclidian_similarity = collapse_mixture_of_tastes(tastes_tf_euclidian_sims)
+        self.tf_predict_similar_items = predict_similar_items(tf_item_representation=self.tf_item_representation,
+                                                              tf_similar_items_ids=self.tf_similar_items_ids)
+        self.tf_rank_similar_items = rank_predictions(tf_prediction=self.tf_predict_similar_items)
 
         # Compose loss function args
         # This composition is for execution safety: it prevents loss functions that are incorrectly configured from
@@ -640,6 +645,35 @@ class TensorRec(object):
                                            item_features_matrix=item_features)
         predictions = self.tf_predict_euclidian_similarity.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
+
+    def predict_similar_items(self, item_features, item_ids, n_similar):
+        """
+        Predicts the most similar items to the given item_ids.
+        :param item_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :param item_ids: list or np.array
+        The ids of the items of interest.
+        E.g. [4, 8, 12] to get sims for items 4, 8, and 12.
+        :param n_similar: int
+        The number of similar items to get per item of interest.
+        :return: list of lists of tuples
+        The first level list corresponds to input arg item_ids.
+        The second level list is of length n_similar and contains tuples of (item_id, score) for each similar item.
+        """
+        feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
+        feed_dict[self.tf_similar_items_ids] = np.array(item_ids)
+
+        sims, ranks = get_session().run([self.tf_predict_similar_items, self.tf_rank_similar_items],
+                                        feed_dict=feed_dict)
+
+        results = []
+        for i in range(len(item_ids)):
+            item_sims = sims[i]
+            best = np.argpartition(item_sims, -n_similar)[-n_similar:]
+            item_results = sorted(zip(best, item_sims[best]), key=lambda x: -x[1])
+            results.append(item_results)
+
+        return results
 
     def predict_rank(self, user_features, item_features):
         """

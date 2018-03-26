@@ -13,6 +13,7 @@ from tensorrec import TensorRec
 from tensorrec.eval import precision_at_k, recall_at_k
 from tensorrec.loss_graphs import BalancedWMRBLossGraph
 from tensorrec.prediction_graphs import DotProductPredictionGraph
+from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph
 
 from test.datasets import get_movielens_100k
 
@@ -25,6 +26,7 @@ train_interactions, test_interactions, user_features, item_features, item_titles
 epochs = 1000
 alpha = 0.0001
 n_components = 2
+n_tastes = 1
 biased = True
 verbose = True
 learning_rate = .01
@@ -38,10 +40,12 @@ model = TensorRec(n_components=n_components,
                   biased=biased,
                   loss_graph=BalancedWMRBLossGraph(),
                   prediction_graph=DotProductPredictionGraph(),
+                  user_repr_graph=NormalizedLinearRepresentationGraph(),
                   normalize_users=True,
-                  normalize_items=True)
+                  normalize_items=True,
+                  n_tastes=n_tastes)
 
-movies_to_plot = np.random.choice(a=item_features.shape[0], size=100, replace=False)
+movies_to_plot = np.random.choice(a=item_features.shape[0], size=200, replace=False)
 user_to_plot = np.random.choice(a=user_features.shape[0], size=400, replace=False)
 
 for epoch in range(epochs):
@@ -67,7 +71,7 @@ for epoch in range(epochs):
     for i, movie in enumerate(movies_to_plot):
         movie_name = item_titles[movie]
         movie_position = movie_positions[movie]
-        ax.annotate(movie_name, movie_position[0:2], fontsize='x-small')
+        # ax.annotate(movie_name, movie_position[0:2], fontsize='x-small')
 
     file = '/tmp/tensorrec/movielens/epoch_{}.jpg'.format(epoch)
     plt.savefig(file)

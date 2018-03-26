@@ -104,6 +104,18 @@ class TensorRecTestCase(TestCase):
                 val = ranks[x][y]
                 self.assertGreater(val, 0)
 
+    def test_predict_similar_items(self):
+        sims = self.standard_model.predict_similar_items(item_features=self.item_features,
+                                                         item_ids=[6, 12],
+                                                         n_similar=5)
+
+        # Two items, two rows of sims
+        self.assertEqual(len(sims), 2)
+
+        for item_sims in sims:
+            # Should equal n_similar
+            self.assertEqual(len(item_sims), 5)
+
     def test_fit_predict_unbiased(self):
         predictions = self.unbiased_model.predict(user_features=self.user_features, item_features=self.item_features)
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
