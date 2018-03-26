@@ -108,6 +108,7 @@ class TensorRecTestCase(TestCase):
         sims = self.standard_model.predict_similar_items(item_features=self.item_features,
                                                          item_ids=[6, 12],
                                                          n_similar=5)
+
         # Two items, two rows of sims
         self.assertEqual(len(sims), 2)
 

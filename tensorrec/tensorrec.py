@@ -666,18 +666,11 @@ class TensorRec(object):
         sims, ranks = get_session().run([self.tf_predict_similar_items, self.tf_rank_similar_items],
                                         feed_dict=feed_dict)
 
-        all_item_ids = np.arange(len(sims[0]))
-
         results = []
         for i in range(len(item_ids)):
             item_sims = sims[i]
-            item_ranks = ranks[i]
-            rank_mask = item_ranks <= n_similar
-            scores = item_sims[rank_mask]
-            ids = all_item_ids[rank_mask]
-
-            item_results = [(item_id, score) for score, item_id in six.moves.zip(scores, ids)]
-            item_results = sorted(item_results, key=lambda x: x[1], reverse=True)
+            best = np.argpartition(item_sims, -n_similar)[-n_similar:]
+            item_results = sorted(zip(best, item_sims[best]), key=lambda x: -x[1])
             results.append(item_results)
 
         return results
