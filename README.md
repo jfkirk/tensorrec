@@ -14,6 +14,8 @@ For an overview of TensorRec and its usage, please see the [wiki.](https://githu
 
 For more information, and for an outline of this project, please read [this blog post](https://medium.com/@jameskirk1/tensorrec-a-recommendation-engine-framework-in-tensorflow-d85e4f0874e8).
 
+![TensorRec System Diagram](https://raw.githubusercontent.com/jfkirk/tensorrec/2b115973881a1ac6d5415a033493bca0ebf19ae8/examples/system_diagram.png)
+
 ## Quick Start
 TensorRec can be installed via pip:
 ```pip install tensorrec```
