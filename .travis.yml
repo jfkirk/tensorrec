@@ -11,6 +11,7 @@ install:
 script:
   - flake8 tensorrec
   - flake8 test
+  - flake8 examples
   - nosetests --with-timer
 
 notifications:

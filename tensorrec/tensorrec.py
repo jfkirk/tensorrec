@@ -663,8 +663,7 @@ class TensorRec(object):
         feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
         feed_dict[self.tf_similar_items_ids] = np.array(item_ids)
 
-        sims, ranks = get_session().run([self.tf_predict_similar_items, self.tf_rank_similar_items],
-                                        feed_dict=feed_dict)
+        sims = self.tf_predict_similar_items.eval(session=get_session(), feed_dict=feed_dict)
 
         results = []
         for i in range(len(item_ids)):
