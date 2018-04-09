@@ -67,33 +67,6 @@ class TensorRecTestCase(TestCase):
 
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
 
-    def test_predict_dot_product(self):
-        predictions = self.standard_model.predict_dot_product(user_features=self.user_features,
-                                                              item_features=self.item_features)
-
-        self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-
-    def test_predict_cosine_similarity(self):
-        cosines = self.standard_model.predict_cosine_similarity(user_features=self.user_features,
-                                                                item_features=self.item_features)
-
-        self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-        for x in range(cosines.shape[0]):
-            for y in range(cosines.shape[1]):
-                val = cosines[x][y]
-                self.assertGreaterEqual(val, -1.0)
-                self.assertLessEqual(val, 1.0)
-
-    def test_predict_euclidian_similarity(self):
-        cosines = self.standard_model.predict_euclidian_similarity(user_features=self.user_features,
-                                                                   item_features=self.item_features)
-
-        self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-        for x in range(cosines.shape[0]):
-            for y in range(cosines.shape[1]):
-                val = cosines[x][y]
-                self.assertLessEqual(val, 0.0)
-
     def test_predict_rank(self):
         ranks = self.standard_model.predict_rank(user_features=self.user_features,
                                                  item_features=self.item_features)

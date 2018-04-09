@@ -7,10 +7,7 @@ import six
 import tensorflow as tf
 
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
-from .prediction_graphs import (
-    AbstractPredictionGraph, DotProductPredictionGraph, CosineSimilarityPredictionGraph,
-    EuclidianSimilarityPredictionGraph
-)
+from .prediction_graphs import AbstractPredictionGraph, DotProductPredictionGraph
 from .recommendation_graphs import (
     project_biases, split_sparse_tensor_indices, bias_prediction_dense, bias_prediction_serial, rank_predictions,
     densify_sampled_item_predictions, collapse_mixture_of_tastes, predict_similar_items
@@ -91,7 +88,6 @@ class TensorRec(object):
 
             # Top-level API nodes
             'tf_user_representation', 'tf_item_representation', 'tf_prediction_serial', 'tf_prediction', 'tf_rankings',
-            'tf_predict_dot_product', 'tf_predict_cosine_similarity', 'tf_predict_euclidian_similarity',
             'tf_predict_similar_items', 'tf_rank_similar_items',
 
             # Training nodes
@@ -308,9 +304,6 @@ class TensorRec(object):
         tastes_tf_predictions = []
         tastes_tf_prediction_serials = []
         tastes_tf_sample_prediction_serials = []
-        tastes_tf_dot_products = []
-        tastes_tf_cosine_sims = []
-        tastes_tf_euclidian_sims = []
 
         for taste in range(self.n_tastes):
             tf_user_representation, user_weights = \
@@ -338,26 +331,11 @@ class TensorRec(object):
                 tf_x_user=tf_x_user_sample,
                 tf_x_item=tf_x_item_sample,
             )
-            tf_predict_dot_product = DotProductPredictionGraph().connect_dense_prediction_graph(
-                tf_user_representation=tf_user_representation,
-                tf_item_representation=self.tf_item_representation,
-            )
-            tf_predict_cosine_similarity = CosineSimilarityPredictionGraph().connect_dense_prediction_graph(
-                tf_user_representation=tf_user_representation,
-                tf_item_representation=self.tf_item_representation,
-            )
-            tf_predict_euclidian_similarity = EuclidianSimilarityPredictionGraph().connect_dense_prediction_graph(
-                tf_user_representation=tf_user_representation,
-                tf_item_representation=self.tf_item_representation,
-            )
 
             # Append to tastes
             tastes_tf_predictions.append(tf_prediction)
             tastes_tf_prediction_serials.append(tf_prediction_serial)
             tastes_tf_sample_prediction_serials.append(tf_sample_predictions_serial)
-            tastes_tf_dot_products.append(tf_predict_dot_product)
-            tastes_tf_cosine_sims.append(tf_predict_cosine_similarity)
-            tastes_tf_euclidian_sims.append(tf_predict_euclidian_similarity)
 
         self.tf_user_representation = tf.stack(tastes_tf_user_representations)
         self.tf_prediction = collapse_mixture_of_tastes(tastes_tf_predictions)
@@ -399,9 +377,6 @@ class TensorRec(object):
 
         # Construct API nodes
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
-        self.tf_predict_dot_product = collapse_mixture_of_tastes(tastes_tf_dot_products)
-        self.tf_predict_cosine_similarity = collapse_mixture_of_tastes(tastes_tf_cosine_sims)
-        self.tf_predict_euclidian_similarity = collapse_mixture_of_tastes(tastes_tf_euclidian_sims)
         self.tf_predict_similar_items = predict_similar_items(tf_item_representation=self.tf_item_representation,
                                                               tf_similar_items_ids=self.tf_similar_items_ids)
         self.tf_rank_similar_items = rank_predictions(tf_prediction=self.tf_predict_similar_items)
@@ -596,54 +571,6 @@ class TensorRec(object):
 
         predictions = self.tf_prediction.eval(session=get_session(), feed_dict=feed_dict)
 
-        return predictions
-
-    def predict_dot_product(self, user_features, item_features):
-        """
-        Predicts the latent dot product between the given users and items.
-        :param user_features: scipy.sparse matrix
-        A matrix of user features of shape [n_users, n_user_features].
-        :param item_features: scipy.sparse matrix
-        A matrix of item features of shape [n_items, n_item_features].
-        :return: np.ndarray
-        The dot products in an ndarray of shape [n_users, n_items]
-        """
-        feed_dict = self._create_feed_dict(interactions_matrix=None,
-                                           user_features_matrix=user_features,
-                                           item_features_matrix=item_features)
-        predictions = self.tf_predict_dot_product.eval(session=get_session(), feed_dict=feed_dict)
-        return predictions
-
-    def predict_cosine_similarity(self, user_features, item_features):
-        """
-        Predicts the latent cosine similarity between the given users and items.
-        :param user_features: scipy.sparse matrix
-        A matrix of user features of shape [n_users, n_user_features].
-        :param item_features: scipy.sparse matrix
-        A matrix of item features of shape [n_items, n_item_features].
-        :return: np.ndarray
-        The predictions in an ndarray of shape [n_users, n_items]
-        """
-        feed_dict = self._create_feed_dict(interactions_matrix=None,
-                                           user_features_matrix=user_features,
-                                           item_features_matrix=item_features)
-        predictions = self.tf_predict_cosine_similarity.eval(session=get_session(), feed_dict=feed_dict)
-        return predictions
-
-    def predict_euclidian_similarity(self, user_features, item_features):
-        """
-        Predicts the latent euclidian similarity between the given users and items.
-        :param user_features: scipy.sparse matrix
-        A matrix of user features of shape [n_users, n_user_features].
-        :param item_features: scipy.sparse matrix
-        A matrix of item features of shape [n_items, n_item_features].
-        :return: np.ndarray
-        The predictions in an ndarray of shape [n_users, n_items]
-        """
-        feed_dict = self._create_feed_dict(interactions_matrix=None,
-                                           user_features_matrix=user_features,
-                                           item_features_matrix=item_features)
-        predictions = self.tf_predict_euclidian_similarity.eval(session=get_session(), feed_dict=feed_dict)
         return predictions
 
     def predict_similar_items(self, item_features, item_ids, n_similar):
