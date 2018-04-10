@@ -6,7 +6,7 @@ from unittest import TestCase
 import tensorflow as tf
 
 from tensorrec import TensorRec
-from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph
+from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
 from tensorrec.session_management import set_session
 from tensorrec.util import generate_dummy_data_with_indicator, generate_dummy_data
 
@@ -45,6 +45,14 @@ class TensorRecTestCase(TestCase):
         with self.assertRaises(ValueError):
             TensorRec(loss_graph=np.mean)
 
+    def test_init_fail_attention_with_1_taste(self):
+        with self.assertRaises(ValueError):
+            TensorRec(n_tastes=1, attention_graph=LinearRepresentationGraph())
+
+    def test_init_fail_bad_attention_graph(self):
+        with self.assertRaises(ValueError):
+            TensorRec(attention_graph=np.mean)
+
     def test_fit(self):
         # Ensure that the nodes have been built
         self.assertIsNotNone(self.standard_model.tf_prediction)
@@ -66,33 +74,6 @@ class TensorRecTestCase(TestCase):
                                                   item_features=self.item_features)
 
         self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-
-    def test_predict_dot_product(self):
-        predictions = self.standard_model.predict_dot_product(user_features=self.user_features,
-                                                              item_features=self.item_features)
-
-        self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-
-    def test_predict_cosine_similarity(self):
-        cosines = self.standard_model.predict_cosine_similarity(user_features=self.user_features,
-                                                                item_features=self.item_features)
-
-        self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-        for x in range(cosines.shape[0]):
-            for y in range(cosines.shape[1]):
-                val = cosines[x][y]
-                self.assertGreaterEqual(val, -1.0)
-                self.assertLessEqual(val, 1.0)
-
-    def test_predict_euclidian_similarity(self):
-        cosines = self.standard_model.predict_euclidian_similarity(user_features=self.user_features,
-                                                                   item_features=self.item_features)
-
-        self.assertEqual(cosines.shape, (self.user_features.shape[0], self.item_features.shape[0]))
-        for x in range(cosines.shape[0]):
-            for y in range(cosines.shape[1]):
-                val = cosines[x][y]
-                self.assertLessEqual(val, 0.0)
 
     def test_predict_rank(self):
         ranks = self.standard_model.predict_rank(user_features=self.user_features,
@@ -203,6 +184,29 @@ class TensorRecNTastesTestCase(TensorRecTestCase):
 
         # 3 tastes, shape[0] users, 10 components
         self.assertEqual(user_repr.shape, (3, self.user_features.shape[0], 10))
+
+
+class TensorRecAttentionTestCase(TensorRecNTastesTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
+            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
+            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+        )
+
+        cls.standard_model = TensorRec(n_components=10,
+                                       n_tastes=3,
+                                       user_repr_graph=NormalizedLinearRepresentationGraph(),
+                                       attention_graph=LinearRepresentationGraph())
+        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+        cls.unbiased_model = TensorRec(n_components=10,
+                                       n_tastes=3,
+                                       biased=False,
+                                       user_repr_graph=NormalizedLinearRepresentationGraph(),
+                                       attention_graph=LinearRepresentationGraph())
+        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
 
 class TensorRecSavingTestCase(TestCase):

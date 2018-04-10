@@ -3,9 +3,10 @@ import tensorflow as tf
 import scipy.sparse as sp
 from unittest import TestCase
 
+from tensorrec.prediction_graphs import CosineSimilarityPredictionGraph
 from tensorrec.recommendation_graphs import (
     project_biases, split_sparse_tensor_indices, bias_prediction_dense, bias_prediction_serial,
-    densify_sampled_item_predictions, rank_predictions, collapse_mixture_of_tastes
+    densify_sampled_item_predictions, rank_predictions, collapse_mixture_of_tastes, predict_similar_items
 )
 from tensorrec.session_management import get_session
 
@@ -143,9 +144,39 @@ class RecommendationGraphsTestCase(TestCase):
             np.array([3.0, 4.0, 1.0, 2.0], dtype=np.float32),
         ]
 
-        collapsed_predictions = collapse_mixture_of_tastes(predictions).eval(session=self.session)
+        collapsed_predictions = collapse_mixture_of_tastes(tastes_predictions=predictions,
+                                                           tastes_attentions=None).eval(session=self.session)
 
-        expected_predictions = np.array([
-            [4.0, 4.0, 3.0, 4.0],
-        ], dtype=np.float32)
+        expected_predictions = np.array([[4.0, 4.0, 3.0, 4.0]], dtype=np.float32)
         self.assertTrue((collapsed_predictions == expected_predictions).all())
+
+    def test_collapse_mixture_of_tastes_with_attention(self):
+        predictions = [
+            np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
+            np.array([4.0, 3.0, 2.0, 1.0], dtype=np.float32),
+            np.array([3.0, 4.0, 1.0, 2.0], dtype=np.float32),
+        ]
+        attentions = [
+            np.array([1.0, 2.0, -3.0, 4.0], dtype=np.float32),
+            np.array([0.0, 3.0, 2.0, 1.0], dtype=np.float32),
+            np.array([3.0, 0.0, 1.0, 2.0], dtype=np.float32),
+        ]
+
+        collapsed_predictions = collapse_mixture_of_tastes(tastes_predictions=predictions,
+                                                           tastes_attentions=attentions).eval(session=self.session)
+
+        expected_predictions = np.array([[2.8136194, 2.7756228, 1.7372786, 3.6455793]], dtype=np.float32)
+        self.assertTrue((collapsed_predictions == expected_predictions).all())
+
+    def test_predict_similar_items(self):
+        reprs = np.array([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, -1.0, 0.0, 0.0],
+        ], dtype=np.float32)
+        sims = predict_similar_items(prediction_graph_factory=CosineSimilarityPredictionGraph(),
+                                     tf_similar_items_ids=[1],
+                                     tf_item_representation=reprs).eval(session=self.session)
+
+        expected_sims = np.array([[0.0,  1.0, -1.0]], dtype=np.float32)
+        self.assertTrue((sims == expected_sims).all())
