@@ -437,7 +437,8 @@ class TensorRec(object):
 
         # Construct API nodes
         self.tf_rankings = rank_predictions(tf_prediction=self.tf_prediction)
-        self.tf_predict_similar_items = predict_similar_items(tf_item_representation=self.tf_item_representation,
+        self.tf_predict_similar_items = predict_similar_items(prediction_graph_factory=self.prediction_graph_factory,
+                                                              tf_item_representation=self.tf_item_representation,
                                                               tf_similar_items_ids=self.tf_similar_items_ids)
         self.tf_rank_similar_items = rank_predictions(tf_prediction=self.tf_predict_similar_items)
 
