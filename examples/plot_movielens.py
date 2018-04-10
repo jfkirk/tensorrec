@@ -11,8 +11,7 @@ import numpy as np
 from tensorrec import TensorRec
 from tensorrec.eval import precision_at_k, recall_at_k
 from tensorrec.loss_graphs import BalancedWMRBLossGraph
-from tensorrec.prediction_graphs import DotProductPredictionGraph
-from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph
+from tensorrec.representation_graphs import ReLURepresentationGraph
 
 from test.datasets import get_movielens_100k
 
@@ -31,10 +30,9 @@ fit_kwargs = {'epochs': 1, 'alpha': 0.0001, 'verbose': True, 'learning_rate': .0
 
 # Build the TensorRec model
 model = TensorRec(n_components=2,
-                  biased=True,
+                  biased=False,
                   loss_graph=BalancedWMRBLossGraph(),
-                  prediction_graph=DotProductPredictionGraph(),
-                  user_repr_graph=NormalizedLinearRepresentationGraph(),
+                  item_repr_graph=ReLURepresentationGraph(),
                   normalize_users=True,
                   normalize_items=True,
                   n_tastes=3)
@@ -48,11 +46,9 @@ for epoch in range(epochs):
     model.fit_partial(interactions=train_interactions, user_features=user_features, item_features=item_features,
                       **fit_kwargs)
 
-    # The position of a movie or user is that movie's/user's 2-dimensional representation. The size of the movie dot is
-    # related to its item bias.
+    # The position of a movie or user is that movie's/user's 2-dimensional representation.
     movie_positions = model.predict_item_representation(item_features)
     user_positions = model.predict_user_representation(user_features)
-    movie_sizes = model.predict_item_bias(item_features) * 10 + 1.0
 
     # Handle multiple tastes, if applicable. If there are more than 1 taste per user, only the first of each user's
     # tastes will be plotted.
@@ -64,7 +60,7 @@ for epoch in range(epochs):
     ax.axhline(y=0, color='k')
     ax.axvline(x=0, color='k')
     ax.scatter(*zip(*user_positions[user_to_plot]), color='r', s=1)
-    ax.scatter(*zip(*movie_positions[movies_to_plot]), s=movie_sizes)
+    ax.scatter(*zip(*movie_positions[movies_to_plot]), s=2)
     ax.set_aspect('equal')
 
     for i, movie in enumerate(movies_to_plot):
