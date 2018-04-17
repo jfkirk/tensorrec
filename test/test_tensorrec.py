@@ -121,6 +121,11 @@ class TensorRecTestCase(TestCase):
             self.unbiased_model.predict_item_bias,
             self.item_features)
 
+    def test_predict_user_attn_repr(self):
+        # This test will be overwritten by the tests that have attention
+        with self.assertRaises(ValueError):
+            self.unbiased_model.predict_user_attention_representation(self.user_features)
+
 
 class TensorRecBiasedPrediction(TestCase):
     # TODO: Collapse these into TensorRecTestCase once the fit bug is fixed
@@ -208,6 +213,12 @@ class TensorRecAttentionTestCase(TensorRecNTastesTestCase):
                                        attention_graph=LinearRepresentationGraph())
         cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
+    def test_predict_user_attn_repr(self):
+        user_attn_repr = self.unbiased_model.predict_user_attention_representation(self.user_features)
+
+        # attn repr should have shape [n_tastes, n_users, n_components]
+        self.assertEqual(user_attn_repr.shape, (3, self.user_features.shape[0], 10))
+
 
 class TensorRecSavingTestCase(TestCase):
 
@@ -241,7 +252,8 @@ class TensorRecSavingTestCase(TestCase):
         self.assertTrue((ranks == ranks_after_save).all())
 
         # Blow away the session
-        set_session(tf.Session())
+        set_session(None)
+        tf.reset_default_graph()
 
         # Reload the model, predict, and check for equal predictions
         new_model = TensorRec.load_model(directory_path=self.test_dir)

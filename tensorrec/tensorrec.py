@@ -109,9 +109,10 @@ class TensorRec(object):
             'tf_sample_indices', 'tf_n_sampled_items', 'tf_similar_items_ids'
         ]
         if self.biased:
-            self.graph_tensor_hook_attr_names += [
-                'tf_projected_user_biases', 'tf_projected_item_biases',
-            ]
+            self.graph_tensor_hook_attr_names += ['tf_projected_user_biases', 'tf_projected_item_biases']
+        if self.attention_graph_factory is not None:
+            self.graph_tensor_hook_attr_names += ['tf_user_attention_representation']
+
         self.graph_operation_hook_attr_names = [
 
             # AdamOptimizer
@@ -320,10 +321,12 @@ class TensorRec(object):
             tastes_tf_attentions = []
             tastes_tf_attention_serials = []
             tastes_tf_sample_attention_serials = []
+            tastes_tf_attention_representations = []
         else:
             tastes_tf_attentions = None
             tastes_tf_attention_serials = None
             tastes_tf_sample_attention_serials = None
+            tastes_tf_attention_representations = None
 
         # Build n_tastes user representations and predictions
         for taste in range(self.n_tastes):
@@ -364,6 +367,7 @@ class TensorRec(object):
                 tastes_tf_attentions.append(tf_attention)
                 tastes_tf_attention_serials.append(tf_attention_serial)
                 tastes_tf_sample_attention_serials.append(tf_sample_attention_serial)
+                tastes_tf_attention_representations.append(tf_attention_representation)
 
             # Connect the configurable prediction graphs for each taste
             tf_prediction = self.prediction_graph_factory.connect_dense_prediction_graph(
@@ -387,6 +391,10 @@ class TensorRec(object):
             tastes_tf_predictions.append(tf_prediction)
             tastes_tf_prediction_serials.append(tf_prediction_serial)
             tastes_tf_sample_prediction_serials.append(tf_sample_predictions_serial)
+
+        # If attention is in the graph, build the API node
+        if self.attention_graph_factory is not None:
+            self.tf_user_attention_representation = tf.stack(tastes_tf_attention_representations)
 
         self.tf_user_representation = tf.stack(tastes_tf_user_representations)
         self.tf_prediction = collapse_mixture_of_tastes(
@@ -697,6 +705,28 @@ class TensorRec(object):
 
         return user_repr
 
+    def predict_user_attention_representation(self, user_features):
+        """
+        Predict latent attention representation vectors for the given users.
+        :param user_features: scipy.sparse matrix
+        A matrix of user features of shape [n_users, n_user_features].
+        :return: np.ndarray
+        The latent user attention representations in an ndarray of shape [n_users, n_components]
+        """
+
+        if self.attention_graph_factory is None:
+            raise ValueError("This TensorRec model does not use attention. Try re-building TensorRec with a valid "
+                             "'attention_graph' arg.")
+
+        feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
+        user_attn_repr = self.tf_user_attention_representation.eval(session=get_session(), feed_dict=feed_dict)
+
+        # If there is only one user attn repr per user, collapse from rank 3 to rank 2
+        if self.n_tastes == 1:
+            user_attn_repr = np.sum(user_attn_repr, axis=0)
+
+        return user_attn_repr
+
     def predict_item_representation(self, item_features):
         """
         Predict representation vectors for the given items.
@@ -770,7 +800,9 @@ class TensorRec(object):
         :return:
         """
 
-        saver = tf.train.Saver()
+        graph_path = os.path.join(directory_path, 'tensorrec_session.cpkt.meta')
+        saver = tf.train.import_meta_graph(graph_path)
+
         session_path = os.path.join(directory_path, 'tensorrec_session.cpkt')
         saver.restore(sess=get_session(), save_path=session_path)
 

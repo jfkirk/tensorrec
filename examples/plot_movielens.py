@@ -38,8 +38,8 @@ model = TensorRec(n_components=2,
                   n_tastes=3)
 
 # Make some random selections of movies and users we want to plot
-movies_to_plot = np.random.choice(a=item_features.shape[0], size=200, replace=False)
-user_to_plot = np.random.choice(a=user_features.shape[0], size=400, replace=False)
+movies_to_plot = np.random.choice(a=item_features.shape[0], size=50, replace=False)
+user_to_plot = np.random.choice(a=user_features.shape[0], size=100, replace=False)
 
 # Iterate through 1000 epochs, outputting a JPG plot each epoch
 for epoch in range(epochs):
@@ -66,8 +66,8 @@ for epoch in range(epochs):
     for i, movie in enumerate(movies_to_plot):
         movie_name = item_titles[movie]
         movie_position = movie_positions[movie]
-        # Uncomment this line to write movie titles to the plot.
-        # ax.annotate(movie_name, movie_position[0:2], fontsize='x-small')
+        # Comment this line to remove movie titles to the plot.
+        ax.annotate(movie_name, movie_position[0:2], fontsize='x-small')
 
     file = '/tmp/tensorrec/movielens/epoch_{}.jpg'.format(epoch)
     plt.savefig(file)
