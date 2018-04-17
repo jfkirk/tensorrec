@@ -121,6 +121,11 @@ class TensorRecTestCase(TestCase):
             self.unbiased_model.predict_item_bias,
             self.item_features)
 
+    def test_predict_user_attn_repr(self):
+        # This test will be overwritten by the tests that have attention
+        with self.assertRaises(ValueError):
+            self.unbiased_model.predict_user_attention_representation(self.user_features)
+
 
 class TensorRecBiasedPrediction(TestCase):
     # TODO: Collapse these into TensorRecTestCase once the fit bug is fixed

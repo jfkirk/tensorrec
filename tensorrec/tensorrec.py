@@ -713,6 +713,11 @@ class TensorRec(object):
         :return: np.ndarray
         The latent user attention representations in an ndarray of shape [n_users, n_components]
         """
+
+        if self.attention_graph_factory is None:
+            raise ValueError("This TensorRec model does not use attention. Try re-building TensorRec with a valid "
+                             "'attention_graph' arg.")
+
         feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
         user_attn_repr = self.tf_user_attention_representation.eval(session=get_session(), feed_dict=feed_dict)
 
