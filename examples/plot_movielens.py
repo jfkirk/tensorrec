@@ -11,7 +11,7 @@ import numpy as np
 from tensorrec import TensorRec
 from tensorrec.eval import precision_at_k, recall_at_k
 from tensorrec.loss_graphs import BalancedWMRBLossGraph
-from tensorrec.representation_graphs import ReLURepresentationGraph, LinearRepresentationGraph
+from tensorrec.representation_graphs import ReLURepresentationGraph
 
 from test.datasets import get_movielens_100k
 
@@ -33,7 +33,6 @@ model = TensorRec(n_components=2,
                   biased=False,
                   loss_graph=BalancedWMRBLossGraph(),
                   item_repr_graph=ReLURepresentationGraph(),
-                  #attention_graph=LinearRepresentationGraph(),
                   normalize_users=True,
                   normalize_items=True,
                   n_tastes=3)
@@ -50,27 +49,24 @@ for epoch in range(epochs):
     # The position of a movie or user is that movie's/user's 2-dimensional representation.
     movie_positions = model.predict_item_representation(item_features)
     user_positions = model.predict_user_representation(user_features)
-    #user_attentions = model.predict_user_attention_representation(user_features)
 
     # Handle multiple tastes, if applicable. If there are more than 1 taste per user, only the first of each user's
     # tastes will be plotted.
     if model.n_tastes > 1:
         user_positions = user_positions[0]
-        #user_attentions = user_attentions[0]
 
     _, ax = plt.subplots()
     ax.grid(b=True, which='both')
     ax.axhline(y=0, color='k')
     ax.axvline(x=0, color='k')
     ax.scatter(*zip(*user_positions[user_to_plot]), color='r', s=1)
-    #ax.scatter(*zip(*user_attentions[user_to_plot]), color='y', s=1)
     ax.scatter(*zip(*movie_positions[movies_to_plot]), s=2)
     ax.set_aspect('equal')
 
     for i, movie in enumerate(movies_to_plot):
         movie_name = item_titles[movie]
         movie_position = movie_positions[movie]
-        # Uncomment this line to write movie titles to the plot.
+        # Comment this line to remove movie titles to the plot.
         ax.annotate(movie_name, movie_position[0:2], fontsize='x-small')
 
     file = '/tmp/tensorrec/movielens/epoch_{}.jpg'.format(epoch)
