@@ -795,7 +795,9 @@ class TensorRec(object):
         :return:
         """
 
-        saver = tf.train.Saver()
+        graph_path = os.path.join(directory_path, 'tensorrec_session.cpkt.meta')
+        saver = tf.train.import_meta_graph(graph_path)
+
         session_path = os.path.join(directory_path, 'tensorrec_session.cpkt')
         saver.restore(sess=get_session(), save_path=session_path)
 

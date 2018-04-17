@@ -105,10 +105,6 @@ class TensorRecTestCase(TestCase):
         user_repr = self.unbiased_model.predict_user_representation(self.user_features)
         self.assertEqual(user_repr.shape, (self.user_features.shape[0], 10))
 
-    def test_predict_user_attn_repr(self):
-        user_attn_repr = self.unbiased_model.predict_user_attention_representation(self.user_features)
-        self.assertEqual(user_attn_repr.shape, (self.user_features.shape[0], 10))
-
     def test_predict_item_repr(self):
         item_repr = self.unbiased_model.predict_item_representation(self.item_features)
         self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
@@ -211,6 +207,12 @@ class TensorRecAttentionTestCase(TensorRecNTastesTestCase):
                                        user_repr_graph=NormalizedLinearRepresentationGraph(),
                                        attention_graph=LinearRepresentationGraph())
         cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+    def test_predict_user_attn_repr(self):
+        user_attn_repr = self.unbiased_model.predict_user_attention_representation(self.user_features)
+
+        # attn repr should have shape [n_tastes, n_users, n_components]
+        self.assertEqual(user_attn_repr.shape, (3, self.user_features.shape[0], 10))
 
 
 class TensorRecSavingTestCase(TestCase):
