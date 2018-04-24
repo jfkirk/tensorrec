@@ -14,7 +14,7 @@ def sample_items(n_items, n_users, n_sampled_items, replace):
         for item in users_items:
             sample_indices.append((user, item))
 
-    return sample_indices
+    return np.array(sample_indices)
 
 
 def calculate_batched_alpha(num_batches, alpha):
