@@ -2,6 +2,7 @@ import math
 import numpy as np
 import random
 import scipy.sparse as sp
+import six
 import tensorflow as tf
 
 
@@ -27,8 +28,47 @@ def calculate_batched_alpha(num_batches, alpha):
     return batched_alpha
 
 
+def dataset_from_raw_input(raw_input, contains_counter):
+
+    if isinstance(raw_input, tf.data.Dataset):
+        return raw_input
+
+    if sp.issparse(raw_input):
+        return handle_sparse_input_matrix(input_sparse_matrix=raw_input, contains_counter=contains_counter)
+
+    raise ValueError('Input must be a scipy sparse matrix or a TensorFlow Dataset')
+
+
+def handle_sparse_input_matrix(input_sparse_matrix, contains_counter, normalize_rows=False):
+
+    # TODO this normalization cruft in the Dataset refactor
+    if normalize_rows:
+        if not isinstance(input_sparse_matrix, sp.csr_matrix):
+            input_sparse_matrix = sp.csr_matrix(input_sparse_matrix)
+        mag = np.sqrt(input_sparse_matrix.power(2).sum(axis=1))
+        input_sparse_matrix = input_sparse_matrix.multiply(1.0 / mag)
+
+    if not isinstance(input_sparse_matrix, sp.coo_matrix):
+        input_sparse_matrix = sp.coo_matrix(input_sparse_matrix)
+
+    # "Actors" is used to signify "users or items" -- unused for interactions
+    n_actors = np.array([input_sparse_matrix.shape[0]], dtype=np.int64)
+    feature_indices = np.array([[pair for pair in six.moves.zip(input_sparse_matrix.row, input_sparse_matrix.col)]],
+                               dtype=np.int64)
+    feature_values = np.array([input_sparse_matrix.data], dtype=np.float32)
+
+    if contains_counter:
+        tensor_slices = (feature_indices, feature_values, n_actors)
+    else:
+        tensor_slices = (feature_indices, feature_values)
+
+    dataset = tf.data.Dataset.from_tensor_slices(tensor_slices)
+    return dataset
+
+
 def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.00045, num_user_features=200,
-                        num_item_features=200, n_features_per_user=20, n_features_per_item=20,  pos_int_ratio=.5):
+                        num_item_features=200, n_features_per_user=20, n_features_per_item=20,  pos_int_ratio=.5,
+                        return_datasets=False):
 
     if pos_int_ratio <= 0.0:
         raise Exception("pos_int_ratio must be > 0")
@@ -44,6 +84,11 @@ def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.0
 
     print("Generating item features")
     item_features = sp.rand(num_items, num_item_features, density=float(n_features_per_item) / num_item_features)
+
+    if return_datasets:
+        interactions = handle_sparse_input_matrix(interactions, contains_counter=False)
+        user_features = handle_sparse_input_matrix(user_features, contains_counter=True)
+        item_features = handle_sparse_input_matrix(item_features, contains_counter=True)
 
     return interactions, user_features, item_features
 

@@ -4,7 +4,6 @@ import numpy as np
 import os
 import pickle
 from scipy import sparse as sp
-import six
 import tensorflow as tf
 
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
@@ -15,7 +14,7 @@ from .recommendation_graphs import (
 )
 from .representation_graphs import AbstractRepresentationGraph, LinearRepresentationGraph
 from .session_management import get_session
-from .util import sample_items, calculate_batched_alpha
+from .util import sample_items, calculate_batched_alpha, dataset_from_raw_input
 
 
 class TensorRec(object):
@@ -28,9 +27,7 @@ class TensorRec(object):
                  attention_graph=None,
                  prediction_graph=DotProductPredictionGraph(),
                  loss_graph=RMSELossGraph(),
-                 biased=True,
-                 normalize_users=False,
-                 normalize_items=False):
+                 biased=True):
         """
         A TensorRec recommendation model.
         :param n_components: Integer
@@ -55,10 +52,6 @@ class TensorRec(object):
         See tensorrec.loss_graphs for examples.
         :param biased: bool
         If True, a bias value will be calculated for every user feature and item feature.
-        :param normalize_users: bool
-        If True, every row of the user features will be l2 normalized.
-        :param normalize_items: bool
-        If True, every row of the item features will be l2 normalized.
         """
 
         # Arg-check
@@ -91,8 +84,6 @@ class TensorRec(object):
         self.prediction_graph_factory = prediction_graph
         self.loss_graph_factory = loss_graph
         self.biased = biased
-        self.normalize_users = normalize_users
-        self.normalize_items = normalize_items
 
         # A list of the attr names of every graph hook attr
         self.graph_tensor_hook_attr_names = [
@@ -193,7 +184,7 @@ class TensorRec(object):
 
         initializer_sets = []
 
-        item_feature_initializer = self._create_dataset_initializers(item_features_matrix=item_features)[0]
+        item_feature_initializer = self._create_dataset_initializers(item_features=item_features)[0]
 
         start_batch = 0
         while start_batch < n_users:
@@ -205,8 +196,8 @@ class TensorRec(object):
             batch_user_features = user_features[start_batch:end_batch]
 
             # TODO its inefficient to make so many copies of the item features
-            initializers = self._create_dataset_initializers(interactions_matrix=batch_interactions,
-                                                             user_features_matrix=batch_user_features)
+            initializers = self._create_dataset_initializers(interactions=batch_interactions,
+                                                             user_features=batch_user_features)
             initializers.append(item_feature_initializer)
             initializer_sets.append(initializers)
 
@@ -214,61 +205,29 @@ class TensorRec(object):
 
         return initializer_sets
 
-    def _create_dataset_initializers(self, interactions_matrix=None, user_features_matrix=None,
-                                     item_features_matrix=None):
-
-        # Check that input data is of a sparse type
-        if (interactions_matrix is not None) and (not sp.issparse(interactions_matrix)):
-            raise Exception('Interactions must be a scipy sparse matrix')
-        if (user_features_matrix is not None) and (not sp.issparse(user_features_matrix)):
-            raise Exception('User features must be a scipy sparse matrix')
-        if (item_features_matrix is not None) and (not sp.issparse(item_features_matrix)):
-            raise Exception('Item features must be a scipy sparse matrix')
+    def _create_dataset_initializers(self, interactions=None, user_features=None, item_features=None):
 
         initializers = []
 
-        if interactions_matrix is not None:
-            _, interaction_indices, interaction_values = self._process_matrix(interactions_matrix)
-            interactions_dataset = tf.data.Dataset.from_tensor_slices((interaction_indices, interaction_values))
-            interactions_initializer = self.tf_interaction_iterator.make_initializer(interactions_dataset)
+        if interactions is not None:
+            interactions_initializer = self.tf_interaction_iterator.make_initializer(
+                dataset_from_raw_input(raw_input=interactions, contains_counter=False)
+            )
             initializers.append(interactions_initializer)
 
-        if user_features_matrix is not None:
-            n_users, user_features_indices, user_features_values = self._process_matrix(user_features_matrix)
-            user_feature_dataset = tf.data.Dataset.from_tensor_slices((user_features_indices,
-                                                                       user_features_values,
-                                                                       n_users))
-            user_features_initializer = self.tf_user_feature_iterator.make_initializer(user_feature_dataset)
+        if user_features is not None:
+            user_features_initializer = self.tf_user_feature_iterator.make_initializer(
+                dataset_from_raw_input(raw_input=user_features, contains_counter=True)
+            )
             initializers.append(user_features_initializer)
 
-        if item_features_matrix is not None:
-            n_items, item_features_indices, item_features_values = self._process_matrix(item_features_matrix)
-            item_feature_dataset = tf.data.Dataset.from_tensor_slices((item_features_indices,
-                                                                       item_features_values,
-                                                                       n_items))
-            item_features_initializer = self.tf_item_feature_iterator.make_initializer(item_feature_dataset)
+        if item_features is not None:
+            item_features_initializer = self.tf_item_feature_iterator.make_initializer(
+                dataset_from_raw_input(raw_input=item_features, contains_counter=True)
+            )
             initializers.append(item_features_initializer)
 
         return initializers
-
-    def _process_matrix(self, features_matrix, normalize_rows=False):
-
-        if normalize_rows:
-            if not isinstance(features_matrix, sp.csr_matrix):
-                features_matrix = sp.csr_matrix(features_matrix)
-            mag = np.sqrt(features_matrix.power(2).sum(axis=1))
-            features_matrix = features_matrix.multiply(1.0 / mag)
-
-        if not isinstance(features_matrix, sp.coo_matrix):
-            features_matrix = sp.coo_matrix(features_matrix)
-
-        # "Actors" is used to signify "users or items" -- unused for interactions
-        n_actors = np.array([features_matrix.shape[0]], dtype=np.int64)
-        feature_indices = np.array([[pair for pair in six.moves.zip(features_matrix.row, features_matrix.col)]],
-                                   dtype=np.int64)
-        feature_values = np.array([features_matrix.data], dtype=np.float32)
-
-        return n_actors, feature_indices, feature_values
 
     def _build_tf_graph(self, n_user_features, n_item_features):
 
@@ -308,7 +267,7 @@ class TensorRec(object):
                                             Tout=tf.int64)
         self.tf_sample_indices.set_shape([None, None])
 
-        # Collect the weights for normalization
+        # Collect the weights for regularization
         tf_weights = []
 
         # Build the item representations
@@ -622,9 +581,9 @@ class TensorRec(object):
         :return: np.ndarray
         The predictions in an ndarray of shape [n_users, n_items]
         """
-        initializers = self._create_dataset_initializers(interactions_matrix=None,
-                                                         user_features_matrix=user_features,
-                                                         item_features_matrix=item_features)
+        initializers = self._create_dataset_initializers(interactions=None,
+                                                         user_features=user_features,
+                                                         item_features=item_features)
         get_session().run(initializers)
 
         predictions = self.tf_prediction.eval(session=get_session())
@@ -645,9 +604,9 @@ class TensorRec(object):
         The first level list corresponds to input arg item_ids.
         The second level list is of length n_similar and contains tuples of (item_id, score) for each similar item.
         """
-        initializers = self._create_dataset_initializers(interactions_matrix=None,
-                                                         user_features_matrix=None,
-                                                         item_features_matrix=item_features)
+        initializers = self._create_dataset_initializers(interactions=None,
+                                                         user_features=None,
+                                                         item_features=item_features)
         get_session().run(initializers)
 
         feed_dict = {self.tf_similar_items_ids: np.array(item_ids)}
@@ -672,9 +631,9 @@ class TensorRec(object):
         :return: np.ndarray
         The ranks in an ndarray of shape [n_users, n_items]
         """
-        initializers = self._create_dataset_initializers(interactions_matrix=None,
-                                                         user_features_matrix=user_features,
-                                                         item_features_matrix=item_features)
+        initializers = self._create_dataset_initializers(interactions=None,
+                                                         user_features=user_features,
+                                                         item_features=item_features)
         get_session().run(initializers)
 
         rankings = self.tf_rankings.eval(session=get_session())
@@ -689,9 +648,9 @@ class TensorRec(object):
         :return: np.ndarray
         The latent user representations in an ndarray of shape [n_users, n_components]
         """
-        initializers = self._create_dataset_initializers(interactions_matrix=None,
-                                                         user_features_matrix=user_features,
-                                                         item_features_matrix=None)
+        initializers = self._create_dataset_initializers(interactions=None,
+                                                         user_features=user_features,
+                                                         item_features=None)
         get_session().run(initializers)
 
         user_repr = self.tf_user_representation.eval(session=get_session())
@@ -715,9 +674,9 @@ class TensorRec(object):
             raise ValueError("This TensorRec model does not use attention. Try re-building TensorRec with a valid "
                              "'attention_graph' arg.")
 
-        initializers = self._create_dataset_initializers(interactions_matrix=None,
-                                                         user_features_matrix=user_features,
-                                                         item_features_matrix=None)
+        initializers = self._create_dataset_initializers(interactions=None,
+                                                         user_features=user_features,
+                                                         item_features=None)
         get_session().run(initializers)
         user_attn_repr = self.tf_user_attention_representation.eval(session=get_session())
 
@@ -735,9 +694,9 @@ class TensorRec(object):
         :return: np.ndarray
         The latent item representations in an ndarray of shape [n_items, n_components]
         """
-        initializers = self._create_dataset_initializers(interactions_matrix=None,
-                                                         user_features_matrix=None,
-                                                         item_features_matrix=item_features)
+        initializers = self._create_dataset_initializers(interactions=None,
+                                                         user_features=None,
+                                                         item_features=item_features)
         get_session().run(initializers)
         item_repr = self.tf_item_representation.eval(session=get_session())
         return item_repr
@@ -753,9 +712,9 @@ class TensorRec(object):
         if not self.biased:
             raise NotImplementedError('Cannot predict user bias for unbiased model')
 
-        initializers = self._create_dataset_initializers(interactions_matrix=None,
-                                                         user_features_matrix=user_features,
-                                                         item_features_matrix=None)
+        initializers = self._create_dataset_initializers(interactions=None,
+                                                         user_features=user_features,
+                                                         item_features=None)
         get_session().run(initializers)
         predictions = self.tf_projected_user_biases.eval(session=get_session())
         return predictions
@@ -771,9 +730,9 @@ class TensorRec(object):
         if not self.biased:
             raise NotImplementedError('Cannot predict item bias for unbiased model')
 
-        initializers = self._create_dataset_initializers(interactions_matrix=None,
-                                                         user_features_matrix=None,
-                                                         item_features_matrix=item_features)
+        initializers = self._create_dataset_initializers(interactions=None,
+                                                         user_features=None,
+                                                         item_features=item_features)
         get_session().run(initializers)
         predictions = self.tf_projected_item_biases.eval(session=get_session())
         return predictions

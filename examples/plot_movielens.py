@@ -33,8 +33,6 @@ model = TensorRec(n_components=2,
                   biased=False,
                   loss_graph=BalancedWMRBLossGraph(),
                   item_repr_graph=ReLURepresentationGraph(),
-                  normalize_users=True,
-                  normalize_items=True,
                   n_tastes=3)
 
 # Make some random selections of movies and users we want to plot
