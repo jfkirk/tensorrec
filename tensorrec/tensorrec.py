@@ -1,4 +1,5 @@
 from functools import partial
+from itertools import cycle
 import logging
 import numpy as np
 import os
@@ -14,7 +15,7 @@ from .recommendation_graphs import (
 )
 from .representation_graphs import AbstractRepresentationGraph, LinearRepresentationGraph
 from .session_management import get_session
-from .util import sample_items, calculate_batched_alpha, dataset_from_raw_input
+from .util import sample_items, calculate_batched_alpha, datasets_from_raw_input
 
 
 class TensorRec(object):
@@ -27,7 +28,9 @@ class TensorRec(object):
                  attention_graph=None,
                  prediction_graph=DotProductPredictionGraph(),
                  loss_graph=RMSELossGraph(),
-                 biased=True):
+                 biased=True,
+                 n_user_features=None,
+                 n_item_features=None):
         """
         A TensorRec recommendation model.
         :param n_components: Integer
@@ -41,8 +44,8 @@ class TensorRec(object):
         An object which inherits AbstractRepresentationGraph that contains a method to calculate item representations.
         See tensorrec.representation_graphs for examples.
         :param attention_graph: AbstractRepresentationGraph or None
-        An object which inherits AbstractRepresentationGraph that contains a method to calculate user attention. Any
-        valid repr_graph is also a valid attention graph. If None, no attention process will be applied.
+        Optional. An object which inherits AbstractRepresentationGraph that contains a method to calculate user
+        attention. Any valid repr_graph is also a valid attention graph. If None, no attention process will be applied.
         :param prediction_graph: AbstractPredictionGraph
         An object which inherits AbstractPredictionGraph that contains a method to calculate predictions from a pair of
         user/item reprs.
@@ -52,6 +55,12 @@ class TensorRec(object):
         See tensorrec.loss_graphs for examples.
         :param biased: bool
         If True, a bias value will be calculated for every user feature and item feature.
+        :param n_user_features: int or None
+        Optional. If an int, all user feature input will have this dimension. If None, user feature dimensions will be
+        inferred from input. Required if the API will be called with user_features that are not scipy sparse matrices.
+        :param n_item_features: int or None
+        Optional. If an int, all item feature input will have this dimension. If None, item feature dimensions will be
+        inferred from input. Required if the API will be called with item_features that are not scipy sparse matrices.
         """
 
         # Arg-check
@@ -85,6 +94,10 @@ class TensorRec(object):
         self.loss_graph_factory = loss_graph
         self.biased = biased
 
+        # Feature sizes
+        self.n_user_features = n_user_features
+        self.n_item_features = n_item_features
+
         # A list of the attr names of every graph hook attr
         self.graph_tensor_hook_attr_names = [
 
@@ -111,6 +124,9 @@ class TensorRec(object):
             # Input data iterators
             'tf_user_feature_iterator', 'tf_item_feature_iterator', 'tf_interaction_iterator',
         ]
+
+        # Calling the break routine during __init__ creates all the attrs on the TensorRec object with an initial value
+        # of None
         self._break_graph_hooks()
 
         # A map of every graph hook attr name to the node name after construction
@@ -168,66 +184,117 @@ class TensorRec(object):
                 iterator_resource_name, output_types, output_shapes, output_classes
             )
 
-    def _create_batched_dataset_initializers(self, interactions=None, user_features=None, item_features=None,
-                                             user_batch_size=None):
+    def _create_batched_dataset_initializers(self, interactions, user_features, item_features, user_batch_size=None):
 
-        if not isinstance(interactions, sp.csr_matrix):
-            interactions = sp.csr_matrix(interactions)
-        if not isinstance(user_features, sp.csr_matrix):
-            user_features = sp.csr_matrix(user_features)
+        if user_batch_size is not None:
 
-        n_users = user_features.shape[0]
+            # Raise exception if interactions and user_features aren't sparse matrices
+            if (not sp.issparse(interactions)) or (not sp.issparse(user_features)):
+                raise ValueError('In order to support user batching at fit time, interactions and user_features must '
+                                 'both be scipy.sparse matrices.')
 
-        # Infer the batch size, if necessary
-        if user_batch_size is None:
-            user_batch_size = n_users
+            # Coerce to CSR for fast batching
+            if not isinstance(interactions, sp.csr_matrix):
+                interactions = sp.csr_matrix(interactions)
+            if not isinstance(user_features, sp.csr_matrix):
+                user_features = sp.csr_matrix(user_features)
 
-        initializer_sets = []
+            n_users = user_features.shape[0]
 
-        item_feature_initializer = self._create_dataset_initializers(item_features=item_features)[0]
+            # Infer the batch size, if necessary
+            if user_batch_size is None:
+                user_batch_size = n_users
 
-        start_batch = 0
-        while start_batch < n_users:
+            interactions_batched = []
+            user_features_batched = []
 
-            # min() ensures that the batch bounds doesn't go past the end of the index
-            end_batch = min(start_batch + user_batch_size, n_users)
+            start_batch = 0
+            while start_batch < n_users:
 
-            batch_interactions = interactions[start_batch:end_batch]
-            batch_user_features = user_features[start_batch:end_batch]
+                # min() ensures that the batch bounds doesn't go past the end of the index
+                end_batch = min(start_batch + user_batch_size, n_users)
 
-            # TODO its inefficient to make so many copies of the item features
-            initializers = self._create_dataset_initializers(interactions=batch_interactions,
-                                                             user_features=batch_user_features)
-            initializers.append(item_feature_initializer)
-            initializer_sets.append(initializers)
+                interactions_batched.append(interactions[start_batch:end_batch])
+                user_features_batched.append(user_features[start_batch:end_batch])
 
-            start_batch = end_batch
+                start_batch = end_batch
 
-        return initializer_sets
+            # Overwrite the input with the new, batched input
+            interactions = interactions_batched
+            user_features = user_features_batched
+
+        int_init, uf_init, if_init = self._create_dataset_initializers(interactions=interactions,
+                                                                       user_features=user_features,
+                                                                       item_features=item_features)
+
+        # Cycle item features when zipping because there should only be one
+        initializers = [init_set for init_set in zip(int_init, uf_init, cycle(if_init))]
+
+        return initializers
 
     def _create_dataset_initializers(self, interactions=None, user_features=None, item_features=None):
 
         initializers = []
 
         if interactions is not None:
-            interactions_initializer = self.tf_interaction_iterator.make_initializer(
-                dataset_from_raw_input(raw_input=interactions, contains_counter=False)
-            )
-            initializers.append(interactions_initializer)
+            interactions_datasets = datasets_from_raw_input(raw_input=interactions, contains_counter=False)
+            interactions_initializers = [self.tf_interaction_iterator.make_initializer(dataset)
+                                         for dataset in interactions_datasets]
+            initializers.append(interactions_initializers)
 
         if user_features is not None:
-            user_features_initializer = self.tf_user_feature_iterator.make_initializer(
-                dataset_from_raw_input(raw_input=user_features, contains_counter=True)
-            )
-            initializers.append(user_features_initializer)
+            user_features_datasets = datasets_from_raw_input(raw_input=user_features, contains_counter=True)
+            user_features_initializers = [self.tf_user_feature_iterator.make_initializer(dataset)
+                                          for dataset in user_features_datasets]
+            initializers.append(user_features_initializers)
 
         if item_features is not None:
-            item_features_initializer = self.tf_item_feature_iterator.make_initializer(
-                dataset_from_raw_input(raw_input=item_features, contains_counter=True)
-            )
-            initializers.append(item_features_initializer)
+            item_features_datasets = datasets_from_raw_input(raw_input=item_features, contains_counter=True)
+            item_features_initializers = [self.tf_item_feature_iterator.make_initializer(dataset)
+                                          for dataset in item_features_datasets]
+            initializers.append(item_features_initializers)
 
         return initializers
+
+    def _infer_n_user_features(self, user_features):
+
+        if sp.issparse(user_features):
+
+            inferred_n_features = user_features.shape[1]
+
+            if self.n_user_features is None:
+                self.n_user_features = inferred_n_features
+
+            else:
+                if self.n_user_features != inferred_n_features:
+                    raise ValueError("user_features size mismatch. Given user_features has {} features, TensorRec was "
+                                     "built with {} user features.".format(inferred_n_features, self.n_user_features))
+
+        elif self.n_user_features is None:
+            raise ValueError("Unable to infer user features shape from input user_features. Please specify "
+                             "n_user_features when constructing TensorRec().")
+
+        return self.n_user_features
+
+    def _infer_n_item_features(self, item_features):
+
+        if sp.issparse(item_features):
+
+            inferred_n_features = item_features.shape[1]
+
+            if self.n_item_features is None:
+                self.n_item_features = inferred_n_features
+
+            else:
+                if self.n_item_features != inferred_n_features:
+                    raise ValueError("item_features size mismatch. Given item_features has {} features, TensorRec was "
+                                     "built with {} item features.".format(inferred_n_features, self.n_item_features))
+
+        elif self.n_item_features is None:
+            raise ValueError("Unable to infer item features shape from input item_features. Please specify "
+                             "n_item_features when constructing TensorRec().")
+
+        return self.n_item_features
 
     def _build_tf_graph(self, n_user_features, n_item_features):
 
@@ -240,16 +307,17 @@ class TensorRec(object):
         self.tf_user_feature_iterator = tf.data.Iterator.from_structure(output_types=(tf.int64, tf.float32, tf.int64),
                                                                         output_shapes=([None, 2], [None], []),
                                                                         shared_name='tf_user_feature_iterator')
-        tf_user_feature_indices, tf_user_feature_values, tf_n_users = self.tf_user_feature_iterator.get_next()
 
         self.tf_item_feature_iterator = tf.data.Iterator.from_structure(output_types=(tf.int64, tf.float32, tf.int64),
                                                                         output_shapes=([None, 2], [None], []),
                                                                         shared_name='tf_item_feature_iterator')
-        tf_item_feature_indices, tf_item_feature_values, tf_n_items = self.tf_item_feature_iterator.get_next()
 
         self.tf_interaction_iterator = tf.data.Iterator.from_structure(output_types=(tf.int64, tf.float32),
                                                                        output_shapes=([None, None], [None]),
                                                                        shared_name='tf_interaction_iterator')
+
+        tf_user_feature_indices, tf_user_feature_values, tf_n_users = self.tf_user_feature_iterator.get_next()
+        tf_item_feature_indices, tf_item_feature_values, tf_n_items = self.tf_item_feature_iterator.get_next()
         tf_interaction_indices, tf_interaction_values = self.tf_interaction_iterator.get_next()
 
         # Construct the features and interactions as sparse matrices
@@ -530,9 +598,12 @@ class TensorRec(object):
         # Check if the graph has been constructed by checking the dense prediction node
         # If it hasn't been constructed, initialize it
         if self.tf_prediction is None:
-            # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed
-            # without refitting
-            self._build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
+
+            # Numbers of features are either learned at fit time from the shape of these two matrices or specified at
+            # TensorRec construction and cannot be changed.
+            n_user_features = self._infer_n_user_features(user_features)
+            n_item_features = self._infer_n_item_features(item_features)
+            self._build_tf_graph(n_user_features=n_user_features, n_item_features=n_item_features)
             session.run(tf.global_variables_initializer())
 
         if verbose:

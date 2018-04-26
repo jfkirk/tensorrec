@@ -28,42 +28,55 @@ def calculate_batched_alpha(num_batches, alpha):
     return batched_alpha
 
 
-def dataset_from_raw_input(raw_input, contains_counter):
+def datasets_from_raw_input(raw_input, contains_counter):
 
     if isinstance(raw_input, tf.data.Dataset):
-        return raw_input
+        return [raw_input]
 
     if sp.issparse(raw_input):
-        return handle_sparse_input_matrix(input_sparse_matrix=raw_input, contains_counter=contains_counter)
+        return handle_sparse_matrix_input(input_sparse_matrix=raw_input, contains_counter=contains_counter)
 
-    raise ValueError('Input must be a scipy sparse matrix or a TensorFlow Dataset')
+    if isinstance(raw_input, list) or isinstance(raw_input, set):
+
+        if all([sp.issparse(input_val) for input_val in raw_input]):
+            return handle_sparse_matrix_list_input(input_sparse_matrix_list=raw_input,
+                                                   contains_counter=contains_counter)
+
+        if all([isinstance(input_val, tf.data.Dataset) for input_val in raw_input]):
+            return raw_input
+
+    raise ValueError('Input must be a scipy sparse matrix, an iterable of scipy sprase matrices, or a TensorFlow '
+                     'Dataset')
 
 
-def handle_sparse_input_matrix(input_sparse_matrix, contains_counter, normalize_rows=False):
+def handle_sparse_matrix_input(input_sparse_matrix, contains_counter):
+    return handle_sparse_matrix_list_input(input_sparse_matrix_list=[input_sparse_matrix],
+                                           contains_counter=contains_counter)
 
-    # TODO this normalization cruft in the Dataset refactor
-    if normalize_rows:
-        if not isinstance(input_sparse_matrix, sp.csr_matrix):
-            input_sparse_matrix = sp.csr_matrix(input_sparse_matrix)
-        mag = np.sqrt(input_sparse_matrix.power(2).sum(axis=1))
-        input_sparse_matrix = input_sparse_matrix.multiply(1.0 / mag)
 
-    if not isinstance(input_sparse_matrix, sp.coo_matrix):
-        input_sparse_matrix = sp.coo_matrix(input_sparse_matrix)
+def handle_sparse_matrix_list_input(input_sparse_matrix_list, contains_counter):
+    all_tensor_slices = [tensor_slices_from_sparse_matrix(input_matrix, contains_counter)
+                         for input_matrix in input_sparse_matrix_list]
+    return [tf.data.Dataset.from_tensor_slices(tensor_slices) for tensor_slices in all_tensor_slices]
+
+
+def tensor_slices_from_sparse_matrix(sparse_matrix, contains_counter):
+
+    if not isinstance(sparse_matrix, sp.coo_matrix):
+        sparse_matrix = sp.coo_matrix(sparse_matrix)
 
     # "Actors" is used to signify "users or items" -- unused for interactions
-    n_actors = np.array([input_sparse_matrix.shape[0]], dtype=np.int64)
-    feature_indices = np.array([[pair for pair in six.moves.zip(input_sparse_matrix.row, input_sparse_matrix.col)]],
+    n_actors = np.array([sparse_matrix.shape[0]], dtype=np.int64)
+    feature_indices = np.array([[pair for pair in six.moves.zip(sparse_matrix.row, sparse_matrix.col)]],
                                dtype=np.int64)
-    feature_values = np.array([input_sparse_matrix.data], dtype=np.float32)
+    feature_values = np.array([sparse_matrix.data], dtype=np.float32)
 
     if contains_counter:
         tensor_slices = (feature_indices, feature_values, n_actors)
     else:
         tensor_slices = (feature_indices, feature_values)
 
-    dataset = tf.data.Dataset.from_tensor_slices(tensor_slices)
-    return dataset
+    return tensor_slices
 
 
 def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.00045, num_user_features=200,
@@ -86,9 +99,9 @@ def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.0
     item_features = sp.rand(num_items, num_item_features, density=float(n_features_per_item) / num_item_features)
 
     if return_datasets:
-        interactions = handle_sparse_input_matrix(interactions, contains_counter=False)
-        user_features = handle_sparse_input_matrix(user_features, contains_counter=True)
-        item_features = handle_sparse_input_matrix(item_features, contains_counter=True)
+        interactions = handle_sparse_matrix_input(interactions, contains_counter=False)[0]
+        user_features = handle_sparse_matrix_input(user_features, contains_counter=True)[0]
+        item_features = handle_sparse_matrix_input(item_features, contains_counter=True)[0]
 
     return interactions, user_features, item_features
 

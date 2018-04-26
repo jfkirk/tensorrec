@@ -8,27 +8,17 @@ import tensorflow as tf
 from tensorrec import TensorRec
 from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
 from tensorrec.session_management import set_session
-from tensorrec.util import generate_dummy_data_with_indicator, generate_dummy_data
+from tensorrec.util import generate_dummy_data
 
 
 class TensorRecTestCase(TestCase):
 
     @classmethod
-    def getDummyData(cls):
-        return generate_dummy_data(
+    def setUpClass(cls):
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
             num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
             n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
-
-    @classmethod
-    def setUpClass(cls):
-        cls.interactions, cls.user_features, cls.item_features = cls.getDummyData()
-
-        cls.standard_model = TensorRec(n_components=10)
-        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
-
-        cls.unbiased_model = TensorRec(n_components=10, biased=False)
-        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
     def test_init(self):
         self.assertIsNotNone(TensorRec())
@@ -57,10 +47,6 @@ class TensorRecTestCase(TestCase):
         with self.assertRaises(ValueError):
             TensorRec(attention_graph=np.mean)
 
-    def test_fit(self):
-        # Ensure that the nodes have been built
-        self.assertIsNotNone(self.standard_model.tf_prediction)
-
     def test_fit_verbose(self):
         model = TensorRec(n_components=10)
         model.fit(self.interactions, self.user_features, self.item_features, epochs=10, verbose=True)
@@ -73,17 +59,41 @@ class TensorRecTestCase(TestCase):
         # Ensure that the nodes have been built
         self.assertIsNotNone(model.tf_prediction)
 
+
+class TensorRecAPITestCase(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        cls.n_users = 15
+        cls.n_items = 30
+
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
+            num_users=cls.n_users, num_items=cls.n_items, interaction_density=.5, num_user_features=200,
+            num_item_features=200, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+        )
+
+        cls.standard_model = TensorRec(n_components=10)
+        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+        cls.unbiased_model = TensorRec(n_components=10, biased=False)
+        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+    def test_fit(self):
+        # Ensure that the nodes have been built
+        self.assertIsNotNone(self.standard_model.tf_prediction)
+
     def test_predict(self):
         predictions = self.standard_model.predict(user_features=self.user_features,
                                                   item_features=self.item_features)
 
-        self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+        self.assertEqual(predictions.shape, (self.n_users, self.n_items))
 
     def test_predict_rank(self):
         ranks = self.standard_model.predict_rank(user_features=self.user_features,
                                                  item_features=self.item_features)
 
-        self.assertEqual(ranks.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+        self.assertEqual(ranks.shape, (self.n_users, self.n_items))
         for x in range(ranks.shape[0]):
             for y in range(ranks.shape[1]):
                 val = ranks[x][y]
@@ -103,15 +113,15 @@ class TensorRecTestCase(TestCase):
 
     def test_fit_predict_unbiased(self):
         predictions = self.unbiased_model.predict(user_features=self.user_features, item_features=self.item_features)
-        self.assertEqual(predictions.shape, (self.user_features.shape[0], self.item_features.shape[0]))
+        self.assertEqual(predictions.shape, (self.n_users, self.n_items))
 
     def test_predict_user_repr(self):
         user_repr = self.unbiased_model.predict_user_representation(self.user_features)
-        self.assertEqual(user_repr.shape, (self.user_features.shape[0], 10))
+        self.assertEqual(user_repr.shape, (self.n_users, 10))
 
     def test_predict_item_repr(self):
         item_repr = self.unbiased_model.predict_item_representation(self.item_features)
-        self.assertEqual(item_repr.shape, (self.item_features.shape[0], 10))
+        self.assertEqual(item_repr.shape, (self.n_items, 10))
 
     def test_predict_user_bias_unbiased_model(self):
         self.assertRaises(
@@ -153,13 +163,17 @@ class TensorRecBiasedPrediction(TestCase):
         self.assertTrue(any(item_bias))  # Make sure it isn't all 0s
 
 
-class TensorRecNTastesTestCase(TensorRecTestCase):
+class TensorRecAPINTastesTestCase(TensorRecAPITestCase):
 
     @classmethod
     def setUpClass(cls):
+
+        cls.n_users = 15
+        cls.n_items = 30
+
         cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
-            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
-            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+            num_users=cls.n_users, num_items=cls.n_items, interaction_density=.5, num_user_features=200,
+            num_item_features=200, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
 
         cls.standard_model = TensorRec(n_components=10,
@@ -180,13 +194,17 @@ class TensorRecNTastesTestCase(TensorRecTestCase):
         self.assertEqual(user_repr.shape, (3, self.user_features.shape[0], 10))
 
 
-class TensorRecAttentionTestCase(TensorRecNTastesTestCase):
+class TensorRecAPIAttentionTestCase(TensorRecAPINTastesTestCase):
 
     @classmethod
     def setUpClass(cls):
+
+        cls.n_users = 15
+        cls.n_items = 30
+
         cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
-            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
-            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+            num_users=cls.n_users, num_items=cls.n_items, interaction_density=.5, num_user_features=200,
+            num_item_features=200, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
 
         cls.standard_model = TensorRec(n_components=10,
@@ -209,14 +227,30 @@ class TensorRecAttentionTestCase(TensorRecNTastesTestCase):
         self.assertEqual(user_attn_repr.shape, (3, self.user_features.shape[0], 10))
 
 
-class TensorRecDatasetInputTestCase(TensorRecTestCase):
+class TensorRecAPIDatasetInputTestCase(TensorRecAPITestCase):
 
     @classmethod
-    def getDummyData(cls):
-        return generate_dummy_data(
-            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
-            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+    def setUpClass(cls):
+
+        cls.n_users = 15
+        cls.n_items = 30
+
+        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
+            num_users=cls.n_users, num_items=cls.n_items, interaction_density=.5, num_user_features=200,
+            num_item_features=200, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5,
+            return_datasets=True
         )
+
+        cls.standard_model = TensorRec(n_components=10,
+                                       n_user_features=200,
+                                       n_item_features=200,)
+        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+        cls.unbiased_model = TensorRec(n_components=10,
+                                       biased=False,
+                                       n_user_features=200,
+                                       n_item_features=200,)
+        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
 
 
 class TensorRecSavingTestCase(TestCase):
