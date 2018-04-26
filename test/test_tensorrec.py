@@ -8,16 +8,20 @@ import tensorflow as tf
 from tensorrec import TensorRec
 from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
 from tensorrec.session_management import set_session
-from tensorrec.util import generate_dummy_data
+from tensorrec.util import generate_dummy_data, handle_sparse_matrix_input
 
 
 class TensorRecTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
+
+        cls.n_user_features = 200
+        cls.n_item_features = 150
+
         cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
-            num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
-            n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
+            num_users=15, num_items=30, interaction_density=.5, num_user_features=cls.n_user_features,
+            num_item_features=cls.n_item_features, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
 
     def test_init(self):
@@ -58,6 +62,68 @@ class TensorRecTestCase(TestCase):
         model.fit(self.interactions, self.user_features, self.item_features, epochs=10, user_batch_size=2)
         # Ensure that the nodes have been built
         self.assertIsNotNone(model.tf_prediction)
+
+    def test_fit_fail_bad_input(self):
+        model = TensorRec(n_components=10)
+        with self.assertRaises(ValueError):
+            model.fit(np.array([1, 2, 3, 4]), self.user_features, self.item_features, epochs=10)
+        with self.assertRaises(ValueError):
+            model.fit(self.interactions, np.array([1, 2, 3, 4]), self.item_features, epochs=10)
+        with self.assertRaises(ValueError):
+            model.fit(self.interactions, self.user_features, np.array([1, 2, 3, 4]), epochs=10)
+
+    def test_fit_fail_mismatched_batches(self):
+        model = TensorRec(n_components=10, n_user_features=self.n_user_features, n_item_features=self.n_item_features)
+        with self.assertRaises(ValueError):
+            model.fit(self.interactions,
+                      [self.user_features, self.user_features],
+                      [self.item_features, self.item_features, self.item_features],
+                      epochs=10)
+
+        with self.assertRaises(ValueError):
+            model.fit(self.interactions,
+                      [self.user_features, self.user_features],
+                      [self.item_features, self.item_features],
+                      epochs=10)
+
+        model.fit([self.interactions, self.interactions],
+                  [self.user_features, self.user_features],
+                  self.item_features,
+                  epochs=10)
+
+    def test_fit_fail_batching_dataset(self):
+        model = TensorRec(n_components=10)
+
+        interactions_as_dataset = handle_sparse_matrix_input(self.interactions, contains_counter=False)[0]
+        with self.assertRaises(ValueError):
+            model.fit(interactions_as_dataset, self.user_features, self.item_features, epochs=10, user_batch_size=2)
+
+    def test_fit_fail_mismatched_feature_sizes(self):
+        model = TensorRec(n_components=10)
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
+
+        # Fit again -- same dims, no problems
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=10)
+
+        # Fit with mismatched items
+        with self.assertRaises(ValueError):
+            model.fit(self.interactions, self.user_features, self.user_features, epochs=10)
+
+        # Fir with mismatched users
+        with self.assertRaises(ValueError):
+            model.fit(self.interactions, self.item_features, self.item_features, epochs=10)
+
+    def test_fit_fail_user_feature_inference_from_dataset(self):
+        uf_as_dataset = handle_sparse_matrix_input(self.user_features, contains_counter=True)[0]
+        with self.assertRaises(ValueError):
+            model = TensorRec(n_components=10)
+            model.fit(self.interactions, uf_as_dataset, self.item_features, epochs=10)
+
+    def test_fit_fail_item_feature_inference_from_dataset(self):
+        if_as_dataset = handle_sparse_matrix_input(self.user_features, contains_counter=True)[0]
+        with self.assertRaises(ValueError):
+            model = TensorRec(n_components=10)
+            model.fit(self.interactions, self.user_features, if_as_dataset, epochs=10)
 
 
 class TensorRecAPITestCase(TestCase):

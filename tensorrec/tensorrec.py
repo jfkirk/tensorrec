@@ -227,6 +227,13 @@ class TensorRec(object):
                                                                        user_features=user_features,
                                                                        item_features=item_features)
 
+        # Ensure that lengths make sense
+        if len(int_init) != len(uf_init):
+            raise ValueError('Number of batches in user_features and interactions must be equal.')
+        if (len(if_init) > 1) and (len(if_init) != len(uf_init)):
+            raise ValueError('Number of batches in item_features must be 1 or equal to the number of batches in '
+                             'user_features.')
+
         # Cycle item features when zipping because there should only be one
         initializers = [init_set for init_set in zip(int_init, uf_init, cycle(if_init))]
 
@@ -595,14 +602,16 @@ class TensorRec(object):
         if (n_sampled_items is not None) and (not self.loss_graph_factory.is_sample_based):
             logging.warning('n_sampled_items was specified, but the loss graph is not sample-based')
 
+        # Check input dimensions
+        n_user_features = self._infer_n_user_features(user_features)
+        n_item_features = self._infer_n_item_features(item_features)
+
         # Check if the graph has been constructed by checking the dense prediction node
         # If it hasn't been constructed, initialize it
         if self.tf_prediction is None:
 
             # Numbers of features are either learned at fit time from the shape of these two matrices or specified at
             # TensorRec construction and cannot be changed.
-            n_user_features = self._infer_n_user_features(user_features)
-            n_item_features = self._infer_n_item_features(item_features)
             self._build_tf_graph(n_user_features=n_user_features, n_item_features=n_item_features)
             session.run(tf.global_variables_initializer())
 
