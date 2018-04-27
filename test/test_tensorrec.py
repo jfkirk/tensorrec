@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import shutil
 import tempfile
 from unittest import TestCase
@@ -6,9 +7,9 @@ from unittest import TestCase
 import tensorflow as tf
 
 from tensorrec import TensorRec
-from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix
+from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix, write_tfrecord_from_tensorrec_dataset
 from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
-from tensorrec.session_management import set_session
+from tensorrec.session_management import set_session, get_session
 from tensorrec.util import generate_dummy_data
 
 
@@ -306,6 +307,43 @@ class TensorRecAPIDatasetInputTestCase(TensorRecAPITestCase):
 
         cls.unbiased_model = TensorRec(n_components=10, biased=False)
         cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+
+class TensorRecAPITFRecordInputTestCase(TensorRecAPITestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        # Blow away an existing session to avoid 'tf_map_func not found' error
+        set_session(None)
+
+        cls.n_users = 15
+        cls.n_items = 30
+
+        int_ds, uf_ds, if_ds = generate_dummy_data(
+            num_users=cls.n_users, num_items=cls.n_items, interaction_density=.5, num_user_features=200,
+            num_item_features=200, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5,
+            return_datasets=True
+        )
+
+        cls.temp_dir = tempfile.mkdtemp()
+        cls.interactions = os.path.join(cls.temp_dir, 'interactions.tfrecord')
+        cls.user_features = os.path.join(cls.temp_dir, 'user_features.tfrecord')
+        cls.item_features = os.path.join(cls.temp_dir, 'item_features.tfrecord')
+
+        write_tfrecord_from_tensorrec_dataset(cls.interactions, int_ds, get_session())
+        write_tfrecord_from_tensorrec_dataset(cls.user_features, uf_ds, get_session())
+        write_tfrecord_from_tensorrec_dataset(cls.item_features, if_ds, get_session())
+
+        cls.standard_model = TensorRec(n_components=10)
+        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+        cls.unbiased_model = TensorRec(n_components=10, biased=False)
+        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp_dir)
 
 
 class TensorRecSavingTestCase(TestCase):

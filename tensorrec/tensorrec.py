@@ -270,9 +270,16 @@ class TensorRec(object):
         self.tf_learning_rate = tf.placeholder('float', None)
         self.tf_alpha = tf.placeholder('float', None)
 
-        tf_user_feature_indices, tf_user_feature_values, tf_n_users, _ = self.tf_user_feature_iterator.get_next()
-        tf_item_feature_indices, tf_item_feature_values, tf_n_items, _ = self.tf_item_feature_iterator.get_next()
-        tf_interaction_indices, tf_interaction_values, _, _ = self.tf_interaction_iterator.get_next()
+        tf_user_feature_rows, tf_user_feature_cols, tf_user_feature_values, tf_n_users, _ = \
+            self.tf_user_feature_iterator.get_next()
+        tf_item_feature_rows, tf_item_feature_cols, tf_item_feature_values, tf_n_items, _ = \
+            self.tf_item_feature_iterator.get_next()
+        tf_interaction_rows, tf_interaction_cols, tf_interaction_values, _, _ = \
+            self.tf_interaction_iterator.get_next()
+
+        tf_user_feature_indices = tf.stack([tf_user_feature_rows, tf_user_feature_cols], axis=1)
+        tf_item_feature_indices = tf.stack([tf_item_feature_rows, tf_item_feature_cols], axis=1)
+        tf_interaction_indices = tf.stack([tf_interaction_rows, tf_interaction_cols], axis=1)
 
         # Construct the features and interactions as sparse matrices
         tf_user_features = tf.SparseTensor(tf_user_feature_indices, tf_user_feature_values,

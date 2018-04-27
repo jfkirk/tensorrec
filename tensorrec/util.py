@@ -2,9 +2,10 @@ import math
 import numpy as np
 import random
 import scipy.sparse as sp
+import six
 import tensorflow as tf
 
-from .input_utils import create_tensorrec_dataset_from_sparse_matrix
+from .input_utils import create_tensorrec_dataset_from_sparse_matrix, create_tensorrec_dataset_from_tfrecord
 
 
 def sample_items(n_items, n_users, n_sampled_items, replace):
@@ -37,14 +38,20 @@ def datasets_from_raw_input(raw_input):
     if sp.issparse(raw_input):
         return [create_tensorrec_dataset_from_sparse_matrix(raw_input)]
 
-    if isinstance(raw_input, list) or isinstance(raw_input, set):
+    if isinstance(raw_input, six.string_types):
+        return [create_tensorrec_dataset_from_tfrecord(raw_input)]
+
+    if isinstance(raw_input, list):
+
+        if all([isinstance(input_val, tf.data.Dataset) for input_val in raw_input]):
+            return raw_input
 
         if all([sp.issparse(input_val) for input_val in raw_input]):
             return [create_tensorrec_dataset_from_sparse_matrix(input_sparse_matrix)
                     for input_sparse_matrix in raw_input]
 
-        if all([isinstance(input_val, tf.data.Dataset) for input_val in raw_input]):
-            return raw_input
+        if all([isinstance(input_val, six.string_types) for input_val in raw_input]):
+            return [create_tensorrec_dataset_from_tfrecord(input_str) for input_str in raw_input]
 
     raise ValueError('Input must be a scipy sparse matrix, an iterable of scipy sprase matrices, or a TensorFlow '
                      'Dataset')
