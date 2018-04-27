@@ -5,6 +5,12 @@ import tensorflow as tf
 
 
 def create_tensorrec_iterator(name):
+    """
+    Creates a TensorFlow Iterator that is ready for the standard TensorRec data format.
+    :param name: str
+    The name for this Iterator.
+    :return: tf.data.Iterator
+    """
     return tf.data.Iterator.from_structure(
             output_types=(tf.int64, tf.float32, tf.int64, tf.int64),
             output_shapes=([None, 2], [None], [], []),
@@ -13,6 +19,12 @@ def create_tensorrec_iterator(name):
 
 
 def create_tensorrec_dataset_from_sparse_matrix(sparse_matrix):
+    """
+    Creates a TensorFlow Dataset containing the data from the given sparse matrix.
+    :param sparse_matrix: scipy.sparse matrix
+    The data to be contained in this Dataset.
+    :return: tf.data.Dataset
+    """
     if not isinstance(sparse_matrix, sp.coo_matrix):
         sparse_matrix = sp.coo_matrix(sparse_matrix)
 
@@ -27,6 +39,13 @@ def create_tensorrec_dataset_from_sparse_matrix(sparse_matrix):
 
 
 def get_dimensions_from_tensorrec_dataset(dataset, session):
+    """
+    Given a TensorFlow Dataset in the standard TensorRec format, returns the dimensions of the SparseTensor to be
+    populated by the Dataset.
+    :param dataset: tf.data.Dataset
+    :param session: tf.Session
+    :return: (int, int)
+    """
     iterator = create_tensorrec_iterator('dims_iterator')
     initializer = iterator.make_initializer(dataset)
     _, _, tf_d0, tf_d1 = iterator.get_next()
