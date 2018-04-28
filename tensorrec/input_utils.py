@@ -55,6 +55,12 @@ def get_dimensions_from_tensorrec_dataset(dataset, session):
 
 
 def write_tfrecord_from_tensorrec_dataset(tfrecord_path, dataset, session):
+    """
+    Writes the contents of a TensorRec Dataset to a TFRecord file.
+    :param tfrecord_path: str
+    :param dataset: tf.data.Dataset
+    :param session: tf.Session
+    """
     iterator = create_tensorrec_iterator('dataset_writing_iterator')
     initializer = iterator.make_initializer(dataset)
     tf_row_index, tf_col_index, tf_values, tf_d0, tf_d1 = iterator.get_next()
@@ -81,6 +87,11 @@ def write_tfrecord_from_tensorrec_dataset(tfrecord_path, dataset, session):
 
 
 def create_tensorrec_dataset_from_tfrecord(tfrecord_path):
+    """
+    Loads a TFRecord file and creates a Dataset with the contents.
+    :param tfrecord_path: str
+    :return: tf.data.Dataset
+    """
 
     def parse_tensorrec_tfrecord(example_proto):
         features = {
