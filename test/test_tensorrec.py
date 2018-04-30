@@ -7,7 +7,7 @@ from unittest import TestCase
 import tensorflow as tf
 
 from tensorrec import TensorRec
-from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix, write_tfrecord_from_tensorrec_dataset
+from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix, write_tfrecord_from_sparse_matrix
 from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
 from tensorrec.session_management import set_session, get_session
 from tensorrec.util import generate_dummy_data
@@ -25,6 +25,20 @@ class TensorRecTestCase(TestCase):
             num_users=15, num_items=30, interaction_density=.5, num_user_features=cls.n_user_features,
             num_item_features=cls.n_item_features, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
+
+        set_session(None)
+        cls.temp_dir = tempfile.mkdtemp()
+        cls.interactions_path = os.path.join(cls.temp_dir, 'interactions.tfrecord')
+        cls.user_features_path = os.path.join(cls.temp_dir, 'user_features.tfrecord')
+        cls.item_features_path = os.path.join(cls.temp_dir, 'item_features.tfrecord')
+
+        write_tfrecord_from_sparse_matrix(cls.user_features_path, cls.user_features, get_session())
+        write_tfrecord_from_sparse_matrix(cls.item_features_path, cls.item_features, get_session())
+        write_tfrecord_from_sparse_matrix(cls.interactions_path, cls.interactions, get_session())
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.temp_dir)
 
     def test_init(self):
         self.assertIsNotNone(TensorRec())
@@ -119,6 +133,18 @@ class TensorRecTestCase(TestCase):
         int_as_dataset = create_tensorrec_dataset_from_sparse_matrix(self.interactions)
         model = TensorRec(n_components=10)
         model.fit(int_as_dataset, self.user_features, self.item_features, epochs=10)
+
+    def test_fit_from_datasets(self):
+        uf_as_dataset = create_tensorrec_dataset_from_sparse_matrix(self.user_features)
+        if_as_dataset = create_tensorrec_dataset_from_sparse_matrix(self.item_features)
+        int_as_dataset = create_tensorrec_dataset_from_sparse_matrix(self.interactions)
+        model = TensorRec(n_components=10)
+        model.fit(int_as_dataset, uf_as_dataset, if_as_dataset, epochs=10)
+
+    def test_fit_from_tfrecords(self):
+        set_session(None)
+        model = TensorRec(n_components=10)
+        model.fit(self.interactions_path, self.user_features_path, self.item_features_path, epochs=10)
 
 
 class TensorRecAPITestCase(TestCase):
@@ -322,8 +348,7 @@ class TensorRecAPITFRecordInputTestCase(TensorRecAPITestCase):
 
         int_ds, uf_ds, if_ds = generate_dummy_data(
             num_users=cls.n_users, num_items=cls.n_items, interaction_density=.5, num_user_features=200,
-            num_item_features=200, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5,
-            return_datasets=True
+            num_item_features=200, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
 
         cls.temp_dir = tempfile.mkdtemp()
@@ -331,9 +356,9 @@ class TensorRecAPITFRecordInputTestCase(TensorRecAPITestCase):
         cls.user_features = os.path.join(cls.temp_dir, 'user_features.tfrecord')
         cls.item_features = os.path.join(cls.temp_dir, 'item_features.tfrecord')
 
-        write_tfrecord_from_tensorrec_dataset(cls.interactions, int_ds, get_session())
-        write_tfrecord_from_tensorrec_dataset(cls.user_features, uf_ds, get_session())
-        write_tfrecord_from_tensorrec_dataset(cls.item_features, if_ds, get_session())
+        write_tfrecord_from_sparse_matrix(cls.interactions, int_ds, get_session())
+        write_tfrecord_from_sparse_matrix(cls.user_features, uf_ds, get_session())
+        write_tfrecord_from_sparse_matrix(cls.item_features, if_ds, get_session())
 
         cls.standard_model = TensorRec(n_components=10)
         cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)

@@ -38,6 +38,21 @@ def create_tensorrec_dataset_from_sparse_matrix(sparse_matrix):
     return tf.data.Dataset.from_tensor_slices(tensor_slices)
 
 
+def write_tfrecord_from_sparse_matrix(tfrecord_path, sparse_matrix, session):
+    """
+    Writes the contents of a sparse matrix to a TFRecord file.
+    :param tfrecord_path: str
+    :param sparse_matrix: scipy.sparse matrix
+    :param session: tf.Session
+    :return: str
+    The tfrecord path
+    """
+    dataset = create_tensorrec_dataset_from_sparse_matrix(sparse_matrix=sparse_matrix)
+    return write_tfrecord_from_tensorrec_dataset(tfrecord_path=tfrecord_path,
+                                                 dataset=dataset,
+                                                 session=session)
+
+
 def get_dimensions_from_tensorrec_dataset(dataset, session):
     """
     Given a TensorFlow Dataset in the standard TensorRec format, returns the dimensions of the SparseTensor to be
@@ -60,6 +75,8 @@ def write_tfrecord_from_tensorrec_dataset(tfrecord_path, dataset, session):
     :param tfrecord_path: str
     :param dataset: tf.data.Dataset
     :param session: tf.Session
+    :return: str
+    The tfrecord path
     """
     iterator = create_tensorrec_iterator('dataset_writing_iterator')
     initializer = iterator.make_initializer(dataset)
@@ -84,6 +101,7 @@ def write_tfrecord_from_tensorrec_dataset(tfrecord_path, dataset, session):
     example = tf.train.Example(features=tf.train.Features(feature=feature))
     writer.write(example.SerializeToString())
     writer.close()
+    return tfrecord_path
 
 
 def create_tensorrec_dataset_from_tfrecord(tfrecord_path):
