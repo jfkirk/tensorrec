@@ -2,7 +2,10 @@ import math
 import numpy as np
 import random
 import scipy.sparse as sp
+import six
 import tensorflow as tf
+
+from .input_utils import create_tensorrec_dataset_from_sparse_matrix, create_tensorrec_dataset_from_tfrecord
 
 
 def sample_items(n_items, n_users, n_sampled_items, replace):
@@ -14,7 +17,7 @@ def sample_items(n_items, n_users, n_sampled_items, replace):
         for item in users_items:
             sample_indices.append((user, item))
 
-    return sample_indices
+    return np.array(sample_indices)
 
 
 def calculate_batched_alpha(num_batches, alpha):
@@ -27,8 +30,36 @@ def calculate_batched_alpha(num_batches, alpha):
     return batched_alpha
 
 
+def datasets_from_raw_input(raw_input):
+
+    if isinstance(raw_input, tf.data.Dataset):
+        return [raw_input]
+
+    if sp.issparse(raw_input):
+        return [create_tensorrec_dataset_from_sparse_matrix(raw_input)]
+
+    if isinstance(raw_input, six.string_types):
+        return [create_tensorrec_dataset_from_tfrecord(raw_input)]
+
+    if isinstance(raw_input, list):
+
+        if all([isinstance(input_val, tf.data.Dataset) for input_val in raw_input]):
+            return raw_input
+
+        if all([sp.issparse(input_val) for input_val in raw_input]):
+            return [create_tensorrec_dataset_from_sparse_matrix(input_sparse_matrix)
+                    for input_sparse_matrix in raw_input]
+
+        if all([isinstance(input_val, six.string_types) for input_val in raw_input]):
+            return [create_tensorrec_dataset_from_tfrecord(input_str) for input_str in raw_input]
+
+    raise ValueError('Input must be a scipy sparse matrix, an iterable of scipy sprase matrices, or a TensorFlow '
+                     'Dataset')
+
+
 def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.00045, num_user_features=200,
-                        num_item_features=200, n_features_per_user=20, n_features_per_item=20,  pos_int_ratio=.5):
+                        num_item_features=200, n_features_per_user=20, n_features_per_item=20,  pos_int_ratio=.5,
+                        return_datasets=False):
 
     if pos_int_ratio <= 0.0:
         raise Exception("pos_int_ratio must be > 0")
@@ -44,6 +75,11 @@ def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.0
 
     print("Generating item features")
     item_features = sp.rand(num_items, num_item_features, density=float(n_features_per_item) / num_item_features)
+
+    if return_datasets:
+        interactions = create_tensorrec_dataset_from_sparse_matrix(interactions)
+        user_features = create_tensorrec_dataset_from_sparse_matrix(user_features)
+        item_features = create_tensorrec_dataset_from_sparse_matrix(item_features)
 
     return interactions, user_features, item_features
 

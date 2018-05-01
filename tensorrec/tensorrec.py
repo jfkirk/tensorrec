@@ -1,11 +1,13 @@
+from functools import partial
+from itertools import cycle
 import logging
 import numpy as np
 import os
 import pickle
 from scipy import sparse as sp
-import six
 import tensorflow as tf
 
+from .input_utils import create_tensorrec_iterator, get_dimensions_from_tensorrec_dataset
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
 from .prediction_graphs import AbstractPredictionGraph, DotProductPredictionGraph
 from .recommendation_graphs import (
@@ -14,7 +16,7 @@ from .recommendation_graphs import (
 )
 from .representation_graphs import AbstractRepresentationGraph, LinearRepresentationGraph
 from .session_management import get_session
-from .util import sample_items, calculate_batched_alpha
+from .util import sample_items, calculate_batched_alpha, datasets_from_raw_input
 
 
 class TensorRec(object):
@@ -27,9 +29,7 @@ class TensorRec(object):
                  attention_graph=None,
                  prediction_graph=DotProductPredictionGraph(),
                  loss_graph=RMSELossGraph(),
-                 biased=True,
-                 normalize_users=False,
-                 normalize_items=False):
+                 biased=True,):
         """
         A TensorRec recommendation model.
         :param n_components: Integer
@@ -43,8 +43,8 @@ class TensorRec(object):
         An object which inherits AbstractRepresentationGraph that contains a method to calculate item representations.
         See tensorrec.representation_graphs for examples.
         :param attention_graph: AbstractRepresentationGraph or None
-        An object which inherits AbstractRepresentationGraph that contains a method to calculate user attention. Any
-        valid repr_graph is also a valid attention graph. If None, no attention process will be applied.
+        Optional. An object which inherits AbstractRepresentationGraph that contains a method to calculate user
+        attention. Any valid repr_graph is also a valid attention graph. If None, no attention process will be applied.
         :param prediction_graph: AbstractPredictionGraph
         An object which inherits AbstractPredictionGraph that contains a method to calculate predictions from a pair of
         user/item reprs.
@@ -54,10 +54,6 @@ class TensorRec(object):
         See tensorrec.loss_graphs for examples.
         :param biased: bool
         If True, a bias value will be calculated for every user feature and item feature.
-        :param normalize_users: bool
-        If True, every row of the user features will be l2 normalized.
-        :param normalize_items: bool
-        If True, every row of the item features will be l2 normalized.
         """
 
         # Arg-check
@@ -90,8 +86,6 @@ class TensorRec(object):
         self.prediction_graph_factory = prediction_graph
         self.loss_graph_factory = loss_graph
         self.biased = biased
-        self.normalize_users = normalize_users
-        self.normalize_items = normalize_items
 
         # A list of the attr names of every graph hook attr
         self.graph_tensor_hook_attr_names = [
@@ -104,9 +98,7 @@ class TensorRec(object):
             'tf_basic_loss', 'tf_weight_reg_loss', 'tf_loss',
 
             # Feed placeholders
-            'tf_n_users', 'tf_n_items', 'tf_user_feature_indices', 'tf_user_feature_values', 'tf_item_feature_indices',
-            'tf_item_feature_values', 'tf_interaction_indices', 'tf_interaction_values', 'tf_learning_rate', 'tf_alpha',
-            'tf_sample_indices', 'tf_n_sampled_items', 'tf_similar_items_ids'
+            'tf_learning_rate', 'tf_alpha', 'tf_sample_indices', 'tf_n_sampled_items', 'tf_similar_items_ids',
         ]
         if self.biased:
             self.graph_tensor_hook_attr_names += ['tf_projected_user_biases', 'tf_projected_item_biases']
@@ -114,25 +106,33 @@ class TensorRec(object):
             self.graph_tensor_hook_attr_names += ['tf_user_attention_representation']
 
         self.graph_operation_hook_attr_names = [
-
             # AdamOptimizer
             'tf_optimizer',
-
         ]
-        self._clear_graph_hook_attrs()
+        self.graph_iterator_hook_attr_names = [
+            # Input data iterators
+            'tf_user_feature_iterator', 'tf_item_feature_iterator', 'tf_interaction_iterator',
+        ]
+
+        # Calling the break routine during __init__ creates all the attrs on the TensorRec object with an initial value
+        # of None
+        self._break_graph_hooks()
 
         # A map of every graph hook attr name to the node name after construction
         # Tensors and operations are stored separated because they are handled differently by TensorFlow
         self.graph_tensor_hook_node_names = {}
         self.graph_operation_hook_node_names = {}
+        self.graph_iterator_hook_node_names = {}
 
-    def _clear_graph_hook_attrs(self):
+    def _break_graph_hooks(self):
         for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
             self.__setattr__(graph_tensor_hook_attr_name, None)
         for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
             self.__setattr__(graph_operation_hook_attr_name, None)
+        for graph_iterator_hook_attr_name in self.graph_iterator_hook_attr_names:
+            self.__setattr__(graph_iterator_hook_attr_name, None)
 
-    def _attach_graph_hook_attrs(self):
+    def _attach_graph_hooks(self):
         session = get_session()
 
         for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
@@ -145,156 +145,159 @@ class TensorRec(object):
             node = session.graph.get_operation_by_name(name=graph_operation_hook_node_name)
             self.__setattr__(graph_operation_hook_attr_name, node)
 
-    def _create_feed_dict(self, interactions_matrix, user_features_matrix, item_features_matrix,
-                          extra_feed_kwargs=None):
+        for graph_iterator_hook_attr_name in self.graph_iterator_hook_attr_names:
+            iterator_resource_name, output_types, output_shapes, output_classes = \
+                self.graph_iterator_hook_node_names[graph_iterator_hook_attr_name]
+            iterator_resource = session.graph.get_tensor_by_name(name=iterator_resource_name)
+            iterator = tf.data.Iterator(iterator_resource, None, output_types, output_shapes, output_classes)
+            self.__setattr__(graph_iterator_hook_attr_name, iterator)
 
-        # Check that input data is of a sparse type
-        if (interactions_matrix is not None) and (not sp.issparse(interactions_matrix)):
-            raise Exception('Interactions must be a scipy sparse matrix')
-        if not sp.issparse(user_features_matrix):
-            raise Exception('User features must be a scipy sparse matrix')
-        if not sp.issparse(item_features_matrix):
-            raise Exception('Item features must be a scipy sparse matrix')
+    def _record_graph_hook_names(self):
 
-        n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix,
-                                                                                  normalize_rows=self.normalize_users)
-        n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix,
-                                                                                  normalize_rows=self.normalize_items)
+        # Record serializable node names/info for each graph hook
+        for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
+            hook = self.__getattribute__(graph_tensor_hook_attr_name)
+            self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
 
-        feed_dict = {self.tf_n_users: n_users,
-                     self.tf_n_items: n_items,
-                     self.tf_user_feature_indices: user_feature_indices,
-                     self.tf_user_feature_values: user_feature_values,
-                     self.tf_item_feature_indices: item_feature_indices,
-                     self.tf_item_feature_values: item_feature_values, }
+        for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
+            hook = self.__getattribute__(graph_operation_hook_attr_name)
+            self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
 
-        if interactions_matrix is not None:
-            _, interaction_indices, interaction_values = self._process_matrix(interactions_matrix)
-            feed_dict[self.tf_interaction_indices] = interaction_indices
-            feed_dict[self.tf_interaction_values] = interaction_values
+        for graph_iterator_hook_attr_name in self.graph_iterator_hook_attr_names:
+            hook = self.__getattribute__(graph_iterator_hook_attr_name)
+            iterator_resource_name = hook._iterator_resource.name
+            output_types = hook._output_types
+            output_shapes = hook._output_shapes
+            output_classes = hook._output_classes
+            self.graph_iterator_hook_node_names[graph_iterator_hook_attr_name] = (
+                iterator_resource_name, output_types, output_shapes, output_classes
+            )
 
-        if extra_feed_kwargs:
-            feed_dict.update(extra_feed_kwargs)
+    def _create_batched_dataset_initializers(self, interactions, user_features, item_features, user_batch_size=None):
 
-        return feed_dict
+        if user_batch_size is not None:
 
-    def _create_user_feed_dict(self, user_features_matrix, extra_feed_kwargs=None):
+            # Raise exception if interactions and user_features aren't sparse matrices
+            if (not sp.issparse(interactions)) or (not sp.issparse(user_features)):
+                raise ValueError('In order to support user batching at fit time, interactions and user_features must '
+                                 'both be scipy.sparse matrices.')
 
-        if not sp.issparse(user_features_matrix):
-            raise Exception('User features must be a scipy sparse matrix')
+            # Coerce to CSR for fast batching
+            if not isinstance(interactions, sp.csr_matrix):
+                interactions = sp.csr_matrix(interactions)
+            if not isinstance(user_features, sp.csr_matrix):
+                user_features = sp.csr_matrix(user_features)
 
-        n_users, user_feature_indices, user_feature_values = self._process_matrix(user_features_matrix,
-                                                                                  normalize_rows=self.normalize_users)
+            n_users = user_features.shape[0]
 
-        feed_dict = {self.tf_n_users: n_users,
-                     self.tf_user_feature_indices: user_feature_indices,
-                     self.tf_user_feature_values: user_feature_values}
+            # Infer the batch size, if necessary
+            if user_batch_size is None:
+                user_batch_size = n_users
 
-        if extra_feed_kwargs:
-            feed_dict.update(extra_feed_kwargs)
+            interactions_batched = []
+            user_features_batched = []
 
-        return feed_dict
+            start_batch = 0
+            while start_batch < n_users:
 
-    def _create_item_feed_dict(self, item_features_matrix, extra_feed_kwargs=None):
+                # min() ensures that the batch bounds doesn't go past the end of the index
+                end_batch = min(start_batch + user_batch_size, n_users)
 
-        if not sp.issparse(item_features_matrix):
-            raise Exception('Item features must be a scipy sparse matrix')
+                interactions_batched.append(interactions[start_batch:end_batch])
+                user_features_batched.append(user_features[start_batch:end_batch])
 
-        n_items, item_feature_indices, item_feature_values = self._process_matrix(item_features_matrix,
-                                                                                  normalize_rows=self.normalize_items)
+                start_batch = end_batch
 
-        feed_dict = {self.tf_n_items: n_items,
-                     self.tf_item_feature_indices: item_feature_indices,
-                     self.tf_item_feature_values: item_feature_values}
+            # Overwrite the input with the new, batched input
+            interactions = interactions_batched
+            user_features = user_features_batched
 
-        if extra_feed_kwargs:
-            feed_dict.update(extra_feed_kwargs)
+        # TODO this is hand-wavy and begging for a cleaner refactor
+        (int_ds, uf_ds, if_ds), (int_init, uf_init, if_init) = self._create_datasets_and_initializers(
+            interactions=interactions, user_features=user_features, item_features=item_features
+        )
 
-        return feed_dict
+        # Ensure that lengths make sense
+        if len(int_init) != len(uf_init):
+            raise ValueError('Number of batches in user_features and interactions must be equal.')
+        if (len(if_init) > 1) and (len(if_init) != len(uf_init)):
+            raise ValueError('Number of batches in item_features must be 1 or equal to the number of batches in '
+                             'user_features.')
 
-    def _process_matrix(self, features_matrix, normalize_rows=False):
+        # Cycle item features when zipping because there should only be one
+        datasets = [ds_set for ds_set in zip(int_ds, uf_ds, cycle(if_ds))]
+        initializers = [init_set for init_set in zip(int_init, uf_init, cycle(if_init))]
 
-        if normalize_rows:
-            if not isinstance(features_matrix, sp.csr_matrix):
-                features_matrix = sp.csr_matrix(features_matrix)
-            mag = np.sqrt(features_matrix.power(2).sum(axis=1))
-            features_matrix = features_matrix.multiply(1.0 / mag)
+        return datasets, initializers
 
-        if not isinstance(features_matrix, sp.coo_matrix):
-            features_matrix = sp.coo_matrix(features_matrix)
+    def _create_datasets_and_initializers(self, interactions=None, user_features=None, item_features=None):
 
-        # "Actors" is used to signify "users or items" -- unused for interactions
-        n_actors = features_matrix.shape[0]
-        feature_indices = [pair for pair in six.moves.zip(features_matrix.row, features_matrix.col)]
-        feature_values = features_matrix.data
+        datasets = []
+        initializers = []
 
-        return n_actors, feature_indices, feature_values
+        if interactions is not None:
+            interactions_datasets = datasets_from_raw_input(raw_input=interactions)
+            interactions_initializers = [self.tf_interaction_iterator.make_initializer(dataset)
+                                         for dataset in interactions_datasets]
+            datasets.append(interactions_datasets)
+            initializers.append(interactions_initializers)
 
-    def _create_batch_feed_dicts(self, interactions, user_features, item_features, extra_feed_kwargs,
-                                 user_batch_size=None):
+        if user_features is not None:
+            user_features_datasets = datasets_from_raw_input(raw_input=user_features)
+            user_features_initializers = [self.tf_user_feature_iterator.make_initializer(dataset)
+                                          for dataset in user_features_datasets]
+            datasets.append(user_features_datasets)
+            initializers.append(user_features_initializers)
 
-        if not isinstance(interactions, sp.csr_matrix):
-            interactions = sp.csr_matrix(interactions)
-        if not isinstance(user_features, sp.csr_matrix):
-            user_features = sp.csr_matrix(user_features)
+        if item_features is not None:
+            item_features_datasets = datasets_from_raw_input(raw_input=item_features)
+            item_features_initializers = [self.tf_item_feature_iterator.make_initializer(dataset)
+                                          for dataset in item_features_datasets]
+            datasets.append(item_features_datasets)
+            initializers.append(item_features_initializers)
 
-        n_users = user_features.shape[0]
+        return datasets, initializers
 
-        # Infer the batch size, if necessary
-        if user_batch_size is None:
-            user_batch_size = n_users
-
-        feed_dicts = []
-
-        start_batch = 0
-        while start_batch < n_users:
-
-            # min() ensures that the batch bounds doesn't go past the end of the index
-            end_batch = min(start_batch + user_batch_size, n_users)
-
-            batch_interactions = interactions[start_batch:end_batch]
-            batch_user_features = user_features[start_batch:end_batch]
-
-            # TODO its inefficient to make so many copies of the item features
-            feed_dict = self._create_feed_dict(interactions_matrix=batch_interactions,
-                                               user_features_matrix=batch_user_features,
-                                               item_features_matrix=item_features,
-                                               extra_feed_kwargs=extra_feed_kwargs)
-            feed_dicts.append(feed_dict)
-
-            start_batch = end_batch
-
-        return feed_dicts
+    def _build_input_iterators(self):
+        self.tf_user_feature_iterator = create_tensorrec_iterator(name='tf_user_feature_iterator')
+        self.tf_item_feature_iterator = create_tensorrec_iterator(name='tf_item_feature_iterator')
+        self.tf_interaction_iterator = create_tensorrec_iterator(name='tf_interaction_iterator')
 
     def _build_tf_graph(self, n_user_features, n_item_features):
 
-        # Initialize placeholder values for inputs
-        self.tf_n_users = tf.placeholder('int64')
-        self.tf_n_items = tf.placeholder('int64')
+        # Build placeholders
         self.tf_n_sampled_items = tf.placeholder('int64')
-
-        # SparseTensor placeholders
-        self.tf_user_feature_indices = tf.placeholder('int64', [None, 2])
-        self.tf_user_feature_values = tf.placeholder('float', [None])
-        self.tf_item_feature_indices = tf.placeholder('int64', [None, 2])
-        self.tf_item_feature_values = tf.placeholder('float', [None])
-        self.tf_interaction_indices = tf.placeholder('int64', [None, 2])
-        self.tf_interaction_values = tf.placeholder('float', [None])
         self.tf_similar_items_ids = tf.placeholder('int64', [None])
-
-        self.tf_sample_indices = tf.placeholder('int64', [None, None])
         self.tf_learning_rate = tf.placeholder('float', None)
         self.tf_alpha = tf.placeholder('float', None)
 
-        # Construct the features and interactions as sparse matrices
-        tf_user_features = tf.SparseTensor(self.tf_user_feature_indices, self.tf_user_feature_values,
-                                           [self.tf_n_users, n_user_features])
-        tf_item_features = tf.SparseTensor(self.tf_item_feature_indices, self.tf_item_feature_values,
-                                           [self.tf_n_items, n_item_features])
-        tf_interactions = tf.SparseTensor(self.tf_interaction_indices, self.tf_interaction_values,
-                                          [self.tf_n_users, self.tf_n_items])
+        tf_user_feature_rows, tf_user_feature_cols, tf_user_feature_values, tf_n_users, _ = \
+            self.tf_user_feature_iterator.get_next()
+        tf_item_feature_rows, tf_item_feature_cols, tf_item_feature_values, tf_n_items, _ = \
+            self.tf_item_feature_iterator.get_next()
+        tf_interaction_rows, tf_interaction_cols, tf_interaction_values, _, _ = \
+            self.tf_interaction_iterator.get_next()
 
-        # Collect the weights for normalization
+        tf_user_feature_indices = tf.stack([tf_user_feature_rows, tf_user_feature_cols], axis=1)
+        tf_item_feature_indices = tf.stack([tf_item_feature_rows, tf_item_feature_cols], axis=1)
+        tf_interaction_indices = tf.stack([tf_interaction_rows, tf_interaction_cols], axis=1)
+
+        # Construct the features and interactions as sparse matrices
+        tf_user_features = tf.SparseTensor(tf_user_feature_indices, tf_user_feature_values,
+                                           [tf_n_users, n_user_features])
+        tf_item_features = tf.SparseTensor(tf_item_feature_indices, tf_item_feature_values,
+                                           [tf_n_items, n_item_features])
+        tf_interactions = tf.SparseTensor(tf_interaction_indices, tf_interaction_values,
+                                          [tf_n_users, tf_n_items])
+
+        # Construct the sampling py_func
+        sample_items_partial = partial(sample_items, replace=self.loss_graph_factory.is_sampled_with_replacement)
+        self.tf_sample_indices = tf.py_func(func=sample_items_partial,
+                                            inp=[tf_n_items, tf_n_users, self.tf_n_sampled_items],
+                                            Tout=tf.int64)
+        self.tf_sample_indices.set_shape([None, None])
+
+        # Collect the weights for regularization
         tf_weights = []
 
         # Build the item representations
@@ -457,8 +460,8 @@ class TensorRec(object):
             'tf_prediction_serial': self.tf_prediction_serial,
             'tf_interactions_serial': tf_interactions_serial,
             'tf_interactions': tf_interactions,
-            'tf_n_users': self.tf_n_users,
-            'tf_n_items': self.tf_n_items,
+            'tf_n_users': tf_n_users,
+            'tf_n_items': tf_n_items,
         }
         if self.loss_graph_factory.is_dense:
             loss_graph_kwargs.update({
@@ -469,7 +472,7 @@ class TensorRec(object):
             tf_sample_predictions = densify_sampled_item_predictions(
                 tf_sample_predictions_serial=tf_sample_predictions_serial,
                 tf_n_sampled_items=self.tf_n_sampled_items,
-                tf_n_users=self.tf_n_users,
+                tf_n_users=tf_n_users,
             )
             loss_graph_kwargs.update({'tf_sample_predictions': tf_sample_predictions,
                                       'tf_n_sampled_items': self.tf_n_sampled_items})
@@ -481,24 +484,28 @@ class TensorRec(object):
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
 
-        # Get node names for each graph hook
-        for graph_tensor_hook_attr_name in self.graph_tensor_hook_attr_names:
-            hook = self.__getattribute__(graph_tensor_hook_attr_name)
-            self.graph_tensor_hook_node_names[graph_tensor_hook_attr_name] = hook.name
-        for graph_operation_hook_attr_name in self.graph_operation_hook_attr_names:
-            hook = self.__getattribute__(graph_operation_hook_attr_name)
-            self.graph_operation_hook_node_names[graph_operation_hook_attr_name] = hook.name
+        # Record the new node names
+        self._record_graph_hook_names()
 
     def fit(self, interactions, user_features, item_features, epochs=100, learning_rate=0.1, alpha=0.00001,
-            verbose=False, out_sample_interactions=None, user_batch_size=None, n_sampled_items=None):
+            verbose=False, user_batch_size=None, n_sampled_items=None):
         """
         Constructs the TensorRec graph and fits the model.
-        :param interactions: scipy.sparse matrix
+        :param interactions: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of interactions of shape [n_users, n_items].
-        :param user_features: scipy.sparse matrix
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+        :param user_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of user features of shape [n_users, n_user_features].
-        :param item_features: scipy.sparse matrix
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+        :param item_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of item features of shape [n_items, n_item_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :param epochs: Integer
         The number of epochs to fit the model.
         :param learning_rate: Float
@@ -507,9 +514,6 @@ class TensorRec(object):
         The weight regularization loss coefficient.
         :param verbose: boolean
         If true, the model will print a number of status statements during fitting.
-        :param out_sample_interactions: scipy.sparse matrix
-        A matrix of interactions of shape [n_users, n_items].
-        If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         :param user_batch_size: int or None
         The maximum number of users per batch, or None for all users.
         :param n_sampled_items: int or None
@@ -525,21 +529,28 @@ class TensorRec(object):
                          learning_rate=learning_rate,
                          alpha=alpha,
                          verbose=verbose,
-                         out_sample_interactions=out_sample_interactions,
                          user_batch_size=user_batch_size,
                          n_sampled_items=n_sampled_items)
 
     def fit_partial(self, interactions, user_features, item_features, epochs=1, learning_rate=0.1,
-                    alpha=0.00001, verbose=False, out_sample_interactions=None, user_batch_size=None,
-                    n_sampled_items=None):
+                    alpha=0.00001, verbose=False, user_batch_size=None, n_sampled_items=None):
         """
         Constructs the TensorRec graph and fits the model.
-        :param interactions: scipy.sparse matrix
+        :param interactions: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of interactions of shape [n_users, n_items].
-        :param user_features: scipy.sparse matrix
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+        :param user_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of user features of shape [n_users, n_user_features].
-        :param item_features: scipy.sparse matrix
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+        :param item_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of item features of shape [n_items, n_item_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :param epochs: Integer
         The number of epochs to fit the model.
         :param learning_rate: Float
@@ -548,9 +559,6 @@ class TensorRec(object):
         The weight regularization loss coefficient.
         :param verbose: boolean
         If true, the model will print a number of status statements during fitting.
-        :param out_sample_interactions: scipy.sparse matrix
-        A matrix of interactions of shape [n_users, n_items].
-        If not None, and verbose == True, the model will be evaluated on these interactions on every epoch.
         :param user_batch_size: int or None
         The maximum number of users per batch, or None for all users.
         :param n_sampled_items: int or None
@@ -567,44 +575,45 @@ class TensorRec(object):
         if (n_sampled_items is not None) and (not self.loss_graph_factory.is_sample_based):
             logging.warning('n_sampled_items was specified, but the loss graph is not sample-based')
 
-        # Check if the graph has been constructed by checking the dense prediction node
-        # If it hasn't been constructed, initialize it
-        if self.tf_prediction is None:
-            # Numbers of features are learned at fit time from the shape of these two matrices and cannot be changed
-            # without refitting
-            self._build_tf_graph(n_user_features=user_features.shape[1], n_item_features=item_features.shape[1])
-            session.run(tf.global_variables_initializer())
+        # Check if the iterators have been constructed. If not, build them.
+        if self.tf_interaction_iterator is None:
+            self._build_input_iterators()
 
         if verbose:
             logging.info('Processing interaction and feature data')
 
-        batched_feed_dicts = self._create_batch_feed_dicts(interactions=interactions,
-                                                           user_features=user_features,
-                                                           item_features=item_features,
-                                                           user_batch_size=user_batch_size,
-                                                           extra_feed_kwargs={self.tf_learning_rate: learning_rate})
+        dataset_sets, initializer_sets = self._create_batched_dataset_initializers(interactions=interactions,
+                                                                                   user_features=user_features,
+                                                                                   item_features=item_features,
+                                                                                   user_batch_size=user_batch_size)
 
-        # This scales down the alpha based on the number of batches and inserts the new alpha in all feed dicts
-        batched_alpha = calculate_batched_alpha(num_batches=len(batched_feed_dicts), alpha=alpha)
-        for feed_dict in batched_feed_dicts:
-            feed_dict[self.tf_alpha] = batched_alpha
+        # Check if the graph has been constructed by checking the dense prediction node
+        # If it hasn't been constructed, initialize it
+        if self.tf_prediction is None:
+
+            # Check input dimensions
+            first_batch = dataset_sets[0]
+            _, n_user_features = get_dimensions_from_tensorrec_dataset(first_batch[1], session=session)
+            _, n_item_features = get_dimensions_from_tensorrec_dataset(first_batch[2], session=session)
+
+            # Numbers of features are either learned at fit time from the shape of these two matrices or specified at
+            # TensorRec construction and cannot be changed.
+            self._build_tf_graph(n_user_features=n_user_features, n_item_features=n_item_features)
+            session.run(tf.global_variables_initializer())
+
+        # Build the shared feed dict
+        feed_dict = {self.tf_learning_rate: learning_rate,
+                     self.tf_alpha: calculate_batched_alpha(num_batches=len(initializer_sets), alpha=alpha)}
+        if self.loss_graph_factory.is_sample_based:
+            feed_dict[self.tf_n_sampled_items] = n_sampled_items
 
         if verbose:
             logging.info('Beginning fitting')
 
         for epoch in range(epochs):
-            for batch, feed_dict in enumerate(batched_feed_dicts):
+            for batch, initializers in enumerate(initializer_sets):
 
-                # Handle random item sampling, if applicable
-                if self.loss_graph_factory.is_sample_based:
-                    sample_indices = sample_items(n_users=feed_dict[self.tf_n_users],
-                                                  n_items=feed_dict[self.tf_n_items],
-                                                  n_sampled_items=n_sampled_items,
-                                                  replace=self.loss_graph_factory.is_sampled_with_replacement)
-                    feed_dict[self.tf_sample_indices] = sample_indices
-                    feed_dict[self.tf_n_sampled_items] = n_sampled_items
-
-                # TODO find something more elegant than these cascaded ifs
+                session.run(initializers)
                 if not verbose:
                     session.run(self.tf_optimizer, feed_dict=feed_dict)
 
@@ -619,34 +628,40 @@ class TensorRec(object):
                     logging.info('EPOCH {} BATCH {} loss = {}, weight_reg_l2_loss = {}, mean_pred = {}'.format(
                         epoch, batch, mean_loss, weight_reg_l2_loss, mean_pred
                     ))
-                    if out_sample_interactions:
-                        os_feed_dict = self._create_feed_dict(out_sample_interactions, user_features, item_features)
-                        os_loss = self.tf_basic_loss.eval(session=session, feed_dict=os_feed_dict)
-                        logging.info('Out-Sample loss = {}'.format(os_loss))
 
     def predict(self, user_features, item_features):
         """
         Predict recommendation scores for the given users and items.
-        :param user_features: scipy.sparse matrix
+        :param user_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of user features of shape [n_users, n_user_features].
-        :param item_features: scipy.sparse matrix
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+        :param item_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of item features of shape [n_items, n_item_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :return: np.ndarray
         The predictions in an ndarray of shape [n_users, n_items]
         """
-        feed_dict = self._create_feed_dict(interactions_matrix=None,
-                                           user_features_matrix=user_features,
-                                           item_features_matrix=item_features)
+        _, initializers = self._create_datasets_and_initializers(interactions=None,
+                                                                 user_features=user_features,
+                                                                 item_features=item_features)
+        get_session().run(initializers)
 
-        predictions = self.tf_prediction.eval(session=get_session(), feed_dict=feed_dict)
+        predictions = self.tf_prediction.eval(session=get_session())
 
         return predictions
 
     def predict_similar_items(self, item_features, item_ids, n_similar):
         """
         Predicts the most similar items to the given item_ids.
-        :param item_features: scipy.sparse matrix
-        A matrix of user features of shape [n_users, n_user_features].
+        :param item_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
+        A matrix of item features of shape [n_items, n_item_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :param item_ids: list or np.array
         The ids of the items of interest.
         E.g. [4, 8, 12] to get sims for items 4, 8, and 12.
@@ -656,9 +671,12 @@ class TensorRec(object):
         The first level list corresponds to input arg item_ids.
         The second level list is of length n_similar and contains tuples of (item_id, score) for each similar item.
         """
-        feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
-        feed_dict[self.tf_similar_items_ids] = np.array(item_ids)
+        _, initializers = self._create_datasets_and_initializers(interactions=None,
+                                                                 user_features=None,
+                                                                 item_features=item_features)
+        get_session().run(initializers)
 
+        feed_dict = {self.tf_similar_items_ids: np.array(item_ids)}
         sims = self.tf_predict_similar_items.eval(session=get_session(), feed_dict=feed_dict)
 
         results = []
@@ -673,31 +691,45 @@ class TensorRec(object):
     def predict_rank(self, user_features, item_features):
         """
         Predict recommendation ranks for the given users and items.
-        :param user_features: scipy.sparse matrix
+        :param user_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of user features of shape [n_users, n_user_features].
-        :param item_features: scipy.sparse matrix
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+        :param item_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of item features of shape [n_items, n_item_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :return: np.ndarray
         The ranks in an ndarray of shape [n_users, n_items]
         """
-        feed_dict = self._create_feed_dict(interactions_matrix=None,
-                                           user_features_matrix=user_features,
-                                           item_features_matrix=item_features)
+        _, initializers = self._create_datasets_and_initializers(interactions=None,
+                                                                 user_features=user_features,
+                                                                 item_features=item_features)
+        get_session().run(initializers)
 
-        rankings = self.tf_rankings.eval(session=get_session(), feed_dict=feed_dict)
+        rankings = self.tf_rankings.eval(session=get_session())
 
         return rankings
 
     def predict_user_representation(self, user_features):
         """
         Predict latent representation vectors for the given users.
-        :param user_features: scipy.sparse matrix
+        :param user_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of user features of shape [n_users, n_user_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :return: np.ndarray
         The latent user representations in an ndarray of shape [n_users, n_components]
         """
-        feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
-        user_repr = self.tf_user_representation.eval(session=get_session(), feed_dict=feed_dict)
+        _, initializers = self._create_datasets_and_initializers(interactions=None,
+                                                                 user_features=user_features,
+                                                                 item_features=None)
+        get_session().run(initializers)
+
+        user_repr = self.tf_user_representation.eval(session=get_session())
 
         # If there is only one user repr per user, collapse from rank 3 to rank 2
         if self.n_tastes == 1:
@@ -708,8 +740,11 @@ class TensorRec(object):
     def predict_user_attention_representation(self, user_features):
         """
         Predict latent attention representation vectors for the given users.
-        :param user_features: scipy.sparse matrix
+        :param user_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of user features of shape [n_users, n_user_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :return: np.ndarray
         The latent user attention representations in an ndarray of shape [n_users, n_components]
         """
@@ -718,8 +753,11 @@ class TensorRec(object):
             raise ValueError("This TensorRec model does not use attention. Try re-building TensorRec with a valid "
                              "'attention_graph' arg.")
 
-        feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
-        user_attn_repr = self.tf_user_attention_representation.eval(session=get_session(), feed_dict=feed_dict)
+        _, initializers = self._create_datasets_and_initializers(interactions=None,
+                                                                 user_features=user_features,
+                                                                 item_features=None)
+        get_session().run(initializers)
+        user_attn_repr = self.tf_user_attention_representation.eval(session=get_session())
 
         # If there is only one user attn repr per user, collapse from rank 3 to rank 2
         if self.n_tastes == 1:
@@ -730,41 +768,61 @@ class TensorRec(object):
     def predict_item_representation(self, item_features):
         """
         Predict representation vectors for the given items.
-        :param item_features: scipy.sparse matrix
+        :param item_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of item features of shape [n_items, n_item_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :return: np.ndarray
         The latent item representations in an ndarray of shape [n_items, n_components]
         """
-        feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
-        item_repr = self.tf_item_representation.eval(session=get_session(), feed_dict=feed_dict)
+        _, initializers = self._create_datasets_and_initializers(interactions=None,
+                                                                 user_features=None,
+                                                                 item_features=item_features)
+        get_session().run(initializers)
+        item_repr = self.tf_item_representation.eval(session=get_session())
         return item_repr
 
     def predict_user_bias(self, user_features):
         """
         Predict bias values for the given users.
-        :param user_features: scipy.sparse matrix
+        :param user_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of user features of shape [n_users, n_user_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :return: np.ndarray
         The user biases in an ndarray of shape [n_users]
         """
         if not self.biased:
             raise NotImplementedError('Cannot predict user bias for unbiased model')
-        feed_dict = self._create_user_feed_dict(user_features_matrix=user_features)
-        predictions = self.tf_projected_user_biases.eval(session=get_session(), feed_dict=feed_dict)
+
+        _, initializers = self._create_datasets_and_initializers(interactions=None,
+                                                                 user_features=user_features,
+                                                                 item_features=None)
+        get_session().run(initializers)
+        predictions = self.tf_projected_user_biases.eval(session=get_session())
         return predictions
 
     def predict_item_bias(self, item_features):
         """
         Predict bias values for the given items.
-        :param item_features: scipy.sparse matrix
+        :param item_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
         A matrix of item features of shape [n_items, n_item_features].
+        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+        If a str, the string must be the path to a TFRecord file.
+        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
         :return: np.ndarray
         The item biases in an ndarray of shape [n_items]
         """
         if not self.biased:
             raise NotImplementedError('Cannot predict item bias for unbiased model')
-        feed_dict = self._create_item_feed_dict(item_features_matrix=item_features)
-        predictions = self.tf_projected_item_biases.eval(session=get_session(), feed_dict=feed_dict)
+
+        _, initializers = self._create_datasets_and_initializers(interactions=None,
+                                                                 user_features=None,
+                                                                 item_features=item_features)
+        get_session().run(initializers)
+        predictions = self.tf_projected_item_biases.eval(session=get_session())
         return predictions
 
     def save_model(self, directory_path):
@@ -783,13 +841,13 @@ class TensorRec(object):
         saver.save(sess=get_session(), save_path=session_path)
 
         # Break connections to the graph before saving the python object
-        self._clear_graph_hook_attrs()
+        self._break_graph_hooks()
         tensorrec_path = os.path.join(directory_path, 'tensorrec.pkl')
         with open(tensorrec_path, 'wb') as file:
             pickle.dump(file=file, obj=self)
 
         # Reconnect to the graph after saving
-        self._attach_graph_hook_attrs()
+        self._attach_graph_hooks()
 
     @classmethod
     def load_model(cls, directory_path):
@@ -809,5 +867,5 @@ class TensorRec(object):
         tensorrec_path = os.path.join(directory_path, 'tensorrec.pkl')
         with open(tensorrec_path, 'rb') as file:
             model = pickle.load(file=file)
-        model._attach_graph_hook_attrs()
+        model._attach_graph_hooks()
         return model

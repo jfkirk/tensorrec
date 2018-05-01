@@ -36,6 +36,7 @@ class IndicatorFeature(TransformerMixin):
 
 def _download_and_unpack_zip(url, local_path, skip_if_not_empty):
 
+    os.makedirs(local_path, exist_ok=True)
     files_in_dir = os.listdir(local_path)
     files_in_dir = [file for file in files_in_dir if file[0] != '.']  # Remove hidden files
 
@@ -48,7 +49,6 @@ def _download_and_unpack_zip(url, local_path, skip_if_not_empty):
     files = zip_file.namelist()
 
     local_paths = {}
-    os.makedirs(local_path, exist_ok=True)
     for filename in files:
         contents = zip_file.read(filename)
         write_path = os.path.join(local_path, filename)
