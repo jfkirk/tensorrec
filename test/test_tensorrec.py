@@ -32,9 +32,9 @@ class TensorRecTestCase(TestCase):
         cls.user_features_path = os.path.join(cls.temp_dir, 'user_features.tfrecord')
         cls.item_features_path = os.path.join(cls.temp_dir, 'item_features.tfrecord')
 
-        write_tfrecord_from_sparse_matrix(cls.user_features_path, cls.user_features, get_session())
-        write_tfrecord_from_sparse_matrix(cls.item_features_path, cls.item_features, get_session())
-        write_tfrecord_from_sparse_matrix(cls.interactions_path, cls.interactions, get_session())
+        write_tfrecord_from_sparse_matrix(cls.user_features_path, cls.user_features)
+        write_tfrecord_from_sparse_matrix(cls.item_features_path, cls.item_features)
+        write_tfrecord_from_sparse_matrix(cls.interactions_path, cls.interactions)
 
     @classmethod
     def tearDownClass(cls):
@@ -356,9 +356,9 @@ class TensorRecAPITFRecordInputTestCase(TensorRecAPITestCase):
         cls.user_features = os.path.join(cls.temp_dir, 'user_features.tfrecord')
         cls.item_features = os.path.join(cls.temp_dir, 'item_features.tfrecord')
 
-        write_tfrecord_from_sparse_matrix(cls.interactions, int_ds, get_session())
-        write_tfrecord_from_sparse_matrix(cls.user_features, uf_ds, get_session())
-        write_tfrecord_from_sparse_matrix(cls.item_features, if_ds, get_session())
+        write_tfrecord_from_sparse_matrix(cls.interactions, int_ds)
+        write_tfrecord_from_sparse_matrix(cls.user_features, uf_ds)
+        write_tfrecord_from_sparse_matrix(cls.item_features, if_ds)
 
         cls.standard_model = TensorRec(n_components=10)
         cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)

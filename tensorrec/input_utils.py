@@ -2,6 +2,8 @@ import numpy as np
 from scipy import sparse as sp
 import tensorflow as tf
 
+from .session_management import get_session
+
 
 def create_tensorrec_iterator(name):
     """
@@ -38,29 +40,27 @@ def create_tensorrec_dataset_from_sparse_matrix(sparse_matrix):
     return tf.data.Dataset.from_tensor_slices(tensor_slices)
 
 
-def write_tfrecord_from_sparse_matrix(tfrecord_path, sparse_matrix, session):
+def write_tfrecord_from_sparse_matrix(tfrecord_path, sparse_matrix):
     """
     Writes the contents of a sparse matrix to a TFRecord file.
     :param tfrecord_path: str
     :param sparse_matrix: scipy.sparse matrix
-    :param session: tf.Session
     :return: str
     The tfrecord path
     """
     dataset = create_tensorrec_dataset_from_sparse_matrix(sparse_matrix=sparse_matrix)
     return write_tfrecord_from_tensorrec_dataset(tfrecord_path=tfrecord_path,
-                                                 dataset=dataset,
-                                                 session=session)
+                                                 dataset=dataset)
 
 
-def get_dimensions_from_tensorrec_dataset(dataset, session):
+def get_dimensions_from_tensorrec_dataset(dataset):
     """
     Given a TensorFlow Dataset in the standard TensorRec format, returns the dimensions of the SparseTensor to be
     populated by the Dataset.
     :param dataset: tf.data.Dataset
-    :param session: tf.Session
     :return: (int, int)
     """
+    session = get_session()
     iterator = create_tensorrec_iterator('dims_iterator')
     initializer = iterator.make_initializer(dataset)
     _, _, _, tf_d0, tf_d1 = iterator.get_next()
@@ -69,15 +69,15 @@ def get_dimensions_from_tensorrec_dataset(dataset, session):
     return d0, d1
 
 
-def write_tfrecord_from_tensorrec_dataset(tfrecord_path, dataset, session):
+def write_tfrecord_from_tensorrec_dataset(tfrecord_path, dataset):
     """
     Writes the contents of a TensorRec Dataset to a TFRecord file.
     :param tfrecord_path: str
     :param dataset: tf.data.Dataset
-    :param session: tf.Session
     :return: str
     The tfrecord path
     """
+    session = get_session()
     iterator = create_tensorrec_iterator('dataset_writing_iterator')
     initializer = iterator.make_initializer(dataset)
     tf_row_index, tf_col_index, tf_values, tf_d0, tf_d1 = iterator.get_next()

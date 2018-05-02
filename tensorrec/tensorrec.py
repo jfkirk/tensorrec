@@ -593,8 +593,8 @@ class TensorRec(object):
 
             # Check input dimensions
             first_batch = dataset_sets[0]
-            _, n_user_features = get_dimensions_from_tensorrec_dataset(first_batch[1], session=session)
-            _, n_item_features = get_dimensions_from_tensorrec_dataset(first_batch[2], session=session)
+            _, n_user_features = get_dimensions_from_tensorrec_dataset(first_batch[1])
+            _, n_item_features = get_dimensions_from_tensorrec_dataset(first_batch[2])
 
             # Numbers of features are either learned at fit time from the shape of these two matrices or specified at
             # TensorRec construction and cannot be changed.
