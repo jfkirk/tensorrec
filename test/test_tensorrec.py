@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorrec import TensorRec
 from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix, write_tfrecord_from_sparse_matrix
 from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
-from tensorrec.session_management import set_session, get_session
+from tensorrec.session_management import set_session
 from tensorrec.util import generate_dummy_data
 
 
