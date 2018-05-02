@@ -58,7 +58,7 @@ class NormalizedLinearRepresentationGraph(LinearRepresentationGraph):
         return normalized_repr, weights_list
 
 
-class IdentityRepresentationGraph(AbstractRepresentationGraph):
+class FeaturePassThroughRepresentationGraph(AbstractRepresentationGraph):
     """
     Uses the features as the representation. This representation graph does no transformation to the features.
     """
@@ -72,13 +72,13 @@ class IdentityRepresentationGraph(AbstractRepresentationGraph):
         return tf.sparse_tensor_to_dense(tf_features, validate_indices=False), []
 
 
-class WeightedIdentityRepresentationGraph(IdentityRepresentationGraph):
+class WeightedFeaturePassThroughRepresentationGraph(FeaturePassThroughRepresentationGraph):
     """
     Uses the features as the representation. This representation graph learns weights for each feature.
     """
 
     def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
-        dense_repr, _ = super(WeightedIdentityRepresentationGraph, self).connect_representation_graph(
+        dense_repr, _ = super(WeightedFeaturePassThroughRepresentationGraph, self).connect_representation_graph(
             tf_features=tf_features, n_components=n_components, n_features=n_features, node_name_ending=node_name_ending
         )
 
