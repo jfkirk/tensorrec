@@ -1,6 +1,7 @@
 nose==1.3.7
 nose-cprof==0.2.1
 nose-timer==0.7.1
+nose-parameterized==0.6.0
 
 # For plotting
 matplotlib==2.1.2

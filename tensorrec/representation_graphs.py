@@ -46,7 +46,7 @@ class LinearRepresentationGraph(AbstractRepresentationGraph):
 class NormalizedLinearRepresentationGraph(LinearRepresentationGraph):
     """
     Calculates the representation by passing the features through a linear embedding. Embeddings are L2 normalized,
-    meaning all embeddings have equal magnitued. This can be useful as a user representation in mixture-of-tastes
+    meaning all embeddings have equal magnitude. This can be useful as a user representation in mixture-of-tastes
     models, preventing one taste from having a much larger magnitude than others and dominating the recommendations.
     """
 
@@ -58,9 +58,40 @@ class NormalizedLinearRepresentationGraph(LinearRepresentationGraph):
         return normalized_repr, weights_list
 
 
+class FeaturePassThroughRepresentationGraph(AbstractRepresentationGraph):
+    """
+    Uses the features as the representation. This representation graph does no transformation to the features.
+    """
+
+    def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+
+        if n_components != n_features:
+            raise ValueError('{} requires n_features and n_components to be equal. Either adjust n_components or use a '
+                             'different representation graph. n_features = {}, n_components = {}'.format(
+                                self.__class__.__name__, n_features, n_components
+                             ))
+
+        return tf.sparse_tensor_to_dense(tf_features, validate_indices=False), []
+
+
+class WeightedFeaturePassThroughRepresentationGraph(FeaturePassThroughRepresentationGraph):
+    """
+    Uses the features as the representation. This representation graph learns weights for each feature.
+    """
+
+    def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+        dense_repr, _ = super(WeightedFeaturePassThroughRepresentationGraph, self).connect_representation_graph(
+            tf_features=tf_features, n_components=n_components, n_features=n_features, node_name_ending=node_name_ending
+        )
+
+        weights = tf.ones([1, n_components])
+        weighted_repr = tf.multiply(dense_repr, weights)
+        return weighted_repr, [weights]
+
+
 class ReLURepresentationGraph(AbstractRepresentationGraph):
     """
-    Calculates the repesentations by passing the features through a single-layer ReLU neural network.
+    Calculates the representations by passing the features through a single-layer ReLU neural network.
     :param relu_size: int or None
     The number of nodes in the ReLU layer. If None, the layer will be of size 4*n_components.
     """
