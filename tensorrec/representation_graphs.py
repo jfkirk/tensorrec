@@ -67,7 +67,9 @@ class FeaturePassThroughRepresentationGraph(AbstractRepresentationGraph):
 
         if n_components != n_features:
             raise ValueError('{} requires n_features and n_components to be equal. Either adjust n_components or use a '
-                             'different representation graph.'.format(self.__class__.__name__))
+                             'different representation graph. n_features = {}, n_components = {}'.format(
+                                self.__class__.__name__, n_features, n_components
+                             ))
 
         return tf.sparse_tensor_to_dense(tf_features, validate_indices=False), []
 
