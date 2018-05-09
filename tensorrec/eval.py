@@ -4,17 +4,13 @@ import scipy.sparse as sp
 from .tensorrec import TensorRec
 
 
-def precision_at_k(model, test_interactions, user_features, item_features, k=10, preserve_rows=False):
+def precision_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
     """
     Modified from LightFM.
-    :param model: TensorRec
-    A trained TensorRec model.
+    :param predicted_ranks: Numpy matrix
+    The results of model.predict_rank()
     :param test_interactions: scipy.sparse matrix
     Test interactions matrix of shape [n_users, n_items]
-    :param user_features: scipy.sparse matrix
-    User features matrix of shape [n_users, n_user_features]
-    :param item_features: scipy.sparse matrix
-    Item features matrix of shape [n_items, n_item_features]
     :param k: int
     The rank at which to stop evaluating precision.
     :param preserve_rows: bool
@@ -22,9 +18,6 @@ def precision_at_k(model, test_interactions, user_features, item_features, k=10,
     If False, only users with test interactions will be returned.
     :return: np.array
     """
-
-    predicted_ranks = model.predict_rank(user_features=user_features, item_features=item_features)
-
     positive_test_interactions = test_interactions > 0
     ranks = sp.csr_matrix(predicted_ranks * positive_test_interactions.A)
     ranks.data = np.less(ranks.data, (k + 1), ranks.data)
@@ -37,17 +30,13 @@ def precision_at_k(model, test_interactions, user_features, item_features, k=10,
     return precision
 
 
-def recall_at_k(model, test_interactions, user_features, item_features, k=10, preserve_rows=False):
+def recall_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
     """
     Modified from LightFM.
-    :param model: TensorRec
-    A trained TensorRec model.
+    :param predicted_ranks: Numpy matrix
+    The results of model.predict_rank()
     :param test_interactions: scipy.sparse matrix
     Test interactions matrix of shape [n_users, n_items]
-    :param user_features: scipy.sparse matrix
-    User features matrix of shape [n_users, n_user_features]
-    :param item_features: scipy.sparse matrix
-    Item features matrix of shape [n_items, n_item_features]
     :param k: int
     The rank at which to stop evaluating recall.
     :param preserve_rows: bool
@@ -55,9 +44,6 @@ def recall_at_k(model, test_interactions, user_features, item_features, k=10, pr
     If False, only users with test interactions will be returned.
     :return: np.array
     """
-
-    predicted_ranks = model.predict_rank(user_features=user_features, item_features=item_features)
-
     positive_test_interactions = test_interactions > 0
     ranks = sp.csr_matrix(predicted_ranks * positive_test_interactions.A)
     ranks.data = np.less(ranks.data, (k + 1), ranks.data)
@@ -100,19 +86,13 @@ def _dcg(relevance, k_mask, ror_at_k, ror):
     return dcg
 
 
-def ndcg_at_k(model, test_interactions, k=10,
-              user_features=None, item_features=None,
-              preserve_rows=False):
+def ndcg_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
     """
     Calculate Normalized Discounted Cumulative Gain @K.
-    :param model: TensorRec
-    A trained TensorRec model.
+    :param predicted_ranks: Numpy matrix
+    The results of model.predict_rank()
     :param test_interactions: scipy.sparse matrix
     Test interactions matrix of shape [n_users, n_items]
-    :param user_features: scipy.sparse matrix
-    User features matrix of shape [n_users, n_user_features]
-    :param item_features: scipy.sparse matrix
-    Item features matrix of shape [n_items, n_item_features]
     :param k: int
     The rank at which to stop evaluating NDCG.
     :param preserve_rows: bool
@@ -120,9 +100,6 @@ def ndcg_at_k(model, test_interactions, k=10,
     If False, only users with test interactions will be returned.
     :return: np.array
     """
-
-    predicted_ranks = model.predict_rank(user_features=user_features,
-                                         item_features=item_features)
 
     relevance, k_mask, ranks_of_relevant, ror_at_k = _setup_ndcg(predicted_ranks,
                                                                  test_interactions,
@@ -140,7 +117,7 @@ def ndcg_at_k(model, test_interactions, k=10,
     return ndcg
 
 
-def f1_score_at_k(model, test_interactions, user_features, item_features, k=10, preserve_rows=False):
+def f1_score_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
     """
     :param model: TensorRec
     A trained TensorRec model.
@@ -157,17 +134,12 @@ def f1_score_at_k(model, test_interactions, user_features, item_features, k=10, 
     If False, only users with test interactions will be returned.
     :return: np.array
     """
-    # TODO: Refactor to calculate more quickly
-    p_at_k = precision_at_k(model=model,
+    p_at_k = precision_at_k(predicted_ranks=predicted_ranks,
                             test_interactions=test_interactions,
-                            k=k, user_features=user_features,
-                            item_features=item_features,
-                            preserve_rows=preserve_rows)
-    r_at_k = recall_at_k(model=model,
+                            k=k, preserve_rows=preserve_rows)
+    r_at_k = recall_at_k(predicted_ranks=predicted_ranks,
                          test_interactions=test_interactions,
-                         k=k, user_features=user_features,
-                         item_features=item_features,
-                         preserve_rows=preserve_rows)
+                         k=k, preserve_rows=preserve_rows)
 
     mean_p = np.mean(p_at_k)
     mean_r = np.mean(r_at_k)
@@ -181,31 +153,15 @@ def fit_and_eval(model, user_features, item_features, train_interactions, test_i
 
     model.fit(user_features=user_features, item_features=item_features,
               interactions=train_interactions, **fit_kwargs)
-    p_at_k = precision_at_k(model, test_interactions,
-                            user_features=user_features,
-                            item_features=item_features,
-                            k=precision_k)
-    r_at_k = recall_at_k(model, test_interactions,
-                         user_features=user_features,
-                         item_features=item_features,
-                         k=recall_k)
-    n_at_k = ndcg_at_k(model, test_interactions,
-                       user_features=user_features,
-                       item_features=item_features,
-                       k=ndcg_k)
+    predicted_ranks = model.predict_rank(user_features=user_features, item_features=item_features)
 
-    p_at_k_insample = precision_at_k(model, train_interactions,
-                                     user_features=user_features,
-                                     item_features=item_features,
-                                     k=precision_k)
-    r_at_k_insample = recall_at_k(model, train_interactions,
-                                  user_features=user_features,
-                                  item_features=item_features,
-                                  k=recall_k)
-    n_at_k_insample = ndcg_at_k(model, train_interactions,
-                                user_features=user_features,
-                                item_features=item_features,
-                                k=ndcg_k)
+    p_at_k = precision_at_k(predicted_ranks, test_interactions, k=precision_k)
+    r_at_k = recall_at_k(predicted_ranks, test_interactions, k=recall_k)
+    n_at_k = ndcg_at_k(predicted_ranks, test_interactions, k=ndcg_k)
+
+    p_at_k_insample = precision_at_k(predicted_ranks, train_interactions, k=precision_k)
+    r_at_k_insample = recall_at_k(predicted_ranks, train_interactions, k=recall_k)
+    n_at_k_insample = ndcg_at_k(predicted_ranks, train_interactions, k=ndcg_k)
 
     return (np.mean(r_at_k), np.mean(p_at_k), np.mean(n_at_k), np.mean(r_at_k_insample), np.mean(p_at_k_insample),
             np.mean(n_at_k_insample))
@@ -221,3 +177,16 @@ def grid_check_model_on_dataset(train_interactions, test_interactions, user_feat
                                   fit_kwargs={'epochs': epochs})
             results.append((n_components, scores))
             print(n_components, epochs, scores)
+
+
+def eval_random_ranks_on_dataset(interactions, recall_k=30, precision_k=5, ndcg_k=30):
+
+    n_users, n_items = interactions.shape
+
+    random_guesses = np.array([np.random.choice(a=n_items, size=n_items, replace=False) + 1 for _ in range(n_users)])
+
+    p_at_k = precision_at_k(random_guesses, interactions, k=precision_k)
+    r_at_k = recall_at_k(random_guesses, interactions, k=recall_k)
+    n_at_k = ndcg_at_k(random_guesses, interactions, k=ndcg_k)
+
+    return np.mean(r_at_k), np.mean(p_at_k), np.mean(n_at_k)

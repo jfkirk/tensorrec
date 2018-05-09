@@ -18,15 +18,14 @@ class ReadmeTestCase(TestCase):
         # Fit the model for 5 epochs
         model.fit(interactions, user_features, item_features, epochs=5, verbose=True)
 
-        # Predict scores for all users and all items
+        # Predict scores and ranks for all users and all items
         predictions = model.predict(user_features=user_features,
                                     item_features=item_features)
+        predicted_ranks = model.predict_rank(user_features=user_features,
+                                             item_features=item_features)
 
         # Calculate and print the recall at 10
-        r_at_k = tensorrec.eval.recall_at_k(model, interactions,
-                                            k=10,
-                                            user_features=user_features,
-                                            item_features=item_features)
+        r_at_k = tensorrec.eval.recall_at_k(predicted_ranks, interactions, k=10)
         print(np.mean(r_at_k))
 
         self.assertIsNotNone(predictions)

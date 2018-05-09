@@ -18,78 +18,61 @@ class EvalTestCase(TestCase):
         model = TensorRec(n_components=10)
         model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
         cls.model = model
+        cls.ranks = model.predict_rank(user_features=cls.user_features, item_features=cls.item_features)
 
     def test_recall_at_k(self):
         # Check non-none results with and without preserve_rows
-        self.assertIsNotNone(recall_at_k(model=self.model,
+        self.assertIsNotNone(recall_at_k(predicted_ranks=self.ranks,
                                          test_interactions=self.interactions,
                                          k=5,
-                                         user_features=self.user_features,
-                                         item_features=self.item_features,
                                          preserve_rows=False))
-        self.assertIsNotNone(recall_at_k(model=self.model,
+        self.assertIsNotNone(recall_at_k(predicted_ranks=self.ranks,
                                          test_interactions=self.interactions,
                                          k=5,
-                                         user_features=self.user_features,
-                                         item_features=self.item_features,
                                          preserve_rows=True))
 
     def test_precision_at_k(self):
         # Check non-none results with and without preserve_rows
-        self.assertIsNotNone(precision_at_k(model=self.model,
+        self.assertIsNotNone(precision_at_k(predicted_ranks=self.ranks,
                                             test_interactions=self.interactions,
                                             k=5,
-                                            user_features=self.user_features,
-                                            item_features=self.item_features,
                                             preserve_rows=False))
-        self.assertIsNotNone(precision_at_k(model=self.model,
+        self.assertIsNotNone(precision_at_k(predicted_ranks=self.ranks,
                                             test_interactions=self.interactions,
                                             k=5,
-                                            user_features=self.user_features,
-                                            item_features=self.item_features,
                                             preserve_rows=True))
 
     def test_f1_score_at_k(self):
         # Check non-none results with and without preserve_rows
-        self.assertIsNotNone(f1_score_at_k(model=self.model,
+        self.assertIsNotNone(f1_score_at_k(predicted_ranks=self.ranks,
                                            test_interactions=self.interactions,
                                            k=5,
-                                           user_features=self.user_features,
-                                           item_features=self.item_features,
                                            preserve_rows=False))
-        self.assertIsNotNone(f1_score_at_k(model=self.model,
+        self.assertIsNotNone(f1_score_at_k(predicted_ranks=self.ranks,
                                            test_interactions=self.interactions,
                                            k=5,
-                                           user_features=self.user_features,
-                                           item_features=self.item_features,
                                            preserve_rows=True))
 
     def test_ndcg_at_k(self):
 
         ndcg10 = np.mean(ndcg_at_k(
-            model=self.model,
+            predicted_ranks=self.ranks,
             test_interactions=self.interactions,
             k=10,
-            user_features=self.user_features,
-            item_features=self.item_features,
             preserve_rows=False
         ))
 
         ndcg20 = np.mean(ndcg_at_k(
-            model=self.model,
+            predicted_ranks=self.ranks,
             test_interactions=self.interactions,
             k=20,
-            user_features=self.user_features,
-            item_features=self.item_features,
             preserve_rows=False
         ))
 
         ndcg5 = np.mean(ndcg_at_k(
-            model=self.model,
+            predicted_ranks=self.ranks,
             test_interactions=self.interactions,
             k=5,
-            user_features=self.user_features,
-            item_features=self.item_features,
             preserve_rows=False
         ))
 

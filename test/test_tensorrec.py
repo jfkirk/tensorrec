@@ -379,6 +379,8 @@ class TensorRecSavingTestCase(TestCase):
             num_users=15, num_items=30, interaction_density=.5, num_user_features=200, num_item_features=200,
             n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
         )
+        tf.reset_default_graph()
+        set_session(None)
 
     def setUp(self):
         # Create a temporary directory

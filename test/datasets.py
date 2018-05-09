@@ -76,12 +76,32 @@ def _split_interactions_warm_start(interactions):
     return train_interactions, test_interactions
 
 
-def _split_interactions_cold_start(interactions):
+def _split_interactions_cold_start_users(interactions):
 
     mask_size = interactions.shape[0]
     sample_rows = np.random.choice(a=mask_size, size=int(.8 * mask_size), replace=False)
 
     train_mask = np.array([True if row in sample_rows else False for row in interactions.row])
+    test_mask = np.invert(train_mask)
+
+    train_interactions = sp.coo_matrix((interactions.data[train_mask],
+                                        (interactions.row[train_mask],
+                                         interactions.col[train_mask])),
+                                       shape=interactions.shape)
+    test_interactions = sp.coo_matrix((interactions.data[test_mask],
+                                       (interactions.row[test_mask],
+                                        interactions.col[test_mask])),
+                                      shape=interactions.shape)
+
+    return train_interactions, test_interactions
+
+
+def _split_interactions_cold_start_items(interactions):
+
+    mask_size = interactions.shape[1]
+    sample_cols = np.random.choice(a=mask_size, size=int(.8 * mask_size), replace=False)
+
+    train_mask = np.array([True if col in sample_cols else False for col in interactions.col])
     test_mask = np.invert(train_mask)
 
     train_interactions = sp.coo_matrix((interactions.data[train_mask],
@@ -118,7 +138,7 @@ def get_movielens_100k(min_positive_score=4, negative_value=0):
 
 
 def get_book_crossing(min_positive_score=7, min_interactions_per_book=5, user_indicators=False, item_indicators=False,
-                      cold_start=False):
+                      cold_start_users=False, cold_start_items=False):
     """
     Dataset from http://www2.informatik.uni-freiburg.de/~cziegler/BX/
 
@@ -129,6 +149,10 @@ def get_book_crossing(min_positive_score=7, min_interactions_per_book=5, user_in
     :param min_positive_score:
     :return:
     """
+
+    if cold_start_items and cold_start_users:
+        raise ValueError("get_book_crossing() can't return both cold_start_users and cold_start_items. Set one to "
+                         "False.")
 
     paths = _download_and_unpack_zip(url='http://www2.informatik.uni-freiburg.de/~cziegler/BX/BX-CSV-Dump.zip',
                                      local_path='/tmp/tensorrec/book-crossing',
@@ -245,7 +269,7 @@ def get_book_crossing(min_positive_score=7, min_interactions_per_book=5, user_in
     book_transformers = [
         ('title_pipeline', Pipeline([
             ('title_extractor', TupleExtractor(0)),
-            ('title_vectorizer', CountVectorizer(min_df=5)),
+            ('title_vectorizer', CountVectorizer(min_df=2)),
         ])),
         ('author_pipeline', Pipeline([
             ('author_extractor', TupleExtractor(1)),
@@ -281,8 +305,10 @@ def get_book_crossing(min_positive_score=7, min_interactions_per_book=5, user_in
     user_pipeline = FeatureUnion(user_transformers)
     user_features = user_pipeline.fit_transform(user_metadata)
 
-    if cold_start:
-        train_interactions, test_interactions = _split_interactions_cold_start(interactions)
+    if cold_start_users:
+        train_interactions, test_interactions = _split_interactions_cold_start_users(interactions)
+    elif cold_start_items:
+        train_interactions, test_interactions = _split_interactions_cold_start_items(interactions)
     else:
         train_interactions, test_interactions = _split_interactions_warm_start(interactions)
 
