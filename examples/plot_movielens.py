@@ -72,14 +72,10 @@ for epoch in range(epochs):
 
     logging.info("Finished epoch {}".format(epoch))
 
-p_at_k = precision_at_k(model, test_interactions,
-                        user_features=user_features,
-                        item_features=item_features,
-                        k=5)
-r_at_k = recall_at_k(model, test_interactions,
-                     user_features=user_features,
-                     item_features=item_features,
-                     k=30)
+ranks = model.predict_rank(user_features=user_features,
+                           item_features=item_features,)
+p_at_k = precision_at_k(ranks, test_interactions, k=5)
+r_at_k = recall_at_k(ranks, test_interactions, k=30)
 
 logging.info("Precision@5: {}, Recall@30: {}".format(np.mean(p_at_k), np.mean(r_at_k)))
 
