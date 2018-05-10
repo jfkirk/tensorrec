@@ -10,6 +10,7 @@ import numpy as np
 
 from tensorrec import TensorRec
 from tensorrec.eval import precision_at_k, recall_at_k
+from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix
 from tensorrec.loss_graphs import BalancedWMRBLossGraph
 from tensorrec.representation_graphs import ReLURepresentationGraph
 
@@ -39,14 +40,21 @@ model = TensorRec(n_components=2,
 movies_to_plot = np.random.choice(a=item_features.shape[0], size=50, replace=False)
 user_to_plot = np.random.choice(a=user_features.shape[0], size=100, replace=False)
 
+# Coerce data to datasets for faster fitting
+train_interactions_ds = create_tensorrec_dataset_from_sparse_matrix(train_interactions)
+user_features_ds = create_tensorrec_dataset_from_sparse_matrix(user_features)
+item_features_ds = create_tensorrec_dataset_from_sparse_matrix(item_features)
+
 # Iterate through 1000 epochs, outputting a JPG plot each epoch
 for epoch in range(epochs):
-    model.fit_partial(interactions=train_interactions, user_features=user_features, item_features=item_features,
+    model.fit_partial(interactions=train_interactions_ds,
+                      user_features=user_features_ds,
+                      item_features=item_features_ds,
                       **fit_kwargs)
 
     # The position of a movie or user is that movie's/user's 2-dimensional representation.
-    movie_positions = model.predict_item_representation(item_features)
-    user_positions = model.predict_user_representation(user_features)
+    movie_positions = model.predict_item_representation(item_features_ds)
+    user_positions = model.predict_user_representation(user_features_ds)
 
     # Handle multiple tastes, if applicable. If there are more than 1 taste per user, only the first of each user's
     # tastes will be plotted.
