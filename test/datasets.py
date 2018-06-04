@@ -34,6 +34,20 @@ class IndicatorFeature(TransformerMixin):
         return self
 
 
+# TODO This class is a hack to work with scikit 0.19.1. Remove this after scikit 0.20 is stable released.
+class PipelineLabelBinarizer(TransformerMixin):
+
+    def __init__(self, *args, **kwargs):
+        self.encoder = LabelBinarizer(*args, **kwargs)
+
+    def fit(self, x, y=None):
+        self.encoder.fit(x)
+        return self
+
+    def transform(self, x, y=None):
+        return self.encoder.transform(x)
+
+
 def _download_and_unpack_zip(url, local_path, skip_if_not_empty):
 
     os.makedirs(local_path, exist_ok=True)
@@ -273,15 +287,15 @@ def get_book_crossing(min_positive_score=7, min_interactions_per_book=5, user_in
         ])),
         ('author_pipeline', Pipeline([
             ('author_extractor', TupleExtractor(1)),
-            ('author_vectorizer', LabelBinarizer(sparse_output=True)),
+            ('author_vectorizer', PipelineLabelBinarizer(sparse_output=True)),
         ])),
         ('year_pipeline', Pipeline([
             ('year_extractor', TupleExtractor(2)),
-            ('year_vectorizer', LabelBinarizer(sparse_output=True)),
+            ('year_vectorizer', PipelineLabelBinarizer(sparse_output=True)),
         ])),
         ('publisher_pipeline', Pipeline([
             ('publisher_extractor', TupleExtractor(3)),
-            ('publisher_vectorizer', LabelBinarizer(sparse_output=True)),
+            ('publisher_vectorizer', PipelineLabelBinarizer(sparse_output=True)),
         ])),
     ]
     if item_indicators:
@@ -297,7 +311,7 @@ def get_book_crossing(min_positive_score=7, min_interactions_per_book=5, user_in
         ])),
         ('age_pipeline', Pipeline([
             ('age_extractor', TupleExtractor(1)),
-            ('age_vectorizer', LabelBinarizer(sparse_output=True)),
+            ('age_vectorizer', PipelineLabelBinarizer(sparse_output=True)),
         ])),
     ]
     if user_indicators:
