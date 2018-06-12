@@ -6,13 +6,15 @@ A TensorFlow recommendation algorithm and framework in Python.
 ## What is TensorRec?
 TensorRec is a Python recommendation system that allows you to quickly develop recommendation algorithms and customize them using TensorFlow.
 
-TensorRec lets you to customize your recommendation system's embedding functions and loss functions while TensorRec handles the data manipulation, scoring, and ranking to generate recommendations.
+TensorRec lets you to customize your recommendation system's representation/embedding functions and loss functions while TensorRec handles the data manipulation, scoring, and ranking to generate recommendations.
 
 A TensorRec system consumes three pieces of data: `user_features`, `item_features`, and `interactions`. It uses this data to learn to make and rank recommendations.
 
 For an overview of TensorRec and its usage, please see the [wiki.](https://github.com/jfkirk/tensorrec/wiki)
 
-For more information, and for an outline of this project, please read [this blog post](https://medium.com/@jameskirk1/tensorrec-a-recommendation-engine-framework-in-tensorflow-d85e4f0874e8).
+For more information, and for an outline of this project, please read [this blog post.](https://medium.com/@jameskirk1/tensorrec-a-recommendation-engine-framework-in-tensorflow-d85e4f0874e8)
+
+For an introduction to building recommender systems, please see [these slides.](https://docs.google.com/presentation/d/1g638Vr5_Z8mw2X6Fu2Oni1xylUm7e1V3CJkmG3lP5C4/edit?usp=sharing)
 
 ![TensorRec System Diagram](https://raw.githubusercontent.com/jfkirk/tensorrec/master/examples/system_diagram.png)
 
