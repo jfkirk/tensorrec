@@ -56,13 +56,13 @@ class TensorRec(object):
         If True, a bias value will be calculated for every user feature and item feature.
         """
 
-        # check TensorFlow version
+        # Check TensorFlow version
         major, minor, patch = tf.__version__.split(".")
         if int(major) < 1 or int(major) == 1 and int(minor) < 7:
             raise RuntimeError("""You need to have at least TensorFlow version 1.7 installed in order to use
                                tensorrec problerly. You have currently installed TensofFlow: """ + tf.__version__)
 
-        # Arg-check
+        # Arg Check
         if (n_components is None) or (n_tastes is None) or (user_repr_graph is None) or (item_repr_graph is None) \
                 or (prediction_graph is None) or (loss_graph is None):
             raise ValueError("All arguments to TensorRec() must be non-None")
