@@ -60,7 +60,7 @@ class TensorRec(object):
         major, minor, patch = tf.__version__.split(".")
         if int(major) < 1 or int(major) == 1 and int(minor) < 7:
             raise RuntimeError("""You need to have at least TensorFlow version 1.7 installed in order to use
-                               tensorrec problerly. You have currently installed TensofFlow: """ + tf.__version__)
+                               TensorRec properly. You have currently installed TensorFlow: """ + tf.__version__)
 
         # Arg Check
         if (n_components is None) or (n_tastes is None) or (user_repr_graph is None) or (item_repr_graph is None) \
