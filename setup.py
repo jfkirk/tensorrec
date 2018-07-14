@@ -16,6 +16,10 @@ setup(
         'requests', 'numpy', 'scipy',
         'sklearn', 'lightfm', 'tensorflow'
     ],
-    keywords=['machine-learning', 'tensorflow', 'recommendation-system', 'python', 'recommender-system'],
-    classifiers=[]
+    keywords=[
+        'machine-learning', 'tensorflow',
+        'recommendation-system', 'python',
+        'recommender-system'
+    ],
+    classifiers=[],
 )
