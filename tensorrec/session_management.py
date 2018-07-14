@@ -1,9 +1,20 @@
+"""
+
+    Session Management
+    ~~~~~~~~~~~~~~~~~~
+
+"""
 import tensorflow as tf
 
 _session = None
 
 
 def get_session():
+    """
+
+    Returns:
+
+    """
     global _session
 
     # Build/retrieve the session if it doesn't exist
@@ -17,5 +28,13 @@ def get_session():
 
 
 def set_session(session):
+    """
+
+    Args:
+        session:
+
+    Returns:
+
+    """
     global _session
     _session = session

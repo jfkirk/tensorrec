@@ -1,3 +1,9 @@
+"""
+
+    Input Utils
+    ~~~~~~~~~~~
+
+"""
 import numpy as np
 from scipy import sparse as sp
 import tensorflow as tf
@@ -6,25 +12,31 @@ from .session_management import get_session
 
 
 def create_tensorrec_iterator(name):
-    """
-    Creates a TensorFlow Iterator that is ready for the standard TensorRec data format.
-    :param name: str
-    The name for this Iterator.
-    :return: tf.data.Iterator
+    """Creates a TensorFlow Iterator that is ready
+    for the standard TensorRec data format.
+
+    Args:
+        name (str): The name for this Iterator.
+
+    Returns:
+        tf.data.Iterator
     """
     return tf.data.Iterator.from_structure(
-            output_types=(tf.int64, tf.int64, tf.float32, tf.int64, tf.int64),
-            output_shapes=([None], [None], [None], [], []),
-            shared_name=name
+        output_types=(tf.int64, tf.int64, tf.float32, tf.int64, tf.int64),
+        output_shapes=([None], [None], [None], [], []),
+        shared_name=name
     )
 
 
 def create_tensorrec_dataset_from_sparse_matrix(sparse_matrix):
-    """
-    Creates a TensorFlow Dataset containing the data from the given sparse matrix.
-    :param sparse_matrix: scipy.sparse matrix
-    The data to be contained in this Dataset.
-    :return: tf.data.Dataset
+    """Creates a TensorFlow Dataset containing the data from
+    the given sparse matrix.
+
+    Args:
+        sparse_matrix (scipy.sparse matrix): The data to be contained in this Dataset.
+
+    Returns:
+         tf.data.Dataset
     """
     if not isinstance(sparse_matrix, sp.coo_matrix):
         sparse_matrix = sp.coo_matrix(sparse_matrix)
@@ -41,12 +53,14 @@ def create_tensorrec_dataset_from_sparse_matrix(sparse_matrix):
 
 
 def write_tfrecord_from_sparse_matrix(tfrecord_path, sparse_matrix):
-    """
-    Writes the contents of a sparse matrix to a TFRecord file.
-    :param tfrecord_path: str
-    :param sparse_matrix: scipy.sparse matrix
-    :return: str
-    The tfrecord path
+    """Writes the contents of a sparse matrix to a TFRecord file.
+
+    Args:
+        tfrecord_path (str):
+        sparse_matrix (scipy.sparse matrix):
+
+    Returns:
+         str: The tfrecord path
     """
     dataset = create_tensorrec_dataset_from_sparse_matrix(sparse_matrix=sparse_matrix)
     return write_tfrecord_from_tensorrec_dataset(tfrecord_path=tfrecord_path,
@@ -54,11 +68,14 @@ def write_tfrecord_from_sparse_matrix(tfrecord_path, sparse_matrix):
 
 
 def get_dimensions_from_tensorrec_dataset(dataset):
-    """
-    Given a TensorFlow Dataset in the standard TensorRec format, returns the dimensions of the SparseTensor to be
-    populated by the Dataset.
-    :param dataset: tf.data.Dataset
-    :return: (int, int)
+    """Given a TensorFlow Dataset in the standard TensorRec format,
+    returns the dimensions of the SparseTensor to be populated by the Dataset.
+
+    Args:
+        dataset (tf.data.Dataset):
+
+    Returns:
+         tuple: (int, int)
     """
     session = get_session()
     iterator = create_tensorrec_iterator('dims_iterator')
@@ -70,12 +87,14 @@ def get_dimensions_from_tensorrec_dataset(dataset):
 
 
 def write_tfrecord_from_tensorrec_dataset(tfrecord_path, dataset):
-    """
-    Writes the contents of a TensorRec Dataset to a TFRecord file.
-    :param tfrecord_path: str
-    :param dataset: tf.data.Dataset
-    :return: str
-    The tfrecord path
+    """Writes the contents of a TensorRec Dataset to a TFRecord file.
+
+    Args:
+        tfrecord_path (str):
+        dataset (tf.data.Dataset):
+
+    Returns:
+        str: The tfrecord path
     """
     session = get_session()
     iterator = create_tensorrec_iterator('dataset_writing_iterator')
@@ -105,10 +124,13 @@ def write_tfrecord_from_tensorrec_dataset(tfrecord_path, dataset):
 
 
 def create_tensorrec_dataset_from_tfrecord(tfrecord_path):
-    """
-    Loads a TFRecord file and creates a Dataset with the contents.
-    :param tfrecord_path: str
-    :return: tf.data.Dataset
+    """Loads a TFRecord file and creates a Dataset with the contents.
+
+    Args:
+        tfrecord_path (str):
+
+    Returns:
+        tf.data.Dataset
     """
 
     def parse_tensorrec_tfrecord(example_proto):

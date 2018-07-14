@@ -1,3 +1,9 @@
+"""
+
+    Prediction Graphs
+    ~~~~~~~~~~~~~~~~~
+
+"""
 import abc
 import tensorflow as tf
 
@@ -9,62 +15,107 @@ class AbstractPredictionGraph(object):
 
     @abc.abstractmethod
     def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
-        """
-        This method is responsible for consuming user and item representations and calculating prediction scores for all
+        """This method is responsible for consuming user and item representations
+        and calculating prediction scores for all
         possible user-item pairs based on these representations.
-        :param tf_user_representation: tf.Tensor
-        The user representations as a Tensor of shape [n_users, n_components]
-        :param tf_item_representation: tf.Tensor
-        The item representations as a Tensor of shape [n_items, n_components]
-        :return: tf.Tensor
-        The predictions as a Tensor of shape [n_users, n_items]
+
+        Args:
+            tf_user_representation: tf.Tensor
+            The user representations as a Tensor of shape ``[n_users, n_components]``
+            tf_item_representation: tf.Tensor
+            The item representations as a Tensor of shape ``[n_items, n_components]``
+
+        Returns:
+             tf.Tensor: The predictions as a Tensor of shape ``[n_users, n_items]``
         """
         pass
 
     @abc.abstractmethod
     def connect_serial_prediction_graph(self, tf_user_representation, tf_item_representation, tf_x_user, tf_x_item):
-        """
-        This method is responsible for consuming user and item representations and indices and calculating prediction
+        """This method is responsible for consuming user and item
+        representations and indices and calculating prediction
         scores for particular user-item pairs.
-        :param tf_user_representation: tf.Tensor
-        The user representations as a Tensor of shape [n_users, n_components]
-        :param tf_item_representation: tf.Tensor
-        The item representations as a Tensor of shape [n_items, n_components]
-        :param tf_x_user: tf.Tensor
-        The users for whom to predict as a Tensor of shape [n_interactions]
-        :param tf_x_item: tf.Tensor
-        The items for which to predict as a Tensor of shape [n_interactions]
-        :return: tf.Tensor
-        The predictions as a Tensor of shape [n_interactions]
+
+        Args:
+            tf_user_representation (tf.Tensor): The user representations as a Tensor of
+            shape ``[n_users, n_components]``
+            tf_item_representation (tf.Tensor): The item representations as a Tensor of shape
+             ``[n_items, n_components]``
+            tf_x_user (tf.Tensor): The users for whom to predict as a Tensor of shape ``[n_interactions]``
+            tf_x_item (tf.Tensor): The items for which to predict as a Tensor of shape ``[n_interactions]``
+
+        Returns:
+             tf.Tensor: The predictions as a Tensor of shape [n_interactions]
         """
         pass
 
 
 class DotProductPredictionGraph(AbstractPredictionGraph):
-    """
-    This prediction function calculates the prediction as the dot product between the user and item representations.
+    """This prediction function calculates the prediction as the dot
+    product between the user and item representations.
     Prediction = user_repr * item_repr
     """
 
     def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
+        """
+        
+        Args:
+            tf_user_representation: 
+            tf_item_representation: 
+
+        Returns:
+
+        """
         return tf.matmul(tf_user_representation, tf_item_representation, transpose_b=True)
 
-    def connect_serial_prediction_graph(self, tf_user_representation, tf_item_representation, tf_x_user, tf_x_item):
+    def connect_serial_prediction_graph(self, tf_user_representation,
+                                        tf_item_representation, tf_x_user, tf_x_item):
+        """
+        
+        Args:
+            tf_user_representation: 
+            tf_item_representation: 
+            tf_x_user: 
+            tf_x_item: 
+
+        Returns:
+
+        """
         gathered_user_reprs = tf.gather(tf_user_representation, tf_x_user)
         gathered_item_reprs = tf.gather(tf_item_representation, tf_x_item)
         return tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
 
 
 class CosineSimilarityPredictionGraph(AbstractPredictionGraph):
-    """
-    This prediction function calculates the prediction as the cosine between the user and item representations.
-    Prediction = cos(user_repr, item_repr)
+    """This prediction function calculates the prediction as the cosine
+    between the user and item representations. Prediction = cos(user_repr, item_repr)
     """
 
     def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
+        """
+        
+        Args:
+            tf_user_representation: 
+            tf_item_representation: 
+
+        Returns:
+
+        """
         return relative_cosine(tf_tensor_1=tf_user_representation, tf_tensor_2=tf_item_representation)
 
-    def connect_serial_prediction_graph(self, tf_user_representation, tf_item_representation, tf_x_user, tf_x_item):
+    def connect_serial_prediction_graph(self, tf_user_representation,
+                                        tf_item_representation, tf_x_user, tf_x_item):
+        """
+        
+        Args:
+            tf_user_representation: 
+            tf_item_representation: 
+            tf_x_user: 
+            tf_x_item: 
+
+        Returns:
+
+        """
         normalized_users = tf.nn.l2_normalize(tf_user_representation, 1)
         normalized_items = tf.nn.l2_normalize(tf_item_representation, 1)
         gathered_user_reprs = tf.gather(normalized_users, tf_x_user)
@@ -72,17 +123,25 @@ class CosineSimilarityPredictionGraph(AbstractPredictionGraph):
         return tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
 
 
+# ToDo: fix typo in 'Euclidian' (should be 'Euclidean').
 class EuclidianSimilarityPredictionGraph(AbstractPredictionGraph):
-    """
-    This prediction function calculates the prediction as the negative euclidian distance between the user and
-    item representations.
+    """This prediction function calculates the prediction as the negative
+    Euclidean distance between the user and item representations.
     Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))
     """
 
     epsilon = 1e-16
 
     def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
+        """
+        
+        Args:
+            tf_user_representation: 
+            tf_item_representation: 
 
+        Returns:
+
+        """
         # [ n_users, 1 ]
         r_user = tf.reduce_sum(tf_user_representation ** 2, 1, keep_dims=True)
 
@@ -99,8 +158,19 @@ class EuclidianSimilarityPredictionGraph(AbstractPredictionGraph):
 
         return -1.0 * tf.sqrt(distance)
 
-    def connect_serial_prediction_graph(self, tf_user_representation, tf_item_representation, tf_x_user, tf_x_item):
+    def connect_serial_prediction_graph(self, tf_user_representation,
+                                        tf_item_representation, tf_x_user, tf_x_item):
+        """
+        
+        Args:
+            tf_user_representation: 
+            tf_item_representation: 
+            tf_x_user: 
+            tf_x_item: 
 
+        Returns:
+
+        """
         # [ n_interactions, n_components ]
         gathered_user_reprs = tf.gather(tf_user_representation, tf_x_user)
         gathered_item_reprs = tf.gather(tf_item_representation, tf_x_item)

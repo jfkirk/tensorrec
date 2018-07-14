@@ -1,3 +1,9 @@
+"""
+
+    Representation Graphs
+    ~~~~~~~~~~~~~~~~~~~~~
+
+"""
 import abc
 import tensorflow as tf
 
@@ -7,30 +13,39 @@ class AbstractRepresentationGraph(object):
 
     @abc.abstractmethod
     def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
-        """
-        This method is responsible for connecting the user/item features to their respective latent representations.
-        :param tf_features: tf.SparseTensor
-        The user/item features as a SparseTensor of shape [ n_users, n_features ]
-        :param n_components: int
-        The size of the latent representation per user/item.
-        :param n_features: int
-        The size of the input features per user/item.
-        :param node_name_ending: str
-        A string, either 'user' or 'item', which can be added to TensorFlow node names for clarity.
-        :return: tf.Tensor
-        The user/item representation as a Tensor of shape [ n_users, n_components ]
+        """This method is responsible for connecting the user/item
+        features to their respective latent representations.
+
+        Args:
+            tf_features (tf.SparseTensor): The user/item features as a SparseTensor of shape ``[ n_users, n_features ]``
+            n_components (int): The size of the latent representation per user/item.
+            n_features (int): The size of the input features per user/item.
+            node_name_ending (str): A string, either 'user' or 'item', which can be added to
+            TensorFlow node names for clarity.
+
+        Returns:
+             tf.Tensor: The user/item representation as a Tensor of shape ``[n_users, n_components]``
         """
         pass
 
 
 class LinearRepresentationGraph(AbstractRepresentationGraph):
-    """
-    Calculates the representation by passing the features through a linear embedding.
+    """Calculates the representation by passing the features through a linear embedding.
     Rough approximation of http://ceur-ws.org/Vol-1448/paper4.pdf
     """
 
     def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+        """
 
+        Args:
+            tf_features:
+            n_components:
+            n_features:
+            node_name_ending:
+
+        Returns:
+
+        """
         # Weights are normalized before building the variable
         raw_weights = tf.random_normal([n_features, n_components], stddev=1.0)
         normalized_weights = tf.nn.l2_normalize(raw_weights, 1)
@@ -44,13 +59,25 @@ class LinearRepresentationGraph(AbstractRepresentationGraph):
 
 
 class NormalizedLinearRepresentationGraph(LinearRepresentationGraph):
-    """
-    Calculates the representation by passing the features through a linear embedding. Embeddings are L2 normalized,
-    meaning all embeddings have equal magnitude. This can be useful as a user representation in mixture-of-tastes
-    models, preventing one taste from having a much larger magnitude than others and dominating the recommendations.
+    """Calculates the representation by passing the features through a linear embedding.
+    Embeddings are L2 normalized, meaning all embeddings have equal magnitude. This can be useful
+    as a user representation in mixture-of-tastes models, preventing one taste from having a much
+    larger magnitude than others and dominating the recommendations.
     """
 
-    def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+    def connect_representation_graph(self, tf_features, n_components,
+                                     n_features, node_name_ending):
+        """
+
+        Args:
+            tf_features:
+            n_components:
+            n_features:
+            node_name_ending:
+
+        Returns:
+
+        """
         tf_repr, weights_list = super(NormalizedLinearRepresentationGraph, self).connect_representation_graph(
             tf_features=tf_features, n_components=n_components, n_features=n_features, node_name_ending=node_name_ending
         )
@@ -59,27 +86,51 @@ class NormalizedLinearRepresentationGraph(LinearRepresentationGraph):
 
 
 class FeaturePassThroughRepresentationGraph(AbstractRepresentationGraph):
-    """
-    Uses the features as the representation. This representation graph does no transformation to the features.
+    """Uses the features as the representation. This representation
+    graph does no transformation to the features.
     """
 
-    def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+    def connect_representation_graph(self, tf_features, n_components,
+                                     n_features, node_name_ending):
+        """
 
+        Args:
+            tf_features:
+            n_components:
+            n_features:
+            node_name_ending:
+
+        Returns:
+
+        """
         if n_components != n_features:
-            raise ValueError('{} requires n_features and n_components to be equal. Either adjust n_components or use a '
-                             'different representation graph. n_features = {}, n_components = {}'.format(
-                                self.__class__.__name__, n_features, n_components
-                             ))
+            raise ValueError(
+                '{} requires n_features and n_components to be equal. Either adjust n_components or use a '
+                'different representation graph. n_features = {}, n_components = {}'.format(
+                    self.__class__.__name__, n_features, n_components
+                ))
 
         return tf.sparse_tensor_to_dense(tf_features, validate_indices=False), []
 
 
 class WeightedFeaturePassThroughRepresentationGraph(FeaturePassThroughRepresentationGraph):
-    """
-    Uses the features as the representation. This representation graph learns weights for each feature.
+    """Uses the features as the representation. This representation
+    graph learns weights for each feature.
     """
 
-    def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+    def connect_representation_graph(self, tf_features, n_components,
+                                     n_features, node_name_ending):
+        """
+
+        Args:
+            tf_features:
+            n_components:
+            n_features:
+            node_name_ending:
+
+        Returns:
+
+        """
         dense_repr, _ = super(WeightedFeaturePassThroughRepresentationGraph, self).connect_representation_graph(
             tf_features=tf_features, n_components=n_components, n_features=n_features, node_name_ending=node_name_ending
         )
@@ -90,16 +141,28 @@ class WeightedFeaturePassThroughRepresentationGraph(FeaturePassThroughRepresenta
 
 
 class ReLURepresentationGraph(AbstractRepresentationGraph):
-    """
-    Calculates the representations by passing the features through a single-layer ReLU neural network.
-    :param relu_size: int or None
-    The number of nodes in the ReLU layer. If None, the layer will be of size 4*n_components.
+    """Calculates the representations by passing the features through
+    a single-layer ReLU neural network.
+
+    relu_size (int or None): The number of nodes in the ReLU layer.
+    If None, the layer will be of size `4 * n_components`.
     """
 
     def __init__(self, relu_size=None):
         self.relu_size = relu_size
 
     def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+        """
+
+        Args:
+            tf_features:
+            n_components:
+            n_features:
+            node_name_ending:
+
+        Returns:
+
+        """
 
         # Infer ReLU layer size if necessary
         if self.relu_size is None:
@@ -125,13 +188,24 @@ class ReLURepresentationGraph(AbstractRepresentationGraph):
 
 
 class AbstractKerasRepresentationGraph(AbstractRepresentationGraph):
-    """
-    This abstract RepresentationGraph allows you to use Keras layers as a representation function by overriding the
-    create_layers() method.
+    """This abstract RepresentationGraph allows you to use Keras
+    layers as a representation function by overriding the
+    ``create_layers()`` method.
     """
     __metaclass__ = abc.ABCMeta
 
     def connect_representation_graph(self, tf_features, n_components, n_features, node_name_ending):
+        """
+
+        Args:
+            tf_features:
+            n_components:
+            n_features:
+            node_name_ending:
+
+        Returns:
+
+        """
         layers = self.create_layers(n_features=n_features, n_components=n_components)
 
         weights = []
@@ -147,13 +221,12 @@ class AbstractKerasRepresentationGraph(AbstractRepresentationGraph):
 
     @abc.abstractmethod
     def create_layers(self, n_features, n_components):
-        """
-        Returns a list of Keras layers.
-        :param n_features: int
-        The input size of the first Keras layer.
-        :param n_components: int
-        The output size of the final Keras layer.
-        :return: list
-        A list of Keras layers.
+        """Returns a list of Keras layers.
+
+        n_features (int): The input size of the first Keras layer.
+        n_components (int): The output size of the final Keras layer.
+
+        Returns:
+             list: A list of Keras layers.
         """
         pass
