@@ -894,15 +894,15 @@ Prediction = user_repr * item_repr</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph">
-<em class="property">class </em><code class="descclassname">tensorrec.prediction_graphs.</code><code class="descname">EuclidianSimilarityPredictionGraph</code><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclidianSimilarityPredictionGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph" title="Permalink to this definition">¶</a></dt>
+<dt id="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.prediction_graphs.</code><code class="descname">EuclideanSimilarityPredictionGraph</code><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclideanSimilarityPredictionGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tensorrec.prediction_graphs.AbstractPredictionGraph" title="tensorrec.prediction_graphs.AbstractPredictionGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.prediction_graphs.AbstractPredictionGraph</span></code></a></p>
 <p>This prediction function calculates the prediction as the negative
 Euclidean distance between the user and item representations.
 Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))</p>
 <dl class="method">
-<dt id="tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph.connect_dense_prediction_graph">
-<code class="descname">connect_dense_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclidianSimilarityPredictionGraph.connect_dense_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph.connect_dense_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dt id="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_dense_prediction_graph">
+<code class="descname">connect_dense_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclideanSimilarityPredictionGraph.connect_dense_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_dense_prediction_graph" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -919,8 +919,8 @@ Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph.connect_serial_prediction_graph">
-<code class="descname">connect_serial_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em>, <em>tf_x_user</em>, <em>tf_x_item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclidianSimilarityPredictionGraph.connect_serial_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph.connect_serial_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dt id="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_serial_prediction_graph">
+<code class="descname">connect_serial_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em>, <em>tf_x_user</em>, <em>tf_x_item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclideanSimilarityPredictionGraph.connect_serial_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_serial_prediction_graph" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -939,10 +939,16 @@ Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph.epsilon">
-<code class="descname">epsilon</code><em class="property"> = 1e-16</em><a class="headerlink" href="#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph.epsilon" title="Permalink to this definition">¶</a></dt>
+<dt id="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.epsilon">
+<code class="descname">epsilon</code><em class="property"> = 1e-16</em><a class="headerlink" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.epsilon" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph">
+<code class="descclassname">tensorrec.prediction_graphs.</code><code class="descname">EuclidianSimilarityPredictionGraph</code><a class="headerlink" href="#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph" title="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph</span></code></a></p>
 </dd></dl>
 
 </div>
