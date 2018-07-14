@@ -93,3 +93,5 @@ ENV/
 
 # Cprof
 stats.dat
+
+docs/build
