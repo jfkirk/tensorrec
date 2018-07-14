@@ -47,6 +47,9 @@ author = 'James Kirk'
 with open('../../setup.py', 'r') as f:
     setup_py = f.read().replace('\n', '')
     try:
+        # Note: this regex assumes that (a) 'version='
+        # is present and (b) that version can be found
+        # between 'version=' and a comma (',').
         version = re.search(
             r'version=(.*?),', setup_py
         ).group(1).replace("'", "")
