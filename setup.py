@@ -21,5 +21,10 @@ setup(
         'recommendation-system', 'python',
         'recommender-system'
     ],
-    classifiers=[],
+    classifiers=[
+        'Natural Language :: English',
+        'Intended Audience :: Science/Research',
+        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 3.6'
+    ],
 )
