@@ -467,17 +467,18 @@ possible nodes from the graph and calculating loss from those nodes.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>tf_prediction_serial</strong> (<em>tf.Tensor</em>) – (The recommendation scores as a Tensor of shape [n_samples, 1]</li>
-<li><strong>tf_interactions_serial</strong> (<em>tf.Tensor</em>) – The sample interactions corresponding to tf_prediction_serial</li>
-<li><strong>a Tensor of shape</strong><strong> [</strong><strong>n_samples</strong><strong>, </strong><strong>1</strong><strong>]</strong> (<em>as</em>) – </li>
-<li><strong>tf_interactions</strong> (<em>tf.SparseTensor</em>) – The sample interactions as a SparseTensor of shape <cite>[n_users, n_items]</cite></li>
-<li><strong>tf_n_users</strong> (<em>tf.placeholder</em>) – The number of users in tf_interactions.</li>
+<li><strong>tf_prediction_serial</strong> (<em>tf.Tensor</em>) – (The recommendation scores as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_samples,</span> <span class="pre">1]</span></code></li>
+<li><strong>tf_interactions_serial</strong> (<em>tf.Tensor</em>) – The sample interactions corresponding to tf_prediction_serial
+as a Tensor of shape <cite>[n_samples, 1]</cite></li>
+<li><strong>tf_interactions</strong> (<em>tf.SparseTensor</em>) – The sample interactions as a SparseTensor
+of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></li>
+<li><strong>tf_n_users</strong> (<em>tf.placeholder</em>) – The number of users in tf_interactions</li>
 <li><strong>tf_n_items</strong> (<em>tf.placeholder</em>) – The number of items in tf_interactions</li>
-<li><strong>tf_prediction</strong> (<em>tf.Tensor</em>) – The recommendation scores as a Tensor of shape [n_users, n_items]</li>
+<li><strong>tf_prediction</strong> (<em>tf.Tensor</em>) – The recommendation scores as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></li>
 <li><strong>tf_rankings</strong> (<em>tf.Tensor</em>) – The item ranks as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></li>
 <li><strong>tf_sample_predictions</strong> (<em>tf.Tensor</em>) – The recommendation scores of a sample of items of
-shape <cite>[n_users, n_sampled_items]</cite></li>
-<li><strong>tf_n_sampled_items</strong> (<em>tf.placeholder</em>) – The number of items per user in <cite>tf_sample_predictions</cite>.</li>
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_sampled_items]</span></code></li>
+<li><strong>tf_n_sampled_items</strong> (<em>tf.placeholder</em>) – The number of items per user in <code class="docutils literal notranslate"><span class="pre">tf_sample_predictions</span></code>.</li>
 </ul>
 </td>
 </tr>

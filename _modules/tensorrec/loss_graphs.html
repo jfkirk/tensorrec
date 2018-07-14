@@ -173,17 +173,18 @@
 <span class="sd">        possible nodes from the graph and calculating loss from those nodes.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            tf_prediction_serial (tf.Tensor): (The recommendation scores as a Tensor of shape [n_samples, 1]</span>
+<span class="sd">            tf_prediction_serial (tf.Tensor): (The recommendation scores as a Tensor of shape ``[n_samples, 1]``</span>
 <span class="sd">            tf_interactions_serial (tf.Tensor): The sample interactions corresponding to tf_prediction_serial</span>
-<span class="sd">            as a Tensor of shape `[n_samples, 1]`</span>
-<span class="sd">            tf_interactions (tf.SparseTensor): The sample interactions as a SparseTensor of shape `[n_users, n_items]`</span>
-<span class="sd">            tf_n_users (tf.placeholder): The number of users in tf_interactions.</span>
+<span class="sd">                as a Tensor of shape `[n_samples, 1]`</span>
+<span class="sd">            tf_interactions (tf.SparseTensor): The sample interactions as a SparseTensor</span>
+<span class="sd">                of shape ``[n_users, n_items]``</span>
+<span class="sd">            tf_n_users (tf.placeholder): The number of users in tf_interactions</span>
 <span class="sd">            tf_n_items (tf.placeholder): The number of items in tf_interactions</span>
-<span class="sd">            tf_prediction (tf.Tensor): The recommendation scores as a Tensor of shape [n_users, n_items]</span>
+<span class="sd">            tf_prediction (tf.Tensor): The recommendation scores as a Tensor of shape ``[n_users, n_items]``</span>
 <span class="sd">            tf_rankings (tf.Tensor): The item ranks as a Tensor of shape ``[n_users, n_items]``</span>
 <span class="sd">            tf_sample_predictions (tf.Tensor): The recommendation scores of a sample of items of</span>
-<span class="sd">                shape `[n_users, n_sampled_items]`</span>
-<span class="sd">            tf_n_sampled_items (tf.placeholder): The number of items per user in `tf_sample_predictions`.</span>
+<span class="sd">                shape ``[n_users, n_sampled_items]``</span>
+<span class="sd">            tf_n_sampled_items (tf.placeholder): The number of items per user in ``tf_sample_predictions``.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">             tf.Tensor: The loss value.</span>
