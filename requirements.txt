@@ -1,3 +1,6 @@
+lightfm
+sklearn
+requests
 flake8==3.3.0
 numpy==1.14.1
 scipy==0.19.1
