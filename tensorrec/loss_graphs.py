@@ -26,7 +26,7 @@ class AbstractLossGraph(object):
         possible nodes from the graph and calculating loss from those nodes.
 
         Args:
-            tf_prediction_serial (tf.Tensor): (The recommendation scores as a Tensor of shape ``[n_samples, 1]``
+            tf_prediction_serial (tf.Tensor): The recommendation scores as a Tensor of shape ``[n_samples, 1]``
             tf_interactions_serial (tf.Tensor): The sample interactions corresponding to tf_prediction_serial
                 as a Tensor of shape ``[n_samples, 1]``
             tf_interactions (tf.SparseTensor): The sample interactions as a SparseTensor
