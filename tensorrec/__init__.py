@@ -1,3 +1,4 @@
+import logging
 from .tensorrec import TensorRec
 from . import eval
 from . import input_utils
@@ -6,13 +7,13 @@ from . import representation_graphs
 from . import prediction_graphs
 from . import session_management
 from . import util
-import logging
 
 __version__ = '0.25.4'
 
 __all__ = [
     TensorRec, eval, util, loss_graphs,
-    representation_graphs, prediction_graphs, session_management, input_utils
+    representation_graphs, prediction_graphs,
+    session_management, input_utils
 ]
 
 # Suppress TensorFlow logs
