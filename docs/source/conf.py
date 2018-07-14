@@ -11,7 +11,6 @@
 import re
 import os
 import sys
-import pip
 import subprocess
 from importlib.util import find_spec
 
