@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>TensorRec &mdash; TensorRec 0.25.4 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Documentation" href="tensorrec.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> TensorRec
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.25.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="tensorrec.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">TensorRec</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>TensorRec</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="tensorrec">
+<h1>TensorRec<a class="headerlink" href="#tensorrec" title="Permalink to this headline">¶</a></h1>
+<p>A TensorFlow recommendation algorithm and framework in Python.</p>
+<a class="reference external image-reference" href="https://badge.fury.io/py/tensorrec"><img alt="PyPI version" src="https://badge.fury.io/py/tensorrec.svg" /></a>
+<a class="reference external image-reference" href="https://travis-ci.org/jfkirk/tensorrec"><img alt="Build Status" src="https://travis-ci.org/jfkirk/tensorrec.svg?branch=master" /></a>
+<a class="reference external image-reference" href="https://gitter.im/tensorrec"><img alt="Gitter chat" src="https://badges.gitter.im/tensorrec/gitter.png" /></a>
+<div class="section" id="what-is-tensorrec">
+<h2>What is TensorRec?<a class="headerlink" href="#what-is-tensorrec" title="Permalink to this headline">¶</a></h2>
+<p>TensorRec is a Python recommendation system that allows you to quickly develop recommendation algorithms and customize them using TensorFlow.</p>
+<p>TensorRec lets you to customize your recommendation system’s representation/embedding functions and loss functions while TensorRec handles the data manipulation, scoring, and ranking to generate recommendations.</p>
+<p>A TensorRec system consumes three pieces of data: <code class="docutils literal notranslate"><span class="pre">user_features</span></code>, <code class="docutils literal notranslate"><span class="pre">item_features</span></code>, and <code class="docutils literal notranslate"><span class="pre">interactions</span></code>. It uses this data to learn to make and rank recommendations.</p>
+<p>For an overview of TensorRec and its usage, please see the <a class="reference external" href="https://github.com/jfkirk/tensorrec/wiki">wiki.</a></p>
+<p>For more information, and for an outline of this project, please read <a class="reference external" href="https://medium.com/&#64;jameskirk1/tensorrec-a-recommendation-engine-framework-in-tensorflow-d85e4f0874e8">this blog post.</a></p>
+<p>For an introduction to building recommender systems, please see <a class="reference external" href="https://docs.google.com/presentation/d/1g638Vr5_Z8mw2X6Fu2Oni1xylUm7e1V3CJkmG3lP5C4/edit?usp=sharing">these slides.</a></p>
+<a class="reference external image-reference" href="https://raw.githubusercontent.com/jfkirk/tensorrec/master/examples/system_diagram.png"><img alt="TensorRec System Diagram" src="https://raw.githubusercontent.com/jfkirk/tensorrec/master/examples/system_diagram.png" /></a>
+<div class="section" id="example-basic-usage">
+<h3>Example: Basic usage<a class="headerlink" href="#example-basic-usage" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorrec</span>
+
+<span class="c1"># Build the model with default parameters</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">tensorrec</span><span class="o">.</span><span class="n">TensorRec</span><span class="p">()</span>
+
+<span class="c1"># Generate some dummy data</span>
+<span class="n">interactions</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span> <span class="o">=</span> <span class="n">tensorrec</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">generate_dummy_data</span><span class="p">(</span>
+    <span class="n">num_users</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">num_items</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+    <span class="n">interaction_density</span><span class="o">=.</span><span class="mo">05</span>
+<span class="p">)</span>
+
+<span class="c1"># Fit the model for 5 epochs</span>
+<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">interactions</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c1"># Predict scores and ranks for all users and all items</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                            <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+<span class="n">predicted_ranks</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_rank</span><span class="p">(</span><span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                                     <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+
+<span class="c1"># Calculate and print the recall at 10</span>
+<span class="n">r_at_k</span> <span class="o">=</span> <span class="n">tensorrec</span><span class="o">.</span><span class="n">eval</span><span class="o">.</span><span class="n">recall_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">r_at_k</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
+<p>TensorRec can be installed via pip:
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">tensorrec</span></code></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tensorrec.html">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#eval">Eval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#input-utils">Input Utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#loss-graphs">Loss Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#prediction-graphs">Prediction Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#recommendation-graphs">Recommendation Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#representation-graphs">Representation Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#session-management">Session Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#tensorrec-recommendation-model">TensorRec Recommendation Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tensorrec.html#utils">Utils</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tensorrec.html" class="btn btn-neutral float-right" title="API Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, James Kirk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.25.4',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

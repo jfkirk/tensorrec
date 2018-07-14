@@ -1,0 +1,1087 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tensorrec.tensorrec &mdash; TensorRec 0.25.4 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TensorRec
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.25.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tensorrec.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TensorRec</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tensorrec.tensorrec</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tensorrec.tensorrec</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    TensorRec Recommendation Model</span>
+<span class="sd">    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">cycle</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">sparse</span> <span class="k">as</span> <span class="n">sp</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">from</span> <span class="nn">.input_utils</span> <span class="k">import</span> <span class="n">create_tensorrec_iterator</span><span class="p">,</span> <span class="n">get_dimensions_from_tensorrec_dataset</span>
+<span class="kn">from</span> <span class="nn">.loss_graphs</span> <span class="k">import</span> <span class="n">AbstractLossGraph</span><span class="p">,</span> <span class="n">RMSELossGraph</span>
+<span class="kn">from</span> <span class="nn">.prediction_graphs</span> <span class="k">import</span> <span class="n">AbstractPredictionGraph</span><span class="p">,</span> <span class="n">DotProductPredictionGraph</span>
+<span class="kn">from</span> <span class="nn">.recommendation_graphs</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">project_biases</span><span class="p">,</span> <span class="n">split_sparse_tensor_indices</span><span class="p">,</span> <span class="n">bias_prediction_dense</span><span class="p">,</span> <span class="n">bias_prediction_serial</span><span class="p">,</span> <span class="n">rank_predictions</span><span class="p">,</span>
+    <span class="n">densify_sampled_item_predictions</span><span class="p">,</span> <span class="n">collapse_mixture_of_tastes</span><span class="p">,</span> <span class="n">predict_similar_items</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.representation_graphs</span> <span class="k">import</span> <span class="n">AbstractRepresentationGraph</span><span class="p">,</span> <span class="n">LinearRepresentationGraph</span>
+<span class="kn">from</span> <span class="nn">.session_management</span> <span class="k">import</span> <span class="n">get_session</span>
+<span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="n">sample_items</span><span class="p">,</span> <span class="n">calculate_batched_alpha</span><span class="p">,</span> <span class="n">datasets_from_raw_input</span>
+
+
+<div class="viewcode-block" id="TensorRec"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec">[docs]</a><span class="k">class</span> <span class="nc">TensorRec</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A TensorRec recommendation model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_components (int): The dimension of a single output of the representation function. Must be &gt;= 1.</span>
+<span class="sd">        n_tastes (int): The number of tastes/reprs to be calculated for each user. Must be &gt;= 1.</span>
+<span class="sd">        user_repr_graph (AbstractRepresentationGraph): An object which inherits ``AbstractRepresentationGraph``</span>
+<span class="sd">            that contains a method to calculate user representations. See tensorrec.representation_graphs for examples.</span>
+<span class="sd">        item_repr_graph (AbstractRepresentationGraph): An object which inherits ``AbstractRepresentationGraph`` that</span>
+<span class="sd">            contains a method to calculate item representations. See tensorrec.representation_graphs for examples.</span>
+<span class="sd">        attention_graph (AbstractRepresentationGraph or None): Optional. An object which inherits</span>
+<span class="sd">            ``AbstractRepresentationGraph`` that contains a method to calculate user attention. Any valid `repr_graph` is</span>
+<span class="sd">            also a valid attention graph. If None, no attention process will be applied.</span>
+<span class="sd">        prediction_graph (AbstractPredictionGraph): An object which inherits ``AbstractPredictionGraph``</span>
+<span class="sd">            that contains a method to calculate predictions from a pair of user/item reprs.</span>
+<span class="sd">            See tensorrec.prediction_graphs for examples.</span>
+<span class="sd">        loss_graph (AbstractLossGraph): An object which inherits AbstractLossGraph that contains</span>
+<span class="sd">            a method to calculate the loss function. See tensorrec.loss_graphs for examples.</span>
+<span class="sd">        biased (bool): If True, a bias value will be calculated for every user feature and item feature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">n_components</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                 <span class="n">n_tastes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">user_repr_graph</span><span class="o">=</span><span class="n">LinearRepresentationGraph</span><span class="p">(),</span>
+                 <span class="n">item_repr_graph</span><span class="o">=</span><span class="n">LinearRepresentationGraph</span><span class="p">(),</span>
+                 <span class="n">attention_graph</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">prediction_graph</span><span class="o">=</span><span class="n">DotProductPredictionGraph</span><span class="p">(),</span>
+                 <span class="n">loss_graph</span><span class="o">=</span><span class="n">RMSELossGraph</span><span class="p">(),</span>
+                 <span class="n">biased</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="p">):</span>
+        <span class="c1"># Check TensorFlow version</span>
+        <span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">,</span> <span class="n">patch</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">major</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">major</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">minor</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;You need to have at least TensorFlow version 1.7 installed in order to use</span>
+<span class="s2">                               TensorRec properly. You have currently installed TensorFlow: &quot;&quot;&quot;</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+
+        <span class="c1"># Arg Check</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">n_components</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">n_tastes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">user_repr_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">item_repr_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> \
+                <span class="ow">or</span> <span class="p">(</span><span class="n">prediction_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">loss_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All arguments to TensorRec() must be non-None&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_components</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_components must be &gt;= 1&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_tastes</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_tastes must be &gt;= 1&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_repr_graph</span><span class="p">,</span> <span class="n">AbstractRepresentationGraph</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;user_repr_graph must inherit AbstractRepresentationGraph&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_repr_graph</span><span class="p">,</span> <span class="n">AbstractRepresentationGraph</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;item_repr_graph must inherit AbstractRepresentationGraph&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prediction_graph</span><span class="p">,</span> <span class="n">AbstractPredictionGraph</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;prediction_graph must inherit AbstractPredictionGraph&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_graph</span><span class="p">,</span> <span class="n">AbstractLossGraph</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;loss_graph must inherit AbstractLossGraph&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">attention_graph</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attention_graph</span><span class="p">,</span> <span class="n">AbstractRepresentationGraph</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;attention_graph must be None or inherit AbstractRepresentationGraph&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n_tastes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;attention_graph must be None if n_tastes == 1&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span> <span class="o">=</span> <span class="n">n_components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tastes</span> <span class="o">=</span> <span class="n">n_tastes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_repr_graph_factory</span> <span class="o">=</span> <span class="n">user_repr_graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_repr_graph_factory</span> <span class="o">=</span> <span class="n">item_repr_graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attention_graph_factory</span> <span class="o">=</span> <span class="n">attention_graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prediction_graph_factory</span> <span class="o">=</span> <span class="n">prediction_graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_graph_factory</span> <span class="o">=</span> <span class="n">loss_graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">biased</span> <span class="o">=</span> <span class="n">biased</span>
+
+        <span class="c1"># A list of the attr names of every graph hook attr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_attr_names</span> <span class="o">=</span> <span class="p">[</span>
+
+            <span class="c1"># Top-level API nodes</span>
+            <span class="s1">&#39;tf_user_representation&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_item_representation&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_prediction_serial&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_prediction&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_rankings&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tf_predict_similar_items&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_rank_similar_items&#39;</span><span class="p">,</span>
+
+            <span class="c1"># Training nodes</span>
+            <span class="s1">&#39;tf_basic_loss&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_weight_reg_loss&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_loss&#39;</span><span class="p">,</span>
+
+            <span class="c1"># Feed placeholders</span>
+            <span class="s1">&#39;tf_learning_rate&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_sample_indices&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_n_sampled_items&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_similar_items_ids&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">biased</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_attr_names</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;tf_projected_user_biases&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_projected_item_biases&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_graph_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_attr_names</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;tf_user_attention_representation&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph_operation_hook_attr_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="c1"># AdamOptimizer</span>
+            <span class="s1">&#39;tf_optimizer&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph_iterator_hook_attr_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="c1"># Input data iterators</span>
+            <span class="s1">&#39;tf_user_feature_iterator&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_item_feature_iterator&#39;</span><span class="p">,</span> <span class="s1">&#39;tf_interaction_iterator&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Calling the break routine during __init__ creates all the attrs on the TensorRec object with an initial value</span>
+        <span class="c1"># of None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_break_graph_hooks</span><span class="p">()</span>
+
+        <span class="c1"># A map of every graph hook attr name to the node name after construction</span>
+        <span class="c1"># Tensors and operations are stored separated because they are handled differently by TensorFlow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_node_names</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph_operation_hook_node_names</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph_iterator_hook_node_names</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_break_graph_hooks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">graph_tensor_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_attr_names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">graph_tensor_hook_attr_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">graph_operation_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_operation_hook_attr_names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">graph_operation_hook_attr_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">graph_iterator_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_iterator_hook_attr_names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">graph_iterator_hook_attr_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_attach_graph_hooks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">get_session</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">graph_tensor_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_attr_names</span><span class="p">:</span>
+            <span class="n">graph_tensor_hook_node_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_node_names</span><span class="p">[</span><span class="n">graph_tensor_hook_attr_name</span><span class="p">]</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_tensor_by_name</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">graph_tensor_hook_node_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">graph_tensor_hook_attr_name</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">graph_operation_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_operation_hook_attr_names</span><span class="p">:</span>
+            <span class="n">graph_operation_hook_node_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_operation_hook_node_names</span><span class="p">[</span><span class="n">graph_operation_hook_attr_name</span><span class="p">]</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_operation_by_name</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">graph_operation_hook_node_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">graph_operation_hook_attr_name</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">graph_iterator_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_iterator_hook_attr_names</span><span class="p">:</span>
+            <span class="n">iterator_resource_name</span><span class="p">,</span> <span class="n">output_types</span><span class="p">,</span> <span class="n">output_shapes</span><span class="p">,</span> <span class="n">output_classes</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">graph_iterator_hook_node_names</span><span class="p">[</span><span class="n">graph_iterator_hook_attr_name</span><span class="p">]</span>
+            <span class="n">iterator_resource</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_tensor_by_name</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">iterator_resource_name</span><span class="p">)</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Iterator</span><span class="p">(</span><span class="n">iterator_resource</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output_types</span><span class="p">,</span> <span class="n">output_shapes</span><span class="p">,</span> <span class="n">output_classes</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">graph_iterator_hook_attr_name</span><span class="p">,</span> <span class="n">iterator</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_record_graph_hook_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># Record serializable node names/info for each graph hook</span>
+        <span class="k">for</span> <span class="n">graph_tensor_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_attr_names</span><span class="p">:</span>
+            <span class="n">hook</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">graph_tensor_hook_attr_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph_tensor_hook_node_names</span><span class="p">[</span><span class="n">graph_tensor_hook_attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">hook</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">for</span> <span class="n">graph_operation_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_operation_hook_attr_names</span><span class="p">:</span>
+            <span class="n">hook</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">graph_operation_hook_attr_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph_operation_hook_node_names</span><span class="p">[</span><span class="n">graph_operation_hook_attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">hook</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">for</span> <span class="n">graph_iterator_hook_attr_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph_iterator_hook_attr_names</span><span class="p">:</span>
+            <span class="n">hook</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">graph_iterator_hook_attr_name</span><span class="p">)</span>
+            <span class="n">iterator_resource_name</span> <span class="o">=</span> <span class="n">hook</span><span class="o">.</span><span class="n">_iterator_resource</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">output_types</span> <span class="o">=</span> <span class="n">hook</span><span class="o">.</span><span class="n">_output_types</span>
+            <span class="n">output_shapes</span> <span class="o">=</span> <span class="n">hook</span><span class="o">.</span><span class="n">_output_shapes</span>
+            <span class="n">output_classes</span> <span class="o">=</span> <span class="n">hook</span><span class="o">.</span><span class="n">_output_classes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph_iterator_hook_node_names</span><span class="p">[</span><span class="n">graph_iterator_hook_attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">iterator_resource_name</span><span class="p">,</span> <span class="n">output_types</span><span class="p">,</span> <span class="n">output_shapes</span><span class="p">,</span> <span class="n">output_classes</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_create_batched_dataset_initializers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">,</span> <span class="n">user_batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">user_batch_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="c1"># Raise exception if interactions and user_features aren&#39;t sparse matrices</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">sp</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">interactions</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">sp</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">user_features</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;In order to support user batching at fit time, interactions and user_features must &#39;</span>
+                                 <span class="s1">&#39;both be scipy.sparse matrices.&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Coerce to CSR for fast batching</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interactions</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">):</span>
+                <span class="n">interactions</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">interactions</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_features</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">):</span>
+                <span class="n">user_features</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">user_features</span><span class="p">)</span>
+
+            <span class="n">n_users</span> <span class="o">=</span> <span class="n">user_features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Infer the batch size, if necessary</span>
+            <span class="k">if</span> <span class="n">user_batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">user_batch_size</span> <span class="o">=</span> <span class="n">n_users</span>
+
+            <span class="n">interactions_batched</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">user_features_batched</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="n">start_batch</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">start_batch</span> <span class="o">&lt;</span> <span class="n">n_users</span><span class="p">:</span>
+                <span class="c1"># min() ensures that the batch bounds doesn&#39;t go past the end of the index</span>
+                <span class="n">end_batch</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start_batch</span> <span class="o">+</span> <span class="n">user_batch_size</span><span class="p">,</span> <span class="n">n_users</span><span class="p">)</span>
+
+                <span class="n">interactions_batched</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interactions</span><span class="p">[</span><span class="n">start_batch</span><span class="p">:</span><span class="n">end_batch</span><span class="p">])</span>
+                <span class="n">user_features_batched</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user_features</span><span class="p">[</span><span class="n">start_batch</span><span class="p">:</span><span class="n">end_batch</span><span class="p">])</span>
+
+                <span class="n">start_batch</span> <span class="o">=</span> <span class="n">end_batch</span>
+
+            <span class="c1"># Overwrite the input with the new, batched input</span>
+            <span class="n">interactions</span> <span class="o">=</span> <span class="n">interactions_batched</span>
+            <span class="n">user_features</span> <span class="o">=</span> <span class="n">user_features_batched</span>
+
+        <span class="c1"># TODO this is hand-wavy and begging for a cleaner refactor</span>
+        <span class="p">(</span><span class="n">int_ds</span><span class="p">,</span> <span class="n">uf_ds</span><span class="p">,</span> <span class="n">if_ds</span><span class="p">),</span> <span class="p">(</span><span class="n">int_init</span><span class="p">,</span> <span class="n">uf_init</span><span class="p">,</span> <span class="n">if_init</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span>
+            <span class="n">interactions</span><span class="o">=</span><span class="n">interactions</span><span class="p">,</span> <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Ensure that lengths make sense</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">int_init</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">uf_init</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Number of batches in user_features and interactions must be equal.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">if_init</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">if_init</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">uf_init</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Number of batches in item_features must be 1 or equal to the number of batches in &#39;</span>
+                             <span class="s1">&#39;user_features.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Cycle item features when zipping because there should only be one</span>
+        <span class="n">datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds_set</span> <span class="k">for</span> <span class="n">ds_set</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">int_ds</span><span class="p">,</span> <span class="n">uf_ds</span><span class="p">,</span> <span class="n">cycle</span><span class="p">(</span><span class="n">if_ds</span><span class="p">))]</span>
+        <span class="n">initializers</span> <span class="o">=</span> <span class="p">[</span><span class="n">init_set</span> <span class="k">for</span> <span class="n">init_set</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">int_init</span><span class="p">,</span> <span class="n">uf_init</span><span class="p">,</span> <span class="n">cycle</span><span class="p">(</span><span class="n">if_init</span><span class="p">))]</span>
+
+        <span class="k">return</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">initializers</span>
+
+    <span class="k">def</span> <span class="nf">_create_datasets_and_initializers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">user_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">item_features</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">initializers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">interactions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">interactions_datasets</span> <span class="o">=</span> <span class="n">datasets_from_raw_input</span><span class="p">(</span><span class="n">raw_input</span><span class="o">=</span><span class="n">interactions</span><span class="p">)</span>
+            <span class="n">interactions_initializers</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_interaction_iterator</span><span class="o">.</span><span class="n">make_initializer</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+                                         <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">interactions_datasets</span><span class="p">]</span>
+            <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interactions_datasets</span><span class="p">)</span>
+            <span class="n">initializers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interactions_initializers</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">user_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">user_features_datasets</span> <span class="o">=</span> <span class="n">datasets_from_raw_input</span><span class="p">(</span><span class="n">raw_input</span><span class="o">=</span><span class="n">user_features</span><span class="p">)</span>
+            <span class="n">user_features_initializers</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_user_feature_iterator</span><span class="o">.</span><span class="n">make_initializer</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+                                          <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">user_features_datasets</span><span class="p">]</span>
+            <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user_features_datasets</span><span class="p">)</span>
+            <span class="n">initializers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user_features_initializers</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">item_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">item_features_datasets</span> <span class="o">=</span> <span class="n">datasets_from_raw_input</span><span class="p">(</span><span class="n">raw_input</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+            <span class="n">item_features_initializers</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_item_feature_iterator</span><span class="o">.</span><span class="n">make_initializer</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+                                          <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">item_features_datasets</span><span class="p">]</span>
+            <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_features_datasets</span><span class="p">)</span>
+            <span class="n">initializers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_features_initializers</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">initializers</span>
+
+    <span class="k">def</span> <span class="nf">_build_input_iterators</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_user_feature_iterator</span> <span class="o">=</span> <span class="n">create_tensorrec_iterator</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;tf_user_feature_iterator&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_item_feature_iterator</span> <span class="o">=</span> <span class="n">create_tensorrec_iterator</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;tf_item_feature_iterator&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_interaction_iterator</span> <span class="o">=</span> <span class="n">create_tensorrec_iterator</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;tf_interaction_iterator&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_build_tf_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_user_features</span><span class="p">,</span> <span class="n">n_item_features</span><span class="p">):</span>
+
+        <span class="c1"># Build placeholders</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_n_sampled_items</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="s1">&#39;int64&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_similar_items_ids</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_learning_rate</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_alpha</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">tf_user_feature_rows</span><span class="p">,</span> <span class="n">tf_user_feature_cols</span><span class="p">,</span> <span class="n">tf_user_feature_values</span><span class="p">,</span> <span class="n">tf_n_users</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">tf_user_feature_iterator</span><span class="o">.</span><span class="n">get_next</span><span class="p">()</span>
+        <span class="n">tf_item_feature_rows</span><span class="p">,</span> <span class="n">tf_item_feature_cols</span><span class="p">,</span> <span class="n">tf_item_feature_values</span><span class="p">,</span> <span class="n">tf_n_items</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">tf_item_feature_iterator</span><span class="o">.</span><span class="n">get_next</span><span class="p">()</span>
+        <span class="n">tf_interaction_rows</span><span class="p">,</span> <span class="n">tf_interaction_cols</span><span class="p">,</span> <span class="n">tf_interaction_values</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">tf_interaction_iterator</span><span class="o">.</span><span class="n">get_next</span><span class="p">()</span>
+
+        <span class="n">tf_user_feature_indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">tf_user_feature_rows</span><span class="p">,</span> <span class="n">tf_user_feature_cols</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">tf_item_feature_indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">tf_item_feature_rows</span><span class="p">,</span> <span class="n">tf_item_feature_cols</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">tf_interaction_indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">tf_interaction_rows</span><span class="p">,</span> <span class="n">tf_interaction_cols</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Construct the features and interactions as sparse matrices</span>
+        <span class="n">tf_user_features</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">SparseTensor</span><span class="p">(</span><span class="n">tf_user_feature_indices</span><span class="p">,</span> <span class="n">tf_user_feature_values</span><span class="p">,</span>
+                                           <span class="p">[</span><span class="n">tf_n_users</span><span class="p">,</span> <span class="n">n_user_features</span><span class="p">])</span>
+        <span class="n">tf_item_features</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">SparseTensor</span><span class="p">(</span><span class="n">tf_item_feature_indices</span><span class="p">,</span> <span class="n">tf_item_feature_values</span><span class="p">,</span>
+                                           <span class="p">[</span><span class="n">tf_n_items</span><span class="p">,</span> <span class="n">n_item_features</span><span class="p">])</span>
+        <span class="n">tf_interactions</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">SparseTensor</span><span class="p">(</span><span class="n">tf_interaction_indices</span><span class="p">,</span> <span class="n">tf_interaction_values</span><span class="p">,</span>
+                                          <span class="p">[</span><span class="n">tf_n_users</span><span class="p">,</span> <span class="n">tf_n_items</span><span class="p">])</span>
+
+        <span class="c1"># Construct the sampling py_func</span>
+        <span class="n">sample_items_partial</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">sample_items</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_graph_factory</span><span class="o">.</span><span class="n">is_sampled_with_replacement</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_sample_indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">py_func</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">sample_items_partial</span><span class="p">,</span>
+                                            <span class="n">inp</span><span class="o">=</span><span class="p">[</span><span class="n">tf_n_items</span><span class="p">,</span> <span class="n">tf_n_users</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_n_sampled_items</span><span class="p">],</span>
+                                            <span class="n">Tout</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_sample_indices</span><span class="o">.</span><span class="n">set_shape</span><span class="p">([</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+
+        <span class="c1"># Collect the weights for regularization</span>
+        <span class="n">tf_weights</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Build the item representations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">item_weights</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">item_repr_graph_factory</span><span class="o">.</span><span class="n">connect_representation_graph</span><span class="p">(</span><span class="n">tf_features</span><span class="o">=</span><span class="n">tf_item_features</span><span class="p">,</span>
+                                                                      <span class="n">n_components</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">,</span>
+                                                                      <span class="n">n_features</span><span class="o">=</span><span class="n">n_item_features</span><span class="p">,</span>
+                                                                      <span class="n">node_name_ending</span><span class="o">=</span><span class="s1">&#39;item&#39;</span><span class="p">)</span>
+        <span class="n">tf_weights</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">item_weights</span><span class="p">)</span>
+
+        <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span> <span class="o">=</span> <span class="n">split_sparse_tensor_indices</span><span class="p">(</span><span class="n">tf_sparse_tensor</span><span class="o">=</span><span class="n">tf_interactions</span><span class="p">,</span> <span class="n">n_dimensions</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">tf_transposed_sample_indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_sample_indices</span><span class="p">)</span>
+        <span class="n">tf_x_user_sample</span> <span class="o">=</span> <span class="n">tf_transposed_sample_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">tf_x_item_sample</span> <span class="o">=</span> <span class="n">tf_transposed_sample_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># These lists will hold the reprs and predictions for each taste</span>
+        <span class="n">tastes_tf_user_representations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tastes_tf_predictions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tastes_tf_prediction_serials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tastes_tf_sample_prediction_serials</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># If this model does not use attention, Nones are used as sentinels in place of the attentions</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_graph_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tastes_tf_attentions</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">tastes_tf_attention_serials</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">tastes_tf_sample_attention_serials</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">tastes_tf_attention_representations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tastes_tf_attentions</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">tastes_tf_attention_serials</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">tastes_tf_sample_attention_serials</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">tastes_tf_attention_representations</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Build n_tastes user representations and predictions</span>
+        <span class="k">for</span> <span class="n">taste</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_tastes</span><span class="p">):</span>
+            <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">user_weights</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">user_repr_graph_factory</span><span class="o">.</span><span class="n">connect_representation_graph</span><span class="p">(</span><span class="n">tf_features</span><span class="o">=</span><span class="n">tf_user_features</span><span class="p">,</span>
+                                                                          <span class="n">n_components</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">,</span>
+                                                                          <span class="n">n_features</span><span class="o">=</span><span class="n">n_user_features</span><span class="p">,</span>
+                                                                          <span class="n">node_name_ending</span><span class="o">=</span><span class="s1">&#39;user_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">taste</span><span class="p">))</span>
+            <span class="n">tastes_tf_user_representations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">)</span>
+            <span class="n">tf_weights</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">user_weights</span><span class="p">)</span>
+
+            <span class="c1"># Connect attention, if applicable</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_graph_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tf_attention_representation</span><span class="p">,</span> <span class="n">attention_weights</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">attention_graph_factory</span><span class="o">.</span><span class="n">connect_representation_graph</span><span class="p">(</span><span class="n">tf_features</span><span class="o">=</span><span class="n">tf_user_features</span><span class="p">,</span>
+                                                                              <span class="n">n_components</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">,</span>
+                                                                              <span class="n">n_features</span><span class="o">=</span><span class="n">n_user_features</span><span class="p">,</span>
+                                                                              <span class="n">node_name_ending</span><span class="o">=</span><span class="s1">&#39;attn_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">taste</span><span class="p">))</span>
+                <span class="n">tf_weights</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">attention_weights</span><span class="p">)</span>
+
+                <span class="n">tf_attention</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction_graph_factory</span><span class="o">.</span><span class="n">connect_dense_prediction_graph</span><span class="p">(</span>
+                    <span class="n">tf_user_representation</span><span class="o">=</span><span class="n">tf_attention_representation</span><span class="p">,</span>
+                    <span class="n">tf_item_representation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span>
+                <span class="p">)</span>
+                <span class="n">tf_attention_serial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction_graph_factory</span><span class="o">.</span><span class="n">connect_serial_prediction_graph</span><span class="p">(</span>
+                    <span class="n">tf_user_representation</span><span class="o">=</span><span class="n">tf_attention_representation</span><span class="p">,</span>
+                    <span class="n">tf_item_representation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span><span class="p">,</span>
+                    <span class="n">tf_x_user</span><span class="o">=</span><span class="n">tf_x_user</span><span class="p">,</span>
+                    <span class="n">tf_x_item</span><span class="o">=</span><span class="n">tf_x_item</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">tf_sample_attention_serial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction_graph_factory</span><span class="o">.</span><span class="n">connect_serial_prediction_graph</span><span class="p">(</span>
+                    <span class="n">tf_user_representation</span><span class="o">=</span><span class="n">tf_user_representation</span><span class="p">,</span>
+                    <span class="n">tf_item_representation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span><span class="p">,</span>
+                    <span class="n">tf_x_user</span><span class="o">=</span><span class="n">tf_x_user_sample</span><span class="p">,</span>
+                    <span class="n">tf_x_item</span><span class="o">=</span><span class="n">tf_x_item_sample</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">tastes_tf_attentions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_attention</span><span class="p">)</span>
+                <span class="n">tastes_tf_attention_serials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_attention_serial</span><span class="p">)</span>
+                <span class="n">tastes_tf_sample_attention_serials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_sample_attention_serial</span><span class="p">)</span>
+                <span class="n">tastes_tf_attention_representations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_attention_representation</span><span class="p">)</span>
+
+            <span class="c1"># Connect the configurable prediction graphs for each taste</span>
+            <span class="n">tf_prediction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction_graph_factory</span><span class="o">.</span><span class="n">connect_dense_prediction_graph</span><span class="p">(</span>
+                <span class="n">tf_user_representation</span><span class="o">=</span><span class="n">tf_user_representation</span><span class="p">,</span>
+                <span class="n">tf_item_representation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span>
+            <span class="p">)</span>
+            <span class="n">tf_prediction_serial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction_graph_factory</span><span class="o">.</span><span class="n">connect_serial_prediction_graph</span><span class="p">(</span>
+                <span class="n">tf_user_representation</span><span class="o">=</span><span class="n">tf_user_representation</span><span class="p">,</span>
+                <span class="n">tf_item_representation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span><span class="p">,</span>
+                <span class="n">tf_x_user</span><span class="o">=</span><span class="n">tf_x_user</span><span class="p">,</span>
+                <span class="n">tf_x_item</span><span class="o">=</span><span class="n">tf_x_item</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">tf_sample_predictions_serial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction_graph_factory</span><span class="o">.</span><span class="n">connect_serial_prediction_graph</span><span class="p">(</span>
+                <span class="n">tf_user_representation</span><span class="o">=</span><span class="n">tf_user_representation</span><span class="p">,</span>
+                <span class="n">tf_item_representation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span><span class="p">,</span>
+                <span class="n">tf_x_user</span><span class="o">=</span><span class="n">tf_x_user_sample</span><span class="p">,</span>
+                <span class="n">tf_x_item</span><span class="o">=</span><span class="n">tf_x_item_sample</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Append to tastes</span>
+            <span class="n">tastes_tf_predictions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_prediction</span><span class="p">)</span>
+            <span class="n">tastes_tf_prediction_serials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_prediction_serial</span><span class="p">)</span>
+            <span class="n">tastes_tf_sample_prediction_serials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_sample_predictions_serial</span><span class="p">)</span>
+
+        <span class="c1"># If attention is in the graph, build the API node</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_graph_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tf_user_attention_representation</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">tastes_tf_attention_representations</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_user_representation</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">tastes_tf_user_representations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction</span> <span class="o">=</span> <span class="n">collapse_mixture_of_tastes</span><span class="p">(</span>
+            <span class="n">tastes_predictions</span><span class="o">=</span><span class="n">tastes_tf_predictions</span><span class="p">,</span>
+            <span class="n">tastes_attentions</span><span class="o">=</span><span class="n">tastes_tf_attentions</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction_serial</span> <span class="o">=</span> <span class="n">collapse_mixture_of_tastes</span><span class="p">(</span>
+            <span class="n">tastes_predictions</span><span class="o">=</span><span class="n">tastes_tf_prediction_serials</span><span class="p">,</span>
+            <span class="n">tastes_attentions</span><span class="o">=</span><span class="n">tastes_tf_attention_serials</span>
+        <span class="p">)</span>
+        <span class="n">tf_sample_predictions_serial</span> <span class="o">=</span> <span class="n">collapse_mixture_of_tastes</span><span class="p">(</span>
+            <span class="n">tastes_predictions</span><span class="o">=</span><span class="n">tastes_tf_sample_prediction_serials</span><span class="p">,</span>
+            <span class="n">tastes_attentions</span><span class="o">=</span><span class="n">tastes_tf_sample_attention_serials</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Add biases, if this is a biased estimator</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">biased</span><span class="p">:</span>
+            <span class="n">tf_user_feature_biases</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_user_biases</span> <span class="o">=</span> <span class="n">project_biases</span><span class="p">(</span>
+                <span class="n">tf_features</span><span class="o">=</span><span class="n">tf_user_features</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="n">n_user_features</span>
+            <span class="p">)</span>
+            <span class="n">tf_item_feature_biases</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_item_biases</span> <span class="o">=</span> <span class="n">project_biases</span><span class="p">(</span>
+                <span class="n">tf_features</span><span class="o">=</span><span class="n">tf_item_features</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="n">n_item_features</span>
+            <span class="p">)</span>
+
+            <span class="n">tf_weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_user_feature_biases</span><span class="p">)</span>
+            <span class="n">tf_weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tf_item_feature_biases</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction</span> <span class="o">=</span> <span class="n">bias_prediction_dense</span><span class="p">(</span>
+                <span class="n">tf_prediction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction</span><span class="p">,</span>
+                <span class="n">tf_projected_user_biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_user_biases</span><span class="p">,</span>
+                <span class="n">tf_projected_item_biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_item_biases</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction_serial</span> <span class="o">=</span> <span class="n">bias_prediction_serial</span><span class="p">(</span>
+                <span class="n">tf_prediction_serial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction_serial</span><span class="p">,</span>
+                <span class="n">tf_projected_user_biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_user_biases</span><span class="p">,</span>
+                <span class="n">tf_projected_item_biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_item_biases</span><span class="p">,</span>
+                <span class="n">tf_x_user</span><span class="o">=</span><span class="n">tf_x_user</span><span class="p">,</span>
+                <span class="n">tf_x_item</span><span class="o">=</span><span class="n">tf_x_item</span><span class="p">)</span>
+
+            <span class="n">tf_sample_predictions_serial</span> <span class="o">=</span> <span class="n">bias_prediction_serial</span><span class="p">(</span>
+                <span class="n">tf_prediction_serial</span><span class="o">=</span><span class="n">tf_sample_predictions_serial</span><span class="p">,</span>
+                <span class="n">tf_projected_user_biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_user_biases</span><span class="p">,</span>
+                <span class="n">tf_projected_item_biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_item_biases</span><span class="p">,</span>
+                <span class="n">tf_x_user</span><span class="o">=</span><span class="n">tf_x_user_sample</span><span class="p">,</span>
+                <span class="n">tf_x_item</span><span class="o">=</span><span class="n">tf_x_item_sample</span><span class="p">)</span>
+
+        <span class="n">tf_interactions_serial</span> <span class="o">=</span> <span class="n">tf_interactions</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="c1"># Construct API nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_rankings</span> <span class="o">=</span> <span class="n">rank_predictions</span><span class="p">(</span><span class="n">tf_prediction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_predict_similar_items</span> <span class="o">=</span> <span class="n">predict_similar_items</span><span class="p">(</span><span class="n">prediction_graph_factory</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prediction_graph_factory</span><span class="p">,</span>
+                                                              <span class="n">tf_item_representation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span><span class="p">,</span>
+                                                              <span class="n">tf_similar_items_ids</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_similar_items_ids</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_rank_similar_items</span> <span class="o">=</span> <span class="n">rank_predictions</span><span class="p">(</span><span class="n">tf_prediction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_predict_similar_items</span><span class="p">)</span>
+
+        <span class="c1"># Compose loss function args</span>
+        <span class="c1"># This composition is for execution safety: it prevents loss functions that are incorrectly configured from</span>
+        <span class="c1"># having visibility of certain nodes.</span>
+        <span class="n">loss_graph_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;tf_prediction_serial&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction_serial</span><span class="p">,</span>
+            <span class="s1">&#39;tf_interactions_serial&#39;</span><span class="p">:</span> <span class="n">tf_interactions_serial</span><span class="p">,</span>
+            <span class="s1">&#39;tf_interactions&#39;</span><span class="p">:</span> <span class="n">tf_interactions</span><span class="p">,</span>
+            <span class="s1">&#39;tf_n_users&#39;</span><span class="p">:</span> <span class="n">tf_n_users</span><span class="p">,</span>
+            <span class="s1">&#39;tf_n_items&#39;</span><span class="p">:</span> <span class="n">tf_n_items</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_graph_factory</span><span class="o">.</span><span class="n">is_dense</span><span class="p">:</span>
+            <span class="n">loss_graph_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s1">&#39;tf_prediction&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction</span><span class="p">,</span>
+                <span class="s1">&#39;tf_rankings&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_rankings</span><span class="p">,</span>
+            <span class="p">})</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_graph_factory</span><span class="o">.</span><span class="n">is_sample_based</span><span class="p">:</span>
+            <span class="n">tf_sample_predictions</span> <span class="o">=</span> <span class="n">densify_sampled_item_predictions</span><span class="p">(</span>
+                <span class="n">tf_sample_predictions_serial</span><span class="o">=</span><span class="n">tf_sample_predictions_serial</span><span class="p">,</span>
+                <span class="n">tf_n_sampled_items</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_n_sampled_items</span><span class="p">,</span>
+                <span class="n">tf_n_users</span><span class="o">=</span><span class="n">tf_n_users</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">loss_graph_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;tf_sample_predictions&#39;</span><span class="p">:</span> <span class="n">tf_sample_predictions</span><span class="p">,</span>
+                                      <span class="s1">&#39;tf_n_sampled_items&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_n_sampled_items</span><span class="p">})</span>
+
+        <span class="c1"># Build loss graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_basic_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_graph_factory</span><span class="o">.</span><span class="n">connect_loss_graph</span><span class="p">(</span><span class="o">**</span><span class="n">loss_graph_kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_weight_reg_loss</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_loss</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="k">for</span> <span class="n">weights</span> <span class="ow">in</span> <span class="n">tf_weights</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_basic_loss</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_alpha</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_weight_reg_loss</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_optimizer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">AdamOptimizer</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_learning_rate</span><span class="p">)</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_loss</span><span class="p">)</span>
+
+        <span class="c1"># Record the new node names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_record_graph_hook_names</span><span class="p">()</span>
+
+<div class="viewcode-block" id="TensorRec.fit"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+            <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.00001</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">user_batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">n_sampled_items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructs the TensorRec graph and fits the model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            interactions (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of interactions of</span>
+<span class="sd">            shape ``[n_users, n_items]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in `tensorrec.input_utils`.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features of</span>
+<span class="sd">                shape ``[n_users, n_user_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
+<span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            epochs (int): The number of epochs to fit the model.</span>
+<span class="sd">            learning_rate (float): The learning rate of the model.</span>
+<span class="sd">            alpha (float): The weight regularization loss coefficient.</span>
+<span class="sd">            verbose (bool): If true, the model will print a number of status statements during fitting.</span>
+<span class="sd">            user_batch_size (int or None): The maximum number of users per batch, or None for all users.</span>
+<span class="sd">            n_sampled_items (int or None): The number of items to sample per user for use in loss functions.</span>
+<span class="sd">                Must be non-None if self.loss_graph_factory.is_sample_based is True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Pass-through to fit_partial</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_partial</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="n">interactions</span><span class="p">,</span>
+                         <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                         <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">,</span>
+                         <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span>
+                         <span class="n">learning_rate</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">,</span>
+                         <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+                         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                         <span class="n">user_batch_size</span><span class="o">=</span><span class="n">user_batch_size</span><span class="p">,</span>
+                         <span class="n">n_sampled_items</span><span class="o">=</span><span class="n">n_sampled_items</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TensorRec.fit_partial"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.fit_partial">[docs]</a>    <span class="k">def</span> <span class="nf">fit_partial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.00001</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">user_batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_sampled_items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructs the TensorRec graph and fits the model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            interactions (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of interactions</span>
+<span class="sd">                of shape ``[n_users, n_items]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user</span>
+<span class="sd">                features of shape ``[n_users, n_user_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
+<span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            epochs (int): The number of epochs to fit the model.</span>
+<span class="sd">            learning_rate (float): The learning rate of the model.</span>
+<span class="sd">            alpha (float): The weight regularization loss coefficient.</span>
+<span class="sd">            verbose (bool): If true, the model will print a number of status statements during fitting.</span>
+<span class="sd">            user_batch_size (int or None): The maximum number of users per batch, or None for all users.</span>
+<span class="sd">            n_sampled_items (int or None): The number of items to sample per user for use in loss functions.</span>
+<span class="sd">            Must be non-None if self.loss_graph_factory.is_sample_based is True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">session</span> <span class="o">=</span> <span class="n">get_session</span><span class="p">()</span>
+
+        <span class="c1"># Arg checking</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_graph_factory</span><span class="o">.</span><span class="n">is_sample_based</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">n_sampled_items</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">n_sampled_items</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_sampled_items must be an integer &gt;0&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">n_sampled_items</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_graph_factory</span><span class="o">.</span><span class="n">is_sample_based</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;n_sampled_items was specified, but the loss graph is not sample-based&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Check if the iterators have been constructed. If not, build them.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_interaction_iterator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_input_iterators</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing interaction and feature data&#39;</span><span class="p">)</span>
+
+        <span class="n">dataset_sets</span><span class="p">,</span> <span class="n">initializer_sets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_batched_dataset_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="n">interactions</span><span class="p">,</span>
+                                                                                   <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                                                                                   <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">,</span>
+                                                                                   <span class="n">user_batch_size</span><span class="o">=</span><span class="n">user_batch_size</span><span class="p">)</span>
+
+        <span class="c1"># Check if the graph has been constructed by checking the dense prediction node</span>
+        <span class="c1"># If it hasn&#39;t been constructed, initialize it</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check input dimensions</span>
+            <span class="n">first_batch</span> <span class="o">=</span> <span class="n">dataset_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">n_user_features</span> <span class="o">=</span> <span class="n">get_dimensions_from_tensorrec_dataset</span><span class="p">(</span><span class="n">first_batch</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">n_item_features</span> <span class="o">=</span> <span class="n">get_dimensions_from_tensorrec_dataset</span><span class="p">(</span><span class="n">first_batch</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+            <span class="c1"># Numbers of features are either learned at fit time from the shape of these two matrices or specified at</span>
+            <span class="c1"># TensorRec construction and cannot be changed.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_tf_graph</span><span class="p">(</span><span class="n">n_user_features</span><span class="o">=</span><span class="n">n_user_features</span><span class="p">,</span> <span class="n">n_item_features</span><span class="o">=</span><span class="n">n_item_features</span><span class="p">)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">global_variables_initializer</span><span class="p">())</span>
+
+        <span class="c1"># Build the shared feed dict</span>
+        <span class="n">feed_dict</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_learning_rate</span><span class="p">:</span> <span class="n">learning_rate</span><span class="p">,</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">tf_alpha</span><span class="p">:</span> <span class="n">calculate_batched_alpha</span><span class="p">(</span><span class="n">num_batches</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">initializer_sets</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_graph_factory</span><span class="o">.</span><span class="n">is_sample_based</span><span class="p">:</span>
+            <span class="n">feed_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_n_sampled_items</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_sampled_items</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Beginning fitting&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">batch</span><span class="p">,</span> <span class="n">initializers</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">initializer_sets</span><span class="p">):</span>
+
+                <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_optimizer</span><span class="p">,</span> <span class="n">feed_dict</span><span class="o">=</span><span class="n">feed_dict</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">serial_predictions</span><span class="p">,</span> <span class="n">wr_loss</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_optimizer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_basic_loss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction_serial</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_weight_reg_loss</span><span class="p">],</span>
+                        <span class="n">feed_dict</span><span class="o">=</span><span class="n">feed_dict</span>
+                    <span class="p">)</span>
+                    <span class="n">mean_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+                    <span class="n">mean_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">serial_predictions</span><span class="p">)</span>
+                    <span class="n">weight_reg_l2_loss</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">wr_loss</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;EPOCH </span><span class="si">{}</span><span class="s1"> BATCH </span><span class="si">{}</span><span class="s1"> loss = </span><span class="si">{}</span><span class="s1">, weight_reg_l2_loss = </span><span class="si">{}</span><span class="s1">, mean_pred = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">epoch</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">mean_loss</span><span class="p">,</span> <span class="n">weight_reg_l2_loss</span><span class="p">,</span> <span class="n">mean_pred</span>
+                    <span class="p">))</span></div>
+
+<div class="viewcode-block" id="TensorRec.predict"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict recommendation scores for the given users and items.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user</span>
+<span class="sd">                features of shape ``[n_users, n_user_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
+<span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             np.ndarray: The predictions in an ndarray of shape [n_users, n_items]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                                                                 <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+        <span class="n">get_session</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+
+        <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_prediction</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">get_session</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">predictions</span></div>
+
+<div class="viewcode-block" id="TensorRec.predict_similar_items"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_similar_items">[docs]</a>    <span class="k">def</span> <span class="nf">predict_similar_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_features</span><span class="p">,</span> <span class="n">item_ids</span><span class="p">,</span> <span class="n">n_similar</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predicts the most similar items to the given item_ids.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):</span>
+<span class="sd">                A matrix of item features of shape [n_items, n_item_features].</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            item_ids (list or np.array): The ids of the items of interest.</span>
+<span class="sd">                E.g. [4, 8, 12] to get sims for items 4, 8, and 12.</span>
+<span class="sd">            n_similar (int): The number of similar items to get per item of interest.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list of lists of tuples : The first level list corresponds to input arg item_ids. The second level</span>
+<span class="sd">            list is of length n_similar and contains tuples of (item_id, score) for each similar item.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">user_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+        <span class="n">get_session</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+
+        <span class="n">feed_dict</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_similar_items_ids</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">item_ids</span><span class="p">)}</span>
+        <span class="n">sims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_predict_similar_items</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">get_session</span><span class="p">(),</span> <span class="n">feed_dict</span><span class="o">=</span><span class="n">feed_dict</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">item_ids</span><span class="p">)):</span>
+            <span class="n">item_sims</span> <span class="o">=</span> <span class="n">sims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">best</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argpartition</span><span class="p">(</span><span class="n">item_sims</span><span class="p">,</span> <span class="o">-</span><span class="n">n_similar</span><span class="p">)[</span><span class="o">-</span><span class="n">n_similar</span><span class="p">:]</span>
+            <span class="n">item_results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">best</span><span class="p">,</span> <span class="n">item_sims</span><span class="p">[</span><span class="n">best</span><span class="p">]),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_results</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="TensorRec.predict_rank"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_rank">[docs]</a>    <span class="k">def</span> <span class="nf">predict_rank</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict recommendation ranks for the given users and items.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features</span>
+<span class="sd">                of shape ``[n_users, n_user_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
+<span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             np.ndarray : The ranks in an ndarray of shape [n_users, n_items]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                                                                 <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+        <span class="n">get_session</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+
+        <span class="n">rankings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_rankings</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">get_session</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">rankings</span></div>
+
+<div class="viewcode-block" id="TensorRec.predict_user_representation"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_user_representation">[docs]</a>    <span class="k">def</span> <span class="nf">predict_user_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict latent representation vectors for the given users.</span>
+
+<span class="sd">        user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):</span>
+<span class="sd">            A matrix of user features of shape ``[n_users, n_user_features]``.</span>
+<span class="sd">            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">            * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             np.ndarray: The latent user representations in an ndarray of shape ``[n_users, n_components]``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                                                                 <span class="n">item_features</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">get_session</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+
+        <span class="n">user_repr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_user_representation</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">get_session</span><span class="p">())</span>
+
+        <span class="c1"># If there is only one user repr per user, collapse from rank 3 to rank 2</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_tastes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">user_repr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">user_repr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">user_repr</span></div>
+
+<div class="viewcode-block" id="TensorRec.predict_user_attention_representation"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_user_attention_representation">[docs]</a>    <span class="k">def</span> <span class="nf">predict_user_attention_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict latent attention representation vectors for the given users.</span>
+
+<span class="sd">        user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features</span>
+<span class="sd">            of shape ``[n_users, n_user_features]``.</span>
+<span class="sd">            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">            * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             np.ndarray: The latent user attention representations in an ndarray of shape ``[n_users, n_components]``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_graph_factory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This TensorRec model does not use attention. Try re-building TensorRec with a valid &quot;</span>
+                             <span class="s2">&quot;&#39;attention_graph&#39; arg.&quot;</span><span class="p">)</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                                                                 <span class="n">item_features</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">get_session</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+        <span class="n">user_attn_repr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_user_attention_representation</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">get_session</span><span class="p">())</span>
+
+        <span class="c1"># If there is only one user attn repr per user, collapse from rank 3 to rank 2</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_tastes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">user_attn_repr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">user_attn_repr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">user_attn_repr</span></div>
+
+<div class="viewcode-block" id="TensorRec.predict_item_representation"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_item_representation">[docs]</a>    <span class="k">def</span> <span class="nf">predict_item_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict representation vectors for the given items.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
+<span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             np.ndarray: The latent item representations in an ndarray of shape ``[n_items, n_components]``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">user_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+        <span class="n">get_session</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+        <span class="n">item_repr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_item_representation</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">get_session</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">item_repr</span></div>
+
+<div class="viewcode-block" id="TensorRec.predict_user_bias"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_user_bias">[docs]</a>    <span class="k">def</span> <span class="nf">predict_user_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict bias values for the given users.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):</span>
+<span class="sd">                A matrix of user features of shape ``[n_users, n_user_features]``.</span>
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             np.ndarray: The user biases in an ndarray of shape ``[n_users]``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">biased</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Cannot predict user bias for unbiased model&#39;</span><span class="p">)</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
+                                                                 <span class="n">item_features</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">get_session</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_user_biases</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">get_session</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">predictions</span></div>
+
+<div class="viewcode-block" id="TensorRec.predict_item_bias"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_item_bias">[docs]</a>    <span class="k">def</span> <span class="nf">predict_item_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict bias values for the given items.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
+<span class="sd">            of shape ``[n_items, n_item_features]``.</span>
+<span class="sd">            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">            * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             np.ndarray: The item biases in an ndarray of shape [n_items]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">biased</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Cannot predict item bias for unbiased model&#39;</span><span class="p">)</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">user_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                 <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+        <span class="n">get_session</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initializers</span><span class="p">)</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_projected_item_biases</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">get_session</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">predictions</span></div>
+
+<div class="viewcode-block" id="TensorRec.save_model"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.save_model">[docs]</a>    <span class="k">def</span> <span class="nf">save_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Saves the model to files in the given directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            directory_path (str): The path to the directory in which to save the model.</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">directory_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory_path</span><span class="p">)</span>
+
+        <span class="n">saver</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">Saver</span><span class="p">()</span>
+        <span class="n">session_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="s1">&#39;tensorrec_session.cpkt&#39;</span><span class="p">)</span>
+        <span class="n">saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">sess</span><span class="o">=</span><span class="n">get_session</span><span class="p">(),</span> <span class="n">save_path</span><span class="o">=</span><span class="n">session_path</span><span class="p">)</span>
+
+        <span class="c1"># Break connections to the graph before saving the python object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_break_graph_hooks</span><span class="p">()</span>
+        <span class="n">tensorrec_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="s1">&#39;tensorrec.pkl&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tensorrec_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Reconnect to the graph after saving</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attach_graph_hooks</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TensorRec.load_model"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.load_model">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">directory_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Loads the TensorRec model and TensorFlow session saved in the given directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            directory_path (str): The path to the directory containing the saved model.</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">graph_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="s1">&#39;tensorrec_session.cpkt.meta&#39;</span><span class="p">)</span>
+        <span class="n">saver</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">import_meta_graph</span><span class="p">(</span><span class="n">graph_path</span><span class="p">)</span>
+
+        <span class="n">session_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="s1">&#39;tensorrec_session.cpkt&#39;</span><span class="p">)</span>
+        <span class="n">saver</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">sess</span><span class="o">=</span><span class="n">get_session</span><span class="p">(),</span> <span class="n">save_path</span><span class="o">=</span><span class="n">session_path</span><span class="p">)</span>
+
+        <span class="n">tensorrec_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="s1">&#39;tensorrec.pkl&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tensorrec_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">_attach_graph_hooks</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">model</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, James Kirk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.25.4',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

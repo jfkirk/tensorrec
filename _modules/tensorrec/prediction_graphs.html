@@ -1,0 +1,393 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tensorrec.prediction_graphs &mdash; TensorRec 0.25.4 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TensorRec
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.25.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tensorrec.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TensorRec</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tensorrec.prediction_graphs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tensorrec.prediction_graphs</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Prediction Graphs</span>
+<span class="sd">    ~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">from</span> <span class="nn">.recommendation_graphs</span> <span class="k">import</span> <span class="n">relative_cosine</span>
+
+
+<div class="viewcode-block" id="AbstractPredictionGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.AbstractPredictionGraph">[docs]</a><span class="k">class</span> <span class="nc">AbstractPredictionGraph</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+<div class="viewcode-block" id="AbstractPredictionGraph.connect_dense_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.AbstractPredictionGraph.connect_dense_prediction_graph">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">connect_dense_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method is responsible for consuming user and item representations</span>
+<span class="sd">        and calculating prediction scores for all</span>
+<span class="sd">        possible user-item pairs based on these representations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_user_representation: tf.Tensor</span>
+<span class="sd">            The user representations as a Tensor of shape ``[n_users, n_components]``</span>
+<span class="sd">            tf_item_representation: tf.Tensor</span>
+<span class="sd">            The item representations as a Tensor of shape ``[n_items, n_components]``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             tf.Tensor: The predictions as a Tensor of shape ``[n_users, n_items]``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractPredictionGraph.connect_serial_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.AbstractPredictionGraph.connect_serial_prediction_graph">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">connect_serial_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method is responsible for consuming user and item</span>
+<span class="sd">        representations and indices and calculating prediction</span>
+<span class="sd">        scores for particular user-item pairs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_user_representation (tf.Tensor): The user representations as a Tensor of</span>
+<span class="sd">            shape ``[n_users, n_components]``</span>
+<span class="sd">            tf_item_representation (tf.Tensor): The item representations as a Tensor of shape</span>
+<span class="sd">             ``[n_items, n_components]``</span>
+<span class="sd">            tf_x_user (tf.Tensor): The users for whom to predict as a Tensor of shape ``[n_interactions]``</span>
+<span class="sd">            tf_x_item (tf.Tensor): The items for which to predict as a Tensor of shape ``[n_interactions]``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             tf.Tensor: The predictions as a Tensor of shape [n_interactions]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="DotProductPredictionGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.DotProductPredictionGraph">[docs]</a><span class="k">class</span> <span class="nc">DotProductPredictionGraph</span><span class="p">(</span><span class="n">AbstractPredictionGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This prediction function calculates the prediction as the dot</span>
+<span class="sd">    product between the user and item representations.</span>
+<span class="sd">    Prediction = user_repr * item_repr</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DotProductPredictionGraph.connect_dense_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.DotProductPredictionGraph.connect_dense_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_dense_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tf_user_representation: </span>
+<span class="sd">            tf_item_representation: </span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DotProductPredictionGraph.connect_serial_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.DotProductPredictionGraph.connect_serial_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_serial_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span>
+                                        <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tf_user_representation: </span>
+<span class="sd">            tf_item_representation: </span>
+<span class="sd">            tf_x_user: </span>
+<span class="sd">            tf_x_item: </span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">gathered_user_reprs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">)</span>
+        <span class="n">gathered_item_reprs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">gathered_user_reprs</span><span class="p">,</span> <span class="n">gathered_item_reprs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CosineSimilarityPredictionGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.CosineSimilarityPredictionGraph">[docs]</a><span class="k">class</span> <span class="nc">CosineSimilarityPredictionGraph</span><span class="p">(</span><span class="n">AbstractPredictionGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This prediction function calculates the prediction as the cosine</span>
+<span class="sd">    between the user and item representations. Prediction = cos(user_repr, item_repr)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CosineSimilarityPredictionGraph.connect_dense_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.CosineSimilarityPredictionGraph.connect_dense_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_dense_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tf_user_representation: </span>
+<span class="sd">            tf_item_representation: </span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">relative_cosine</span><span class="p">(</span><span class="n">tf_tensor_1</span><span class="o">=</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_tensor_2</span><span class="o">=</span><span class="n">tf_item_representation</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CosineSimilarityPredictionGraph.connect_serial_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.CosineSimilarityPredictionGraph.connect_serial_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_serial_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span>
+                                        <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tf_user_representation: </span>
+<span class="sd">            tf_item_representation: </span>
+<span class="sd">            tf_x_user: </span>
+<span class="sd">            tf_x_item: </span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">normalized_users</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_normalize</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">normalized_items</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_normalize</span><span class="p">(</span><span class="n">tf_item_representation</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">gathered_user_reprs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">normalized_users</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">)</span>
+        <span class="n">gathered_item_reprs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">normalized_items</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">gathered_user_reprs</span><span class="p">,</span> <span class="n">gathered_item_reprs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div></div>
+
+
+<span class="c1"># ToDo: fix typo in &#39;Euclidian&#39; (should be &#39;Euclidean&#39;).</span>
+<div class="viewcode-block" id="EuclidianSimilarityPredictionGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph">[docs]</a><span class="k">class</span> <span class="nc">EuclidianSimilarityPredictionGraph</span><span class="p">(</span><span class="n">AbstractPredictionGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This prediction function calculates the prediction as the negative</span>
+<span class="sd">    Euclidean distance between the user and item representations.</span>
+<span class="sd">    Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">epsilon</span> <span class="o">=</span> <span class="mf">1e-16</span>
+
+<div class="viewcode-block" id="EuclidianSimilarityPredictionGraph.connect_dense_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph.connect_dense_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_dense_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tf_user_representation: </span>
+<span class="sd">            tf_item_representation: </span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># [ n_users, 1 ]</span>
+        <span class="n">r_user</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf_user_representation</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">keep_dims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># [ n_items, 1 ]</span>
+        <span class="n">r_item</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf_item_representation</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">keep_dims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># [ n_users, n_items ]</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_user</span>
+                    <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">r_item</span><span class="p">))</span>
+
+        <span class="c1"># For numeric stability</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EuclidianSimilarityPredictionGraph.connect_serial_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph.connect_serial_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_serial_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span>
+                                        <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tf_user_representation: </span>
+<span class="sd">            tf_item_representation: </span>
+<span class="sd">            tf_x_user: </span>
+<span class="sd">            tf_x_item: </span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># [ n_interactions, n_components ]</span>
+        <span class="n">gathered_user_reprs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">)</span>
+        <span class="n">gathered_item_reprs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">)</span>
+
+        <span class="c1"># [ n_interactions, n_components ]</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">gathered_user_reprs</span> <span class="o">-</span> <span class="n">gathered_item_reprs</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># [ n_interactions, 1 ]</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># For numeric stability</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, James Kirk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.25.4',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

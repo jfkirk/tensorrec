@@ -1,0 +1,442 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tensorrec.eval &mdash; TensorRec 0.25.4 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TensorRec
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.25.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tensorrec.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TensorRec</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tensorrec.eval</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tensorrec.eval</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Eval</span>
+<span class="sd">    ~~~~</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sp</span>
+
+<span class="kn">from</span> <span class="nn">.tensorrec</span> <span class="k">import</span> <span class="n">TensorRec</span>
+
+
+<div class="viewcode-block" id="precision_at_k"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.eval.precision_at_k">[docs]</a><span class="k">def</span> <span class="nf">precision_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">preserve_rows</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the precision at K.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        predicted_ranks (numpy matrix): The results of model.predict_rank()</span>
+<span class="sd">        test_interactions (scipy.sparse matrix): Test interactions matrix of shape `[n_users, n_items]`</span>
+<span class="sd">        k (int): the rank at which to stop evaluating precision.</span>
+<span class="sd">        preserve_rows (bool):</span>
+<span class="sd">            If True, a value of 0 will be returned for every user without test interactions.</span>
+<span class="sd">            If False, only users with test interactions will be returned.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Modified from LightFM.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">positive_test_interactions</span> <span class="o">=</span> <span class="n">test_interactions</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">ranks</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">predicted_ranks</span> <span class="o">*</span> <span class="n">positive_test_interactions</span><span class="o">.</span><span class="n">A</span><span class="p">)</span>
+    <span class="n">ranks</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">ranks</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">ranks</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">precision</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ranks</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">/</span> <span class="n">k</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">preserve_rows</span><span class="p">:</span>
+        <span class="n">precision</span> <span class="o">=</span> <span class="n">precision</span><span class="p">[</span><span class="n">positive_test_interactions</span><span class="o">.</span><span class="n">getnnz</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">precision</span></div>
+
+
+<div class="viewcode-block" id="recall_at_k"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.eval.recall_at_k">[docs]</a><span class="k">def</span> <span class="nf">recall_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">preserve_rows</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute recall at K.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        predicted_ranks (Numpy matrix): The results of `model.predict_rank()`</span>
+<span class="sd">        test_interactions (scipy.sparse matrix): Test interactions matrix of shape `[n_users, n_items]`</span>
+<span class="sd">        k (int): The rank at which to stop evaluating recall.</span>
+<span class="sd">        preserve_rows (bool):</span>
+<span class="sd">            If True, a value of 0 will be returned for every user without test interactions.</span>
+<span class="sd">            If False, only users with test interactions will be returned.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Modified from LightFM.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">positive_test_interactions</span> <span class="o">=</span> <span class="n">test_interactions</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">ranks</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">predicted_ranks</span> <span class="o">*</span> <span class="n">positive_test_interactions</span><span class="o">.</span><span class="n">A</span><span class="p">)</span>
+    <span class="n">ranks</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">ranks</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">ranks</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">retrieved</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">positive_test_interactions</span><span class="o">.</span><span class="n">getnnz</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">hit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ranks</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">preserve_rows</span><span class="p">:</span>
+        <span class="n">hit</span> <span class="o">=</span> <span class="n">hit</span><span class="p">[</span><span class="n">positive_test_interactions</span><span class="o">.</span><span class="n">getnnz</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">retrieved</span> <span class="o">=</span> <span class="n">retrieved</span><span class="p">[</span><span class="n">positive_test_interactions</span><span class="o">.</span><span class="n">getnnz</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">hit</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">/</span> <span class="n">retrieved</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_setup_ndcg</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">pos_inter</span> <span class="o">=</span> <span class="n">test_interactions</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">ror</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">predicted_ranks</span> <span class="o">*</span> <span class="n">pos_inter</span><span class="o">.</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="n">relevance</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">test_interactions</span><span class="o">.</span><span class="n">A</span> <span class="o">*</span> <span class="n">pos_inter</span><span class="o">.</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="n">k_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">ror</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">ror_at_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">ror</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">k_mask</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">relevance</span><span class="p">,</span> <span class="n">k_mask</span><span class="p">,</span> <span class="n">ror</span><span class="p">,</span> <span class="n">ror_at_k</span>
+
+
+<span class="k">def</span> <span class="nf">_idcg</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">sorted_hits</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">hits</span><span class="p">)][:</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">),</span> <span class="n">k</span><span class="p">)]</span>
+    <span class="n">idgc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mi">2</span> <span class="o">**</span> <span class="n">sorted_hits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_hits</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">idgc</span>
+
+
+<span class="k">def</span> <span class="nf">_dcg</span><span class="p">(</span><span class="n">relevance</span><span class="p">,</span> <span class="n">k_mask</span><span class="p">,</span> <span class="n">ror_at_k</span><span class="p">,</span> <span class="n">ror</span><span class="p">):</span>
+    <span class="n">numer</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">relevance</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">k_mask</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">denom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">ror_at_k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">ror</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">numer</span> <span class="o">/</span> <span class="n">denom</span>  <span class="c1"># ranks at 1</span>
+    <span class="n">dcg</span> <span class="o">=</span> <span class="n">ror</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">dcg</span>
+
+
+<div class="viewcode-block" id="ndcg_at_k"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.eval.ndcg_at_k">[docs]</a><span class="k">def</span> <span class="nf">ndcg_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">preserve_rows</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculate Normalized Discounted Cumulative Gain at K.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        predicted_ranks (numpy matrix): The results of model.predict_rank()</span>
+<span class="sd">        test_interactions (scipy.sparse matrix): Test interactions matrix of shape `[n_users, n_items]`</span>
+<span class="sd">        k (int): The rank at which to stop evaluating NDCG.</span>
+<span class="sd">        preserve_rows (bool):</span>
+<span class="sd">            If True, a value of 0 will be returned for every user without test interactions.</span>
+<span class="sd">            If False, only users with test interactions will be returned.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">relevance</span><span class="p">,</span> <span class="n">k_mask</span><span class="p">,</span> <span class="n">ranks_of_relevant</span><span class="p">,</span> <span class="n">ror_at_k</span> <span class="o">=</span> <span class="n">_setup_ndcg</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span>
+                                                                 <span class="n">test_interactions</span><span class="p">,</span>
+                                                                 <span class="n">k</span><span class="p">)</span>
+
+    <span class="n">dcg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">_dcg</span><span class="p">(</span><span class="n">relevance</span><span class="p">,</span> <span class="n">k_mask</span><span class="p">,</span> <span class="n">ror_at_k</span><span class="p">,</span> <span class="n">ranks_of_relevant</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">idcg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span><span class="n">_idcg</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">relevance</span><span class="o">.</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="n">ndcg</span> <span class="o">=</span> <span class="n">dcg</span> <span class="o">/</span> <span class="n">idcg</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">preserve_rows</span><span class="p">:</span>
+        <span class="n">positive_test_interactions</span> <span class="o">=</span> <span class="n">test_interactions</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">ndcg</span> <span class="o">=</span> <span class="n">ndcg</span><span class="p">[</span><span class="n">positive_test_interactions</span><span class="o">.</span><span class="n">getnnz</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">ndcg</span></div>
+
+
+<div class="viewcode-block" id="f1_score_at_k"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.eval.f1_score_at_k">[docs]</a><span class="k">def</span> <span class="nf">f1_score_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">preserve_rows</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute f1 score at K.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        predicted_ranks (numpy matrix): The results of model.predict_rank()</span>
+<span class="sd">        test_interactions (scipy.sparse matrix): Test interactions matrix of shape `[n_users, n_items]`</span>
+<span class="sd">        k (int): The rank at which to stop evaluating NDCG.</span>
+<span class="sd">        preserve_rows (bool):</span>
+<span class="sd">            If True, a value of 0 will be returned for every user without test interactions.</span>
+<span class="sd">            If False, only users with test interactions will be returned.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ndarray</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_at_k</span> <span class="o">=</span> <span class="n">precision_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="o">=</span><span class="n">predicted_ranks</span><span class="p">,</span>
+                            <span class="n">test_interactions</span><span class="o">=</span><span class="n">test_interactions</span><span class="p">,</span>
+                            <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">preserve_rows</span><span class="o">=</span><span class="n">preserve_rows</span><span class="p">)</span>
+    <span class="n">r_at_k</span> <span class="o">=</span> <span class="n">recall_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="o">=</span><span class="n">predicted_ranks</span><span class="p">,</span>
+                         <span class="n">test_interactions</span><span class="o">=</span><span class="n">test_interactions</span><span class="p">,</span>
+                         <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">preserve_rows</span><span class="o">=</span><span class="n">preserve_rows</span><span class="p">)</span>
+
+    <span class="n">mean_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">p_at_k</span><span class="p">)</span>
+    <span class="n">mean_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">r_at_k</span><span class="p">)</span>
+
+    <span class="n">f1_score</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">mean_p</span> <span class="o">*</span> <span class="n">mean_r</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mean_p</span> <span class="o">+</span> <span class="n">mean_r</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f1_score</span></div>
+
+
+<div class="viewcode-block" id="fit_and_eval"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.eval.fit_and_eval">[docs]</a><span class="k">def</span> <span class="nf">fit_and_eval</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">,</span>
+                 <span class="n">train_interactions</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span>
+                 <span class="n">fit_kwargs</span><span class="p">,</span> <span class="n">recall_k</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">precision_k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">ndcg_k</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model:</span>
+<span class="sd">        user_features:</span>
+<span class="sd">        item_features:</span>
+<span class="sd">        train_interactions:</span>
+<span class="sd">        test_interactions:</span>
+<span class="sd">        fit_kwargs:</span>
+<span class="sd">        recall_k:</span>
+<span class="sd">        precision_k:</span>
+<span class="sd">        ndcg_k:</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">,</span>
+              <span class="n">interactions</span><span class="o">=</span><span class="n">train_interactions</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_kwargs</span><span class="p">)</span>
+    <span class="n">predicted_ranks</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_rank</span><span class="p">(</span><span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="o">=</span><span class="n">item_features</span><span class="p">)</span>
+
+    <span class="n">p_at_k</span> <span class="o">=</span> <span class="n">precision_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">precision_k</span><span class="p">)</span>
+    <span class="n">r_at_k</span> <span class="o">=</span> <span class="n">recall_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">recall_k</span><span class="p">)</span>
+    <span class="n">n_at_k</span> <span class="o">=</span> <span class="n">ndcg_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">ndcg_k</span><span class="p">)</span>
+
+    <span class="n">p_at_k_insample</span> <span class="o">=</span> <span class="n">precision_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">train_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">precision_k</span><span class="p">)</span>
+    <span class="n">r_at_k_insample</span> <span class="o">=</span> <span class="n">recall_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">train_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">recall_k</span><span class="p">)</span>
+    <span class="n">n_at_k_insample</span> <span class="o">=</span> <span class="n">ndcg_at_k</span><span class="p">(</span><span class="n">predicted_ranks</span><span class="p">,</span> <span class="n">train_interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">ndcg_k</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">r_at_k</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">p_at_k</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">n_at_k</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">r_at_k_insample</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">p_at_k_insample</span><span class="p">),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">n_at_k_insample</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="grid_check_model_on_dataset"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.eval.grid_check_model_on_dataset">[docs]</a><span class="k">def</span> <span class="nf">grid_check_model_on_dataset</span><span class="p">(</span><span class="n">train_interactions</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        train_interactions:</span>
+<span class="sd">        test_interactions:</span>
+<span class="sd">        user_features:</span>
+<span class="sd">        item_features:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n_components</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">epochs</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">]:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">TensorRec</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">)</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">fit_and_eval</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">user_features</span><span class="p">,</span> <span class="n">item_features</span><span class="p">,</span> <span class="n">train_interactions</span><span class="p">,</span> <span class="n">test_interactions</span><span class="p">,</span>
+                                  <span class="n">fit_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;epochs&#39;</span><span class="p">:</span> <span class="n">epochs</span><span class="p">})</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">n_components</span><span class="p">,</span> <span class="n">scores</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">n_components</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">scores</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="eval_random_ranks_on_dataset"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.eval.eval_random_ranks_on_dataset">[docs]</a><span class="k">def</span> <span class="nf">eval_random_ranks_on_dataset</span><span class="p">(</span><span class="n">interactions</span><span class="p">,</span> <span class="n">recall_k</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">precision_k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">ndcg_k</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interactions:</span>
+<span class="sd">        recall_k:</span>
+<span class="sd">        precision_k:</span>
+<span class="sd">        ndcg_k:</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_users</span><span class="p">,</span> <span class="n">n_items</span> <span class="o">=</span> <span class="n">interactions</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">random_guesses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">n_items</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_items</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_users</span><span class="p">)])</span>
+
+    <span class="n">p_at_k</span> <span class="o">=</span> <span class="n">precision_at_k</span><span class="p">(</span><span class="n">random_guesses</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">precision_k</span><span class="p">)</span>
+    <span class="n">r_at_k</span> <span class="o">=</span> <span class="n">recall_at_k</span><span class="p">(</span><span class="n">random_guesses</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">recall_k</span><span class="p">)</span>
+    <span class="n">n_at_k</span> <span class="o">=</span> <span class="n">ndcg_at_k</span><span class="p">(</span><span class="n">random_guesses</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">ndcg_k</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">r_at_k</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">p_at_k</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">n_at_k</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, James Kirk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.25.4',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

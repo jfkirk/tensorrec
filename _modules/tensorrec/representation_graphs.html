@@ -1,0 +1,438 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tensorrec.representation_graphs &mdash; TensorRec 0.25.4 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TensorRec
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.25.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tensorrec.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TensorRec</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tensorrec.representation_graphs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tensorrec.representation_graphs</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Representation Graphs</span>
+<span class="sd">    ~~~~~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+
+<div class="viewcode-block" id="AbstractRepresentationGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.AbstractRepresentationGraph">[docs]</a><span class="k">class</span> <span class="nc">AbstractRepresentationGraph</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+<div class="viewcode-block" id="AbstractRepresentationGraph.connect_representation_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.AbstractRepresentationGraph.connect_representation_graph">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">connect_representation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method is responsible for connecting the user/item</span>
+<span class="sd">        features to their respective latent representations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_features (tf.SparseTensor): The user/item features as a SparseTensor of shape ``[ n_users, n_features ]``</span>
+<span class="sd">            n_components (int): The size of the latent representation per user/item.</span>
+<span class="sd">            n_features (int): The size of the input features per user/item.</span>
+<span class="sd">            node_name_ending (str): A string, either &#39;user&#39; or &#39;item&#39;, which can be added to</span>
+<span class="sd">            TensorFlow node names for clarity.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             tf.Tensor: The user/item representation as a Tensor of shape ``[n_users, n_components]``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="LinearRepresentationGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.LinearRepresentationGraph">[docs]</a><span class="k">class</span> <span class="nc">LinearRepresentationGraph</span><span class="p">(</span><span class="n">AbstractRepresentationGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates the representation by passing the features through a linear embedding.</span>
+<span class="sd">    Rough approximation of http://ceur-ws.org/Vol-1448/paper4.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LinearRepresentationGraph.connect_representation_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.LinearRepresentationGraph.connect_representation_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_representation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_features:</span>
+<span class="sd">            n_components:</span>
+<span class="sd">            n_features:</span>
+<span class="sd">            node_name_ending:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Weights are normalized before building the variable</span>
+        <span class="n">raw_weights</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random_normal</span><span class="p">([</span><span class="n">n_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">],</span> <span class="n">stddev</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">normalized_weights</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_normalize</span><span class="p">(</span><span class="n">raw_weights</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Create variable nodes</span>
+        <span class="n">tf_linear_weights</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">normalized_weights</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;linear_weights_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node_name_ending</span><span class="p">))</span>
+        <span class="n">tf_repr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sparse_tensor_dense_matmul</span><span class="p">(</span><span class="n">tf_features</span><span class="p">,</span> <span class="n">tf_linear_weights</span><span class="p">)</span>
+
+        <span class="c1"># Return repr layer and variables</span>
+        <span class="k">return</span> <span class="n">tf_repr</span><span class="p">,</span> <span class="p">[</span><span class="n">tf_linear_weights</span><span class="p">]</span></div></div>
+
+
+<div class="viewcode-block" id="NormalizedLinearRepresentationGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.NormalizedLinearRepresentationGraph">[docs]</a><span class="k">class</span> <span class="nc">NormalizedLinearRepresentationGraph</span><span class="p">(</span><span class="n">LinearRepresentationGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates the representation by passing the features through a linear embedding.</span>
+<span class="sd">    Embeddings are L2 normalized, meaning all embeddings have equal magnitude. This can be useful</span>
+<span class="sd">    as a user representation in mixture-of-tastes models, preventing one taste from having a much</span>
+<span class="sd">    larger magnitude than others and dominating the recommendations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NormalizedLinearRepresentationGraph.connect_representation_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.NormalizedLinearRepresentationGraph.connect_representation_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_representation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span>
+                                     <span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_features:</span>
+<span class="sd">            n_components:</span>
+<span class="sd">            n_features:</span>
+<span class="sd">            node_name_ending:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tf_repr</span><span class="p">,</span> <span class="n">weights_list</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">NormalizedLinearRepresentationGraph</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">connect_representation_graph</span><span class="p">(</span>
+            <span class="n">tf_features</span><span class="o">=</span><span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="o">=</span><span class="n">node_name_ending</span>
+        <span class="p">)</span>
+        <span class="n">normalized_repr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_normalize</span><span class="p">(</span><span class="n">tf_repr</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">normalized_repr</span><span class="p">,</span> <span class="n">weights_list</span></div></div>
+
+
+<div class="viewcode-block" id="FeaturePassThroughRepresentationGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph">[docs]</a><span class="k">class</span> <span class="nc">FeaturePassThroughRepresentationGraph</span><span class="p">(</span><span class="n">AbstractRepresentationGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Uses the features as the representation. This representation</span>
+<span class="sd">    graph does no transformation to the features.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FeaturePassThroughRepresentationGraph.connect_representation_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph.connect_representation_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_representation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span>
+                                     <span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_features:</span>
+<span class="sd">            n_components:</span>
+<span class="sd">            n_features:</span>
+<span class="sd">            node_name_ending:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">n_components</span> <span class="o">!=</span> <span class="n">n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> requires n_features and n_components to be equal. Either adjust n_components or use a &#39;</span>
+                <span class="s1">&#39;different representation graph. n_features = </span><span class="si">{}</span><span class="s1">, n_components = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">n_components</span>
+                <span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">sparse_tensor_to_dense</span><span class="p">(</span><span class="n">tf_features</span><span class="p">,</span> <span class="n">validate_indices</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="p">[]</span></div></div>
+
+
+<div class="viewcode-block" id="WeightedFeaturePassThroughRepresentationGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.WeightedFeaturePassThroughRepresentationGraph">[docs]</a><span class="k">class</span> <span class="nc">WeightedFeaturePassThroughRepresentationGraph</span><span class="p">(</span><span class="n">FeaturePassThroughRepresentationGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Uses the features as the representation. This representation</span>
+<span class="sd">    graph learns weights for each feature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WeightedFeaturePassThroughRepresentationGraph.connect_representation_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.WeightedFeaturePassThroughRepresentationGraph.connect_representation_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_representation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span>
+                                     <span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_features:</span>
+<span class="sd">            n_components:</span>
+<span class="sd">            n_features:</span>
+<span class="sd">            node_name_ending:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dense_repr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">WeightedFeaturePassThroughRepresentationGraph</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">connect_representation_graph</span><span class="p">(</span>
+            <span class="n">tf_features</span><span class="o">=</span><span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="o">=</span><span class="n">node_name_ending</span>
+        <span class="p">)</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_components</span><span class="p">])</span>
+        <span class="n">weighted_repr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">dense_repr</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">weighted_repr</span><span class="p">,</span> <span class="p">[</span><span class="n">weights</span><span class="p">]</span></div></div>
+
+
+<div class="viewcode-block" id="ReLURepresentationGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.ReLURepresentationGraph">[docs]</a><span class="k">class</span> <span class="nc">ReLURepresentationGraph</span><span class="p">(</span><span class="n">AbstractRepresentationGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates the representations by passing the features through</span>
+<span class="sd">    a single-layer ReLU neural network.</span>
+
+<span class="sd">    relu_size (int or None): The number of nodes in the ReLU layer.</span>
+<span class="sd">    If None, the layer will be of size `4 * n_components`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relu_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relu_size</span> <span class="o">=</span> <span class="n">relu_size</span>
+
+<div class="viewcode-block" id="ReLURepresentationGraph.connect_representation_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.ReLURepresentationGraph.connect_representation_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_representation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_features:</span>
+<span class="sd">            n_components:</span>
+<span class="sd">            n_features:</span>
+<span class="sd">            node_name_ending:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Infer ReLU layer size if necessary</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">relu_size</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">n_components</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">relu_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu_size</span>
+
+        <span class="c1"># Create variable nodes</span>
+        <span class="n">tf_relu_weights</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">random_normal</span><span class="p">([</span><span class="n">n_features</span><span class="p">,</span> <span class="n">relu_size</span><span class="p">],</span> <span class="n">stddev</span><span class="o">=.</span><span class="mi">5</span><span class="p">),</span>
+                                      <span class="n">name</span><span class="o">=</span><span class="s1">&#39;relu_weights_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node_name_ending</span><span class="p">))</span>
+        <span class="n">tf_relu_biases</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">relu_size</span><span class="p">]),</span>
+                                     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;relu_biases_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node_name_ending</span><span class="p">))</span>
+        <span class="n">tf_linear_weights</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">random_normal</span><span class="p">([</span><span class="n">relu_size</span><span class="p">,</span> <span class="n">n_components</span><span class="p">],</span> <span class="n">stddev</span><span class="o">=.</span><span class="mi">5</span><span class="p">),</span>
+                                        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;linear_weights_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node_name_ending</span><span class="p">))</span>
+
+        <span class="c1"># Create ReLU layer</span>
+        <span class="n">tf_relu</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">sparse_tensor_dense_matmul</span><span class="p">(</span><span class="n">tf_features</span><span class="p">,</span> <span class="n">tf_relu_weights</span><span class="p">),</span>
+                                    <span class="n">tf_relu_biases</span><span class="p">))</span>
+        <span class="n">tf_repr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tf_relu</span><span class="p">,</span> <span class="n">tf_linear_weights</span><span class="p">)</span>
+
+        <span class="c1"># Return repr layer and variables</span>
+        <span class="k">return</span> <span class="n">tf_repr</span><span class="p">,</span> <span class="p">[</span><span class="n">tf_relu_weights</span><span class="p">,</span> <span class="n">tf_linear_weights</span><span class="p">,</span> <span class="n">tf_relu_biases</span><span class="p">]</span></div></div>
+
+
+<div class="viewcode-block" id="AbstractKerasRepresentationGraph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.AbstractKerasRepresentationGraph">[docs]</a><span class="k">class</span> <span class="nc">AbstractKerasRepresentationGraph</span><span class="p">(</span><span class="n">AbstractRepresentationGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This abstract RepresentationGraph allows you to use Keras</span>
+<span class="sd">    layers as a representation function by overriding the</span>
+<span class="sd">    ``create_layers()`` method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+<div class="viewcode-block" id="AbstractKerasRepresentationGraph.connect_representation_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.AbstractKerasRepresentationGraph.connect_representation_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_representation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">node_name_ending</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_features:</span>
+<span class="sd">            n_components:</span>
+<span class="sd">            n_features:</span>
+<span class="sd">            node_name_ending:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_layers</span><span class="p">(</span><span class="n">n_features</span><span class="o">=</span><span class="n">n_features</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">)</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">last_layer</span> <span class="o">=</span> <span class="n">tf_features</span>
+
+        <span class="c1"># Iterate through layers, connecting each one and extracting weights/biases</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+            <span class="n">last_layer</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">last_layer</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="s1">&#39;weights&#39;</span><span class="p">):</span>
+                <span class="n">weights</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">last_layer</span><span class="p">,</span> <span class="n">weights</span></div>
+
+<div class="viewcode-block" id="AbstractKerasRepresentationGraph.create_layers"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.representation_graphs.AbstractKerasRepresentationGraph.create_layers">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">create_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">n_components</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of Keras layers.</span>
+
+<span class="sd">        n_features (int): The input size of the first Keras layer.</span>
+<span class="sd">        n_components (int): The output size of the final Keras layer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             list: A list of Keras layers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, James Kirk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.25.4',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

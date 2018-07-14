@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tensorrec.recommendation_graphs &mdash; TensorRec 0.25.4 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TensorRec
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.25.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tensorrec.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TensorRec</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tensorrec.recommendation_graphs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tensorrec.recommendation_graphs</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Recommendation Graphs</span>
+<span class="sd">    ~~~~~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+
+<div class="viewcode-block" id="project_biases"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.project_biases">[docs]</a><span class="k">def</span> <span class="nf">project_biases</span><span class="p">(</span><span class="n">tf_features</span><span class="p">,</span> <span class="n">n_features</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Projects the biases from the feature space to calculate bias per actor</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tf_features:</span>
+<span class="sd">        n_features:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tf_feature_biases</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">n_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+
+    <span class="c1"># The reduce sum is to perform a rank reduction</span>
+    <span class="n">tf_projected_biases</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">sparse_tensor_dense_matmul</span><span class="p">(</span><span class="n">tf_features</span><span class="p">,</span> <span class="n">tf_feature_biases</span><span class="p">),</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tf_feature_biases</span><span class="p">,</span> <span class="n">tf_projected_biases</span></div>
+
+
+<div class="viewcode-block" id="split_sparse_tensor_indices"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.split_sparse_tensor_indices">[docs]</a><span class="k">def</span> <span class="nf">split_sparse_tensor_indices</span><span class="p">(</span><span class="n">tf_sparse_tensor</span><span class="p">,</span> <span class="n">n_dimensions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Separates the each dimension of a sparse tensor&#39;s indices</span>
+<span class="sd">    into independent tensors</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tf_sparse_tensor:</span>
+<span class="sd">        n_dimensions:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tf_transposed_indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tf_sparse_tensor</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">tf_transposed_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_dimensions</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="bias_prediction_dense"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.bias_prediction_dense">[docs]</a><span class="k">def</span> <span class="nf">bias_prediction_dense</span><span class="p">(</span><span class="n">tf_prediction</span><span class="p">,</span> <span class="n">tf_projected_user_biases</span><span class="p">,</span> <span class="n">tf_projected_item_biases</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Broadcasts user and item biases across their</span>
+<span class="sd">    respective axes of the dense predictions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tf_prediction:</span>
+<span class="sd">        tf_projected_user_biases:</span>
+<span class="sd">        tf_projected_item_biases:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">tf_prediction</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">tf_projected_user_biases</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">tf_projected_item_biases</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="bias_prediction_serial"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.bias_prediction_serial">[docs]</a><span class="k">def</span> <span class="nf">bias_prediction_serial</span><span class="p">(</span><span class="n">tf_prediction_serial</span><span class="p">,</span> <span class="n">tf_projected_user_biases</span><span class="p">,</span>
+                           <span class="n">tf_projected_item_biases</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates the bias per user/item pair and adds it to the serial predictions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tf_prediction_serial:</span>
+<span class="sd">        tf_projected_user_biases:</span>
+<span class="sd">        tf_projected_item_biases:</span>
+<span class="sd">        tf_x_user:</span>
+<span class="sd">        tf_x_item:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gathered_user_biases</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_projected_user_biases</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">)</span>
+    <span class="n">gathered_item_biases</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_projected_item_biases</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tf_prediction_serial</span> <span class="o">+</span> <span class="n">gathered_user_biases</span> <span class="o">+</span> <span class="n">gathered_item_biases</span></div>
+
+
+<div class="viewcode-block" id="densify_sampled_item_predictions"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.densify_sampled_item_predictions">[docs]</a><span class="k">def</span> <span class="nf">densify_sampled_item_predictions</span><span class="p">(</span><span class="n">tf_sample_predictions_serial</span><span class="p">,</span> <span class="n">tf_n_sampled_items</span><span class="p">,</span> <span class="n">tf_n_users</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Turns the serial predictions of the sample items in to</span>
+<span class="sd">    a dense matrix of shape [ n_users, n_sampled_items ]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tf_sample_predictions_serial:</span>
+<span class="sd">        tf_n_sampled_items:</span>
+<span class="sd">        tf_n_users:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">densified_shape</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">tf_n_users</span><span class="p">,</span> <span class="n">tf_n_sampled_items</span><span class="p">]),</span> <span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">densified_predictions</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf_sample_predictions_serial</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">densified_shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">densified_predictions</span></div>
+
+
+<div class="viewcode-block" id="rank_predictions"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.rank_predictions">[docs]</a><span class="k">def</span> <span class="nf">rank_predictions</span><span class="p">(</span><span class="n">tf_prediction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Double-sortation serves as a ranking process</span>
+<span class="sd">    The +1 is so the top-ranked has a non-zero rank</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tf_prediction:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tf_prediction_item_size</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">tf_prediction</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">tf_indices_of_ranks</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">top_k</span><span class="p">(</span><span class="n">tf_prediction</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">tf_prediction_item_size</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">top_k</span><span class="p">(</span><span class="o">-</span><span class="n">tf_indices_of_ranks</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">tf_prediction_item_size</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="collapse_mixture_of_tastes"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.collapse_mixture_of_tastes">[docs]</a><span class="k">def</span> <span class="nf">collapse_mixture_of_tastes</span><span class="p">(</span><span class="n">tastes_predictions</span><span class="p">,</span> <span class="n">tastes_attentions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Collapses a list of prediction nodes in to a single prediction node.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tastes_predictions:</span>
+<span class="sd">        tastes_attentions:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">stacked_predictions</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">tastes_predictions</span><span class="p">)</span>
+
+    <span class="c1"># If there is attention, the attentions are used to weight each prediction</span>
+    <span class="k">if</span> <span class="n">tastes_attentions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="c1"># Stack the attentions and perform softmax across the tastes</span>
+        <span class="n">stacked_attentions</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">tastes_attentions</span><span class="p">)</span>
+        <span class="n">softmax_attentions</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">stacked_attentions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># The softmax&#39;d attentions serve as weights for the taste predictiones</span>
+        <span class="n">weighted_predictions</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">stacked_predictions</span><span class="p">,</span> <span class="n">softmax_attentions</span><span class="p">)</span>
+        <span class="n">result_prediction</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">weighted_predictions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># If there is no attention, the max prediction is returned</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result_prediction</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_max</span><span class="p">(</span><span class="n">stacked_predictions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result_prediction</span></div>
+
+
+<div class="viewcode-block" id="relative_cosine"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.relative_cosine">[docs]</a><span class="k">def</span> <span class="nf">relative_cosine</span><span class="p">(</span><span class="n">tf_tensor_1</span><span class="p">,</span> <span class="n">tf_tensor_2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the cosine of every row in tensor_1 against every row in tensor_2.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tf_tensor_1:</span>
+<span class="sd">        tf_tensor_2:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">normalized_t1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_normalize</span><span class="p">(</span><span class="n">tf_tensor_1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">normalized_t2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_normalize</span><span class="p">(</span><span class="n">tf_tensor_2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">normalized_t1</span><span class="p">,</span> <span class="n">normalized_t2</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="predict_similar_items"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.recommendation_graphs.predict_similar_items">[docs]</a><span class="k">def</span> <span class="nf">predict_similar_items</span><span class="p">(</span><span class="n">prediction_graph_factory</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_similar_items_ids</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates the similarity between the given item ids and all</span>
+<span class="sd">    other items using the prediction graph.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prediction_graph_factory:</span>
+<span class="sd">        tf_item_representation:</span>
+<span class="sd">        tf_similar_items_ids:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gathered_items</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_similar_items_ids</span><span class="p">)</span>
+    <span class="n">sims</span> <span class="o">=</span> <span class="n">prediction_graph_factory</span><span class="o">.</span><span class="n">connect_dense_prediction_graph</span><span class="p">(</span>
+        <span class="n">tf_user_representation</span><span class="o">=</span><span class="n">gathered_items</span><span class="p">,</span>
+        <span class="n">tf_item_representation</span><span class="o">=</span><span class="n">tf_item_representation</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">sims</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, James Kirk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.25.4',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
