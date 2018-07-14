@@ -26,17 +26,18 @@ class AbstractLossGraph(object):
         possible nodes from the graph and calculating loss from those nodes.
 
         Args:
-            tf_prediction_serial (tf.Tensor): (The recommendation scores as a Tensor of shape [n_samples, 1]
+            tf_prediction_serial (tf.Tensor): (The recommendation scores as a Tensor of shape ``[n_samples, 1]``
             tf_interactions_serial (tf.Tensor): The sample interactions corresponding to tf_prediction_serial
-            as a Tensor of shape `[n_samples, 1]`
-            tf_interactions (tf.SparseTensor): The sample interactions as a SparseTensor of shape `[n_users, n_items]`
-            tf_n_users (tf.placeholder): The number of users in tf_interactions.
+                as a Tensor of shape `[n_samples, 1]`
+            tf_interactions (tf.SparseTensor): The sample interactions as a SparseTensor
+                of shape ``[n_users, n_items]``
+            tf_n_users (tf.placeholder): The number of users in tf_interactions
             tf_n_items (tf.placeholder): The number of items in tf_interactions
-            tf_prediction (tf.Tensor): The recommendation scores as a Tensor of shape [n_users, n_items]
+            tf_prediction (tf.Tensor): The recommendation scores as a Tensor of shape ``[n_users, n_items]``
             tf_rankings (tf.Tensor): The item ranks as a Tensor of shape ``[n_users, n_items]``
             tf_sample_predictions (tf.Tensor): The recommendation scores of a sample of items of
-                shape `[n_users, n_sampled_items]`
-            tf_n_sampled_items (tf.placeholder): The number of items per user in `tf_sample_predictions`.
+                shape ``[n_users, n_sampled_items]``
+            tf_n_sampled_items (tf.placeholder): The number of items per user in ``tf_sample_predictions``.
 
         Returns:
              tf.Tensor: The loss value.
