@@ -475,7 +475,8 @@ possible nodes from the graph and calculating loss from those nodes.</p>
 <li><strong>tf_n_items</strong> (<em>tf.placeholder</em>) – The number of items in tf_interactions</li>
 <li><strong>tf_prediction</strong> (<em>tf.Tensor</em>) – The recommendation scores as a Tensor of shape [n_users, n_items]</li>
 <li><strong>tf_rankings</strong> (<em>tf.Tensor</em>) – The item ranks as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></li>
-<li><strong>tf_sample_predictions</strong> (<em>tf.Tensor</em>) – The recommendation scores of a sample of items of shape <cite>[n_users, n_sampled_items]</cite></li>
+<li><strong>tf_sample_predictions</strong> (<em>tf.Tensor</em>) – The recommendation scores of a sample of items of
+shape <cite>[n_users, n_sampled_items]</cite></li>
 <li><strong>tf_n_sampled_items</strong> (<em>tf.placeholder</em>) – The number of items per user in <cite>tf_sample_predictions</cite>.</li>
 </ul>
 </td>
@@ -1403,8 +1404,8 @@ that contains a method to calculate user representations. See tensorrec.represen
 <li><strong>item_repr_graph</strong> (<a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><em>AbstractRepresentationGraph</em></a>) – An object which inherits <code class="docutils literal notranslate"><span class="pre">AbstractRepresentationGraph</span></code> that
 contains a method to calculate item representations. See tensorrec.representation_graphs for examples.</li>
 <li><strong>attention_graph</strong> (<a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><em>AbstractRepresentationGraph</em></a><em> or </em><em>None</em>) – Optional. An object which inherits
-<code class="docutils literal notranslate"><span class="pre">AbstractRepresentationGraph</span></code> that contains a method to calculate user attention. Any valid <cite>repr_graph</cite> is
-also a valid attention graph. If None, no attention process will be applied.</li>
+<code class="docutils literal notranslate"><span class="pre">AbstractRepresentationGraph</span></code> that contains a method to calculate user attention. Any valid <cite>repr_graph</cite>
+is also a valid attention graph. If None, no attention process will be applied.</li>
 <li><strong>prediction_graph</strong> (<a class="reference internal" href="#tensorrec.prediction_graphs.AbstractPredictionGraph" title="tensorrec.prediction_graphs.AbstractPredictionGraph"><em>AbstractPredictionGraph</em></a>) – An object which inherits <code class="docutils literal notranslate"><span class="pre">AbstractPredictionGraph</span></code>
 that contains a method to calculate predictions from a pair of user/item reprs.
 See tensorrec.prediction_graphs for examples.</li>

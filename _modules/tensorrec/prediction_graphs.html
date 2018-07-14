@@ -205,28 +205,24 @@
 
 <div class="viewcode-block" id="DotProductPredictionGraph.connect_dense_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.DotProductPredictionGraph.connect_dense_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_dense_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            tf_user_representation: </span>
-<span class="sd">            tf_item_representation: </span>
+<span class="sd">            tf_user_representation:</span>
+<span class="sd">            tf_item_representation:</span>
 
 <span class="sd">        Returns:</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="DotProductPredictionGraph.connect_serial_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.DotProductPredictionGraph.connect_serial_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_serial_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span>
                                         <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            tf_user_representation: </span>
-<span class="sd">            tf_item_representation: </span>
-<span class="sd">            tf_x_user: </span>
-<span class="sd">            tf_x_item: </span>
+<span class="sd">            tf_user_representation:</span>
+<span class="sd">            tf_item_representation:</span>
+<span class="sd">            tf_x_user:</span>
+<span class="sd">            tf_x_item:</span>
 
 <span class="sd">        Returns:</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">gathered_user_reprs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">)</span>
         <span class="n">gathered_item_reprs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">)</span>
@@ -240,28 +236,24 @@
 
 <div class="viewcode-block" id="CosineSimilarityPredictionGraph.connect_dense_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.CosineSimilarityPredictionGraph.connect_dense_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_dense_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            tf_user_representation: </span>
-<span class="sd">            tf_item_representation: </span>
+<span class="sd">            tf_user_representation:</span>
+<span class="sd">            tf_item_representation:</span>
 
 <span class="sd">        Returns:</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">relative_cosine</span><span class="p">(</span><span class="n">tf_tensor_1</span><span class="o">=</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_tensor_2</span><span class="o">=</span><span class="n">tf_item_representation</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CosineSimilarityPredictionGraph.connect_serial_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.CosineSimilarityPredictionGraph.connect_serial_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_serial_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span>
                                         <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            tf_user_representation: </span>
-<span class="sd">            tf_item_representation: </span>
-<span class="sd">            tf_x_user: </span>
-<span class="sd">            tf_x_item: </span>
+<span class="sd">            tf_user_representation:</span>
+<span class="sd">            tf_item_representation:</span>
+<span class="sd">            tf_x_user:</span>
+<span class="sd">            tf_x_item:</span>
 
 <span class="sd">        Returns:</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">normalized_users</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_normalize</span><span class="p">(</span><span class="n">tf_user_representation</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">normalized_items</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">l2_normalize</span><span class="p">(</span><span class="n">tf_item_representation</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -280,10 +272,9 @@
 
 <div class="viewcode-block" id="EuclideanSimilarityPredictionGraph.connect_dense_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_dense_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_dense_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span> <span class="n">tf_item_representation</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            tf_user_representation: </span>
-<span class="sd">            tf_item_representation: </span>
+<span class="sd">            tf_user_representation:</span>
+<span class="sd">            tf_item_representation:</span>
 
 <span class="sd">        Returns:</span>
 
@@ -307,12 +298,11 @@
 <div class="viewcode-block" id="EuclideanSimilarityPredictionGraph.connect_serial_prediction_graph"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_serial_prediction_graph">[docs]</a>    <span class="k">def</span> <span class="nf">connect_serial_prediction_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_user_representation</span><span class="p">,</span>
                                         <span class="n">tf_item_representation</span><span class="p">,</span> <span class="n">tf_x_user</span><span class="p">,</span> <span class="n">tf_x_item</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            tf_user_representation: </span>
-<span class="sd">            tf_item_representation: </span>
-<span class="sd">            tf_x_user: </span>
-<span class="sd">            tf_x_item: </span>
+<span class="sd">            tf_user_representation:</span>
+<span class="sd">            tf_item_representation:</span>
+<span class="sd">            tf_x_user:</span>
+<span class="sd">            tf_x_item:</span>
 
 <span class="sd">        Returns:</span>
 
