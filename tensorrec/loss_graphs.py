@@ -28,7 +28,7 @@ class AbstractLossGraph(object):
         Args:
             tf_prediction_serial (tf.Tensor): (The recommendation scores as a Tensor of shape ``[n_samples, 1]``
             tf_interactions_serial (tf.Tensor): The sample interactions corresponding to tf_prediction_serial
-                as a Tensor of shape `[n_samples, 1]`
+                as a Tensor of shape ``[n_samples, 1]``
             tf_interactions (tf.SparseTensor): The sample interactions as a SparseTensor
                 of shape ``[n_users, n_items]``
             tf_n_users (tf.placeholder): The number of users in tf_interactions
