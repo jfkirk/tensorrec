@@ -58,28 +58,24 @@ class DotProductPredictionGraph(AbstractPredictionGraph):
 
     def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
         """
-        
         Args:
-            tf_user_representation: 
-            tf_item_representation: 
+            tf_user_representation:
+            tf_item_representation:
 
         Returns:
-
         """
         return tf.matmul(tf_user_representation, tf_item_representation, transpose_b=True)
 
     def connect_serial_prediction_graph(self, tf_user_representation,
                                         tf_item_representation, tf_x_user, tf_x_item):
         """
-        
         Args:
-            tf_user_representation: 
-            tf_item_representation: 
-            tf_x_user: 
-            tf_x_item: 
+            tf_user_representation:
+            tf_item_representation:
+            tf_x_user:
+            tf_x_item:
 
         Returns:
-
         """
         gathered_user_reprs = tf.gather(tf_user_representation, tf_x_user)
         gathered_item_reprs = tf.gather(tf_item_representation, tf_x_item)
@@ -93,28 +89,24 @@ class CosineSimilarityPredictionGraph(AbstractPredictionGraph):
 
     def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
         """
-        
         Args:
-            tf_user_representation: 
-            tf_item_representation: 
+            tf_user_representation:
+            tf_item_representation:
 
         Returns:
-
         """
         return relative_cosine(tf_tensor_1=tf_user_representation, tf_tensor_2=tf_item_representation)
 
     def connect_serial_prediction_graph(self, tf_user_representation,
                                         tf_item_representation, tf_x_user, tf_x_item):
         """
-        
         Args:
-            tf_user_representation: 
-            tf_item_representation: 
-            tf_x_user: 
-            tf_x_item: 
+            tf_user_representation:
+            tf_item_representation:
+            tf_x_user:
+            tf_x_item:
 
         Returns:
-
         """
         normalized_users = tf.nn.l2_normalize(tf_user_representation, 1)
         normalized_items = tf.nn.l2_normalize(tf_item_representation, 1)
@@ -133,10 +125,9 @@ class EuclideanSimilarityPredictionGraph(AbstractPredictionGraph):
 
     def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
         """
-        
         Args:
-            tf_user_representation: 
-            tf_item_representation: 
+            tf_user_representation:
+            tf_item_representation:
 
         Returns:
 
@@ -160,12 +151,11 @@ class EuclideanSimilarityPredictionGraph(AbstractPredictionGraph):
     def connect_serial_prediction_graph(self, tf_user_representation,
                                         tf_item_representation, tf_x_user, tf_x_item):
         """
-        
         Args:
-            tf_user_representation: 
-            tf_item_representation: 
-            tf_x_user: 
-            tf_x_item: 
+            tf_user_representation:
+            tf_item_representation:
+            tf_x_user:
+            tf_x_item:
 
         Returns:
 

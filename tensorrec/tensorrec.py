@@ -36,8 +36,8 @@ class TensorRec(object):
         item_repr_graph (AbstractRepresentationGraph): An object which inherits ``AbstractRepresentationGraph`` that
             contains a method to calculate item representations. See tensorrec.representation_graphs for examples.
         attention_graph (AbstractRepresentationGraph or None): Optional. An object which inherits
-            ``AbstractRepresentationGraph`` that contains a method to calculate user attention. Any valid `repr_graph` is
-            also a valid attention graph. If None, no attention process will be applied.
+            ``AbstractRepresentationGraph`` that contains a method to calculate user attention. Any valid `repr_graph`
+            is also a valid attention graph. If None, no attention process will be applied.
         prediction_graph (AbstractPredictionGraph): An object which inherits ``AbstractPredictionGraph``
             that contains a method to calculate predictions from a pair of user/item reprs.
             See tensorrec.prediction_graphs for examples.

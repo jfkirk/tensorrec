@@ -34,7 +34,8 @@ class AbstractLossGraph(object):
             tf_n_items (tf.placeholder): The number of items in tf_interactions
             tf_prediction (tf.Tensor): The recommendation scores as a Tensor of shape [n_users, n_items]
             tf_rankings (tf.Tensor): The item ranks as a Tensor of shape ``[n_users, n_items]``
-            tf_sample_predictions (tf.Tensor): The recommendation scores of a sample of items of shape `[n_users, n_sampled_items]`
+            tf_sample_predictions (tf.Tensor): The recommendation scores of a sample of items of
+                shape `[n_users, n_sampled_items]`
             tf_n_sampled_items (tf.placeholder): The number of items per user in `tf_sample_predictions`.
 
         Returns:
