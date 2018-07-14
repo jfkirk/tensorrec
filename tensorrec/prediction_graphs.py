@@ -184,3 +184,8 @@ class EuclideanSimilarityPredictionGraph(AbstractPredictionGraph):
         distance = tf.maximum(distance, self.epsilon)
 
         return -1.0 * tf.sqrt(distance)
+
+
+# ToDo: depreciate
+# Alias to the former class name to ensure backwards compatibility.
+EuclidianSimilarityPredictionGraph = EuclideanSimilarityPredictionGraph
