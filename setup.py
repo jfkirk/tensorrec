@@ -4,6 +4,9 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
+with open('requirements.txt') as f:
+    requirements = [i.strip() for i in f.read().splitlines()]
+
 setup(
     name='tensorrec',
     packages=['tensorrec'],
@@ -12,10 +15,7 @@ setup(
     author='James Kirk',
     author_email='james.f.kirk@gmail.com',
     url='https://github.com/jfkirk/tensorrec',
-    install_requires=[
-        'requests', 'numpy', 'scipy',
-        'sklearn', 'lightfm', 'tensorflow'
-    ],
+    install_requires=requirements,
     keywords=[
         'machine-learning', 'tensorflow',
         'recommendation-system', 'python',
