@@ -14,3 +14,9 @@ scikit-learn==0.19.1
 
 # For movielens dataset
 lightfm==1.13
+
+# For tests/datasets.py
+requests
+
+# For documentation
+sphinx

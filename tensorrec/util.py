@@ -1,3 +1,9 @@
+"""
+
+    Utils
+    ~~~~~
+
+"""
 import math
 import numpy as np
 import random
@@ -5,10 +11,22 @@ import scipy.sparse as sp
 import six
 import tensorflow as tf
 
-from .input_utils import create_tensorrec_dataset_from_sparse_matrix, create_tensorrec_dataset_from_tfrecord
+from .input_utils import (create_tensorrec_dataset_from_sparse_matrix,
+                          create_tensorrec_dataset_from_tfrecord)
 
 
 def sample_items(n_items, n_users, n_sampled_items, replace):
+    """
+
+    Args:
+        n_items:
+        n_users:
+        n_sampled_items:
+        replace:
+
+    Returns:
+
+    """
     items_per_user = [np.random.choice(a=n_items, size=n_sampled_items, replace=replace)
                       for _ in range(n_users)]
 
@@ -21,6 +39,15 @@ def sample_items(n_items, n_users, n_sampled_items, replace):
 
 
 def calculate_batched_alpha(num_batches, alpha):
+    """
+
+    Args:
+        num_batches:
+        alpha:
+
+    Returns:
+
+    """
     if num_batches < 1:
         raise ValueError('num_batches must be >=1, num_batches={}'.format(num_batches))
     elif num_batches > 1:
@@ -31,6 +58,14 @@ def calculate_batched_alpha(num_batches, alpha):
 
 
 def datasets_from_raw_input(raw_input):
+    """
+
+    Args:
+        raw_input:
+
+    Returns:
+
+    """
 
     if isinstance(raw_input, tf.data.Dataset):
         return [raw_input]
@@ -57,9 +92,25 @@ def datasets_from_raw_input(raw_input):
                      'Dataset')
 
 
-def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.00045, num_user_features=200,
-                        num_item_features=200, n_features_per_user=20, n_features_per_item=20,  pos_int_ratio=.5,
-                        return_datasets=False):
+def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.00045,
+                        num_user_features=200, num_item_features=200, n_features_per_user=20,
+                        n_features_per_item=20, pos_int_ratio=.5, return_datasets=False):
+    """
+
+    Args:
+        num_users:
+        num_items:
+        interaction_density:
+        num_user_features:
+        num_item_features:
+        n_features_per_user:
+        n_features_per_item:
+        pos_int_ratio:
+        return_datasets:
+
+    Returns:
+
+    """
 
     if pos_int_ratio <= 0.0:
         raise Exception("pos_int_ratio must be > 0")
@@ -84,8 +135,19 @@ def generate_dummy_data(num_users=15000, num_items=30000, interaction_density=.0
     return interactions, user_features, item_features
 
 
-def generate_dummy_data_with_indicator(num_users=15000, num_items=30000, interaction_density=.00045, pos_int_ratio=.5):
+def generate_dummy_data_with_indicator(num_users=15000, num_items=30000,
+                                       interaction_density=.00045, pos_int_ratio=.5):
+    """
 
+    Args:
+        num_users:
+        num_items:
+        interaction_density:
+        pos_int_ratio:
+
+    Returns:
+
+    """
     n_user_features = int(num_users * 1.2)
     n_user_tags = num_users * 3
     n_item_features = int(num_items * 1.2)
@@ -117,6 +179,16 @@ def generate_dummy_data_with_indicator(num_users=15000, num_items=30000, interac
 
 
 def append_to_string_at_point(string, value, point):
+    """
+
+    Args:
+        string:
+        value:
+        point:
+
+    Returns:
+
+    """
     for _ in range(0, (point - len(string))):
         string += " "
     string += "{}".format(value)
@@ -124,4 +196,13 @@ def append_to_string_at_point(string, value, point):
 
 
 def simple_tf_print(tensor, places=100):
+    """
+
+    Args:
+        tensor:
+        places:
+
+    Returns:
+
+    """
     return tf.Print(tensor, [tensor, tf.shape(tensor)], summarize=places)

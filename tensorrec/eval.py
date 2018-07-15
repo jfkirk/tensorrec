@@ -1,3 +1,9 @@
+"""
+
+    Eval
+    ~~~~
+
+"""
 import numpy as np
 import scipy.sparse as sp
 
@@ -5,18 +11,22 @@ from .tensorrec import TensorRec
 
 
 def precision_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
-    """
-    Modified from LightFM.
-    :param predicted_ranks: Numpy matrix
-    The results of model.predict_rank()
-    :param test_interactions: scipy.sparse matrix
-    Test interactions matrix of shape [n_users, n_items]
-    :param k: int
-    The rank at which to stop evaluating precision.
-    :param preserve_rows: bool
-    If True, a value of 0 will be returned for every user without test interactions.
-    If False, only users with test interactions will be returned.
-    :return: np.array
+    """Compute the precision at K.
+
+    Args:
+        predicted_ranks (numpy matrix): The results of model.predict_rank()
+        test_interactions (scipy.sparse matrix): Test interactions matrix of shape `[n_users, n_items]`
+        k (int): the rank at which to stop evaluating precision.
+        preserve_rows (bool):
+            If True, a value of 0 will be returned for every user without test interactions.
+            If False, only users with test interactions will be returned.
+
+    Returns:
+        ndarray
+
+    Notes:
+        Modified from LightFM.
+
     """
     positive_test_interactions = test_interactions > 0
     ranks = sp.csr_matrix(predicted_ranks * positive_test_interactions.A)
@@ -31,18 +41,21 @@ def precision_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False
 
 
 def recall_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
-    """
-    Modified from LightFM.
-    :param predicted_ranks: Numpy matrix
-    The results of model.predict_rank()
-    :param test_interactions: scipy.sparse matrix
-    Test interactions matrix of shape [n_users, n_items]
-    :param k: int
-    The rank at which to stop evaluating recall.
-    :param preserve_rows: bool
-    If True, a value of 0 will be returned for every user without test interactions.
-    If False, only users with test interactions will be returned.
-    :return: np.array
+    """Compute recall at K.
+
+    Args:
+        predicted_ranks (Numpy matrix): The results of `model.predict_rank()`
+        test_interactions (scipy.sparse matrix): Test interactions matrix of shape `[n_users, n_items]`
+        k (int): The rank at which to stop evaluating recall.
+        preserve_rows (bool):
+            If True, a value of 0 will be returned for every user without test interactions.
+            If False, only users with test interactions will be returned.
+
+    Returns:
+        ndarray
+
+    Notes:
+        Modified from LightFM.
     """
     positive_test_interactions = test_interactions > 0
     ranks = sp.csr_matrix(predicted_ranks * positive_test_interactions.A)
@@ -59,7 +72,6 @@ def recall_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
 
 
 def _setup_ndcg(predicted_ranks, test_interactions, k=10):
-
     pos_inter = test_interactions > 0
     ror = sp.csr_matrix(predicted_ranks * pos_inter.A)
 
@@ -73,34 +85,34 @@ def _setup_ndcg(predicted_ranks, test_interactions, k=10):
 
 def _idcg(hits, k=10):
     sorted_hits = hits[np.argsort(-hits)][:min(len(hits), k)]
-    idgc = np.sum((2**sorted_hits-1)/np.log2(np.arange(len(sorted_hits)) + 2))
+    idgc = np.sum((2 ** sorted_hits - 1) / np.log2(np.arange(len(sorted_hits)) + 2))
     return idgc
 
 
 def _dcg(relevance, k_mask, ror_at_k, ror):
-    numer = (2**np.multiply(relevance.data, k_mask)) - 1
+    numer = (2 ** np.multiply(relevance.data, k_mask)) - 1
     denom = np.log2(ror_at_k + 1)
-    ror.data = numer/denom  # ranks at 1
+    ror.data = numer / denom  # ranks at 1
     dcg = ror.sum(axis=1).flatten()
 
     return dcg
 
 
 def ndcg_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
-    """
-    Calculate Normalized Discounted Cumulative Gain @K.
-    :param predicted_ranks: Numpy matrix
-    The results of model.predict_rank()
-    :param test_interactions: scipy.sparse matrix
-    Test interactions matrix of shape [n_users, n_items]
-    :param k: int
-    The rank at which to stop evaluating NDCG.
-    :param preserve_rows: bool
-    If True, a value of 0 will be returned for every user without test interactions.
-    If False, only users with test interactions will be returned.
-    :return: np.array
-    """
+    """Calculate Normalized Discounted Cumulative Gain at K.
 
+    Args:
+        predicted_ranks (numpy matrix): The results of model.predict_rank()
+        test_interactions (scipy.sparse matrix): Test interactions matrix of shape `[n_users, n_items]`
+        k (int): The rank at which to stop evaluating NDCG.
+        preserve_rows (bool):
+            If True, a value of 0 will be returned for every user without test interactions.
+            If False, only users with test interactions will be returned.
+
+    Returns:
+        ndarray
+
+    """
     relevance, k_mask, ranks_of_relevant, ror_at_k = _setup_ndcg(predicted_ranks,
                                                                  test_interactions,
                                                                  k)
@@ -108,7 +120,7 @@ def ndcg_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
     dcg = np.asarray(_dcg(relevance, k_mask, ror_at_k, ranks_of_relevant))[0]
     idcg = np.apply_along_axis(_idcg, 1, relevance.A)
 
-    ndcg = dcg/idcg
+    ndcg = dcg / idcg
 
     if not preserve_rows:
         positive_test_interactions = test_interactions > 0
@@ -118,21 +130,19 @@ def ndcg_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
 
 
 def f1_score_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False):
-    """
-    :param model: TensorRec
-    A trained TensorRec model.
-    :param test_interactions: scipy.sparse matrix
-    Test interactions matrix of shape [n_users, n_items]
-    :param user_features: scipy.sparse matrix
-    User features matrix of shape [n_users, n_user_features]
-    :param item_features: scipy.sparse matrix
-    Item features matrix of shape [n_items, n_item_features]
-    :param k: int
-    The rank at which to stop evaluating recall.
-    :param preserve_rows: bool
-    If True, a value of 0 will be returned for every user without test interactions.
-    If False, only users with test interactions will be returned.
-    :return: np.array
+    """Compute f1 score at K.
+
+    Args:
+        predicted_ranks (numpy matrix): The results of model.predict_rank()
+        test_interactions (scipy.sparse matrix): Test interactions matrix of shape `[n_users, n_items]`
+        k (int): The rank at which to stop evaluating NDCG.
+        preserve_rows (bool):
+            If True, a value of 0 will be returned for every user without test interactions.
+            If False, only users with test interactions will be returned.
+
+    Returns:
+        ndarray
+
     """
     p_at_k = precision_at_k(predicted_ranks=predicted_ranks,
                             test_interactions=test_interactions,
@@ -148,9 +158,25 @@ def f1_score_at_k(predicted_ranks, test_interactions, k=10, preserve_rows=False)
     return f1_score
 
 
-def fit_and_eval(model, user_features, item_features, train_interactions, test_interactions, fit_kwargs, recall_k=30,
-                 precision_k=5, ndcg_k=30):
+def fit_and_eval(model, user_features, item_features,
+                 train_interactions, test_interactions,
+                 fit_kwargs, recall_k=30, precision_k=5, ndcg_k=30):
+    """
 
+    Args:
+        model:
+        user_features:
+        item_features:
+        train_interactions:
+        test_interactions:
+        fit_kwargs:
+        recall_k:
+        precision_k:
+        ndcg_k:
+
+    Returns:
+        tuple
+    """
     model.fit(user_features=user_features, item_features=item_features,
               interactions=train_interactions, **fit_kwargs)
     predicted_ranks = model.predict_rank(user_features=user_features, item_features=item_features)
@@ -168,7 +194,15 @@ def fit_and_eval(model, user_features, item_features, train_interactions, test_i
 
 
 def grid_check_model_on_dataset(train_interactions, test_interactions, user_features, item_features):
+    """
 
+    Args:
+        train_interactions:
+        test_interactions:
+        user_features:
+        item_features:
+
+    """
     results = []
     for n_components in [2, 4, 8, 16, 32, 64, 128, 256]:
         for epochs in [2, 4, 8, 16, 32, 64, 128, 256]:
@@ -180,7 +214,17 @@ def grid_check_model_on_dataset(train_interactions, test_interactions, user_feat
 
 
 def eval_random_ranks_on_dataset(interactions, recall_k=30, precision_k=5, ndcg_k=30):
+    """
 
+    Args:
+        interactions:
+        recall_k:
+        precision_k:
+        ndcg_k:
+
+    Returns:
+        tuple
+    """
     n_users, n_items = interactions.shape
 
     random_guesses = np.array([np.random.choice(a=n_items, size=n_items, replace=False) + 1 for _ in range(n_users)])

@@ -50,3 +50,7 @@ print(np.mean(r_at_k))
 ## Quick Start
 TensorRec can be installed via pip:
 ```pip install tensorrec```
+
+## Documentation
+
+Documentation can be viewed [here](https://jfkirk.github.io/tensorrec/index.html).
