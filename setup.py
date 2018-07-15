@@ -13,9 +13,6 @@ setup(
     author_email='james.f.kirk@gmail.com',
     url='https://github.com/jfkirk/tensorrec',
     install_requires=[
-        'lightfm',
-        'sklearn',
-        'requests',
         'numpy==1.14.1',
         'scipy==0.19.1',
         'six==1.11.0',
