@@ -781,8 +781,8 @@ scores for particular user-item pairs.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>tf_user_representation</strong> (<em>tf.Tensor</em>) – The user representations as a Tensor of</li>
-<li><strong>[</strong><strong>n_users</strong><strong>, </strong><strong>n_components</strong><strong>]</strong> (<em>shape</em>) – </li>
+<li><strong>tf_user_representation</strong> (<em>tf.Tensor</em>) – The user representations as a Tensor of
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code></li>
 <li><strong>tf_item_representation</strong> (<em>tf.Tensor</em>) – The item representations as a Tensor of shape
 <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_components]</span></code></li>
 <li><strong>tf_x_user</strong> (<em>tf.Tensor</em>) – The users for whom to predict as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_interactions]</span></code></li>
@@ -1427,13 +1427,11 @@ a method to calculate the loss function. See tensorrec.loss_graphs for examples.
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>interactions</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of interactions of</li>
-<li><strong>[</strong><strong>n_users</strong><strong>, </strong><strong>n_items</strong><strong>]</strong><strong></strong> (<em>shape</em>) – <ul>
-<li>If a Dataset, the Dataset must follow the format used in <cite>tensorrec.input_utils</cite>.</li>
-<li>If a str, the string must be the path to a TFRecord file.</li>
-<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
-</ul>
-</li>
+<li><strong>interactions</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of interactions of
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code>.
+* If a Dataset, the Dataset must follow the format used in <cite>tensorrec.input_utils</cite>.
+* If a str, the string must be the path to a TFRecord file.
+* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
 <li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of user features of
 shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.
 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
@@ -1467,28 +1465,37 @@ Must be non-None if self.loss_graph_factory.is_sample_based is True.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>interactions</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of interactions
-of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
-<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of user
-features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
-<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of item features
-of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+<li><strong>interactions</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of interactions
+of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user
+features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
 <li><strong>epochs</strong> (<em>int</em>) – The number of epochs to fit the model.</li>
 <li><strong>learning_rate</strong> (<em>float</em>) – The learning rate of the model.</li>
 <li><strong>alpha</strong> (<em>float</em>) – The weight regularization loss coefficient.</li>
 <li><strong>verbose</strong> (<em>bool</em>) – If true, the model will print a number of status statements during fitting.</li>
 <li><strong>user_batch_size</strong> (<em>int</em><em> or </em><em>None</em>) – The maximum number of users per batch, or None for all users.</li>
-<li><strong>n_sampled_items</strong> (<em>int</em><em> or </em><em>None</em>) – The number of items to sample per user for use in loss functions.</li>
-<li><strong>be non-None if self.loss_graph_factory.is_sample_based is True.</strong> (<em>Must</em>) – </li>
+<li><strong>n_sampled_items</strong> (<em>int</em><em> or </em><em>None</em>) – The number of items to sample per user for use in loss functions.
+Must be non-None if self.loss_graph_factory.is_sample_based is True.</li>
 </ul>
 </td>
 </tr>
@@ -1520,16 +1527,22 @@ of shape <code class="docutils literal notranslate"><span class="pre">[n_items,<
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of user
-features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
-<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of item features
-of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user
+features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
 </ul>
 </td>
 </tr>
@@ -1547,20 +1560,22 @@ of shape <code class="docutils literal notranslate"><span class="pre">[n_items,<
 <dt id="tensorrec.tensorrec.TensorRec.predict_item_bias">
 <code class="descname">predict_item_bias</code><span class="sig-paren">(</span><em>item_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_item_bias"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_item_bias" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predict bias values for the given items.</p>
-<p>Args:
-item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</p>
-<blockquote>
-<div>of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</div></blockquote>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The item biases in an ndarray of shape [n_items]</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The item biases in an ndarray of shape [n_items]</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -1574,11 +1589,14 @@ item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matri
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of item features
-of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The latent item representations in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_components]</span></code></td>
 </tr>
@@ -1597,16 +1615,22 @@ of shape <code class="docutils literal notranslate"><span class="pre">[n_items,<
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of user features
-of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
-<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of item features
-of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
 </ul>
 </td>
 </tr>
@@ -1629,10 +1653,13 @@ of shape <code class="docutils literal notranslate"><span class="pre">[n_items,<
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of item features of shape [n_items, n_item_features].
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features of shape [n_items, n_item_features].</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
 <li><strong>item_ids</strong> (<em>list</em><em> or </em><em>np.array</em>) – The ids of the items of interest.
 E.g. [4, 8, 12] to get sims for items 4, 8, and 12.</li>
 <li><strong>n_similar</strong> (<em>int</em>) – The number of similar items to get per item of interest.</li>
@@ -1654,20 +1681,22 @@ list is of length n_similar and contains tuples of (item_id, score) for each sim
 <dt id="tensorrec.tensorrec.TensorRec.predict_user_attention_representation">
 <code class="descname">predict_user_attention_representation</code><span class="sig-paren">(</span><em>user_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_user_attention_representation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_user_attention_representation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predict latent attention representation vectors for the given users.</p>
-<dl class="docutils">
-<dt>user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features</dt>
-<dd>of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</dd>
-</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The latent user attention representations in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The latent user attention representations in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -1681,10 +1710,13 @@ list is of length n_similar and contains tuples of (item_id, score) for each sim
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of user features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The user biases in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users]</span></code></td>
 </tr>
@@ -1698,20 +1730,21 @@ list is of length n_similar and contains tuples of (item_id, score) for each sim
 <dt id="tensorrec.tensorrec.TensorRec.predict_user_representation">
 <code class="descname">predict_user_representation</code><span class="sig-paren">(</span><em>user_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_user_representation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_user_representation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predict latent representation vectors for the given users.</p>
-<dl class="docutils">
-<dt>user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):</dt>
-<dd>A matrix of user features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</dd>
-</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The latent user representations in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code>.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The latent user representations in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code>.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
 </tr>
 </tbody>
 </table>

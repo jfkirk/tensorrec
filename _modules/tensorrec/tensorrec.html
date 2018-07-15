@@ -645,7 +645,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            interactions (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of interactions of</span>
-<span class="sd">            shape ``[n_users, n_items]``.</span>
+<span class="sd">                shape ``[n_users, n_items]``.</span>
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in `tensorrec.input_utils`.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
@@ -686,26 +686,32 @@
 <span class="sd">        Args:</span>
 <span class="sd">            interactions (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of interactions</span>
 <span class="sd">                of shape ``[n_users, n_items]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
 <span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user</span>
 <span class="sd">                features of shape ``[n_users, n_user_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
 <span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
 <span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
 <span class="sd">            epochs (int): The number of epochs to fit the model.</span>
 <span class="sd">            learning_rate (float): The learning rate of the model.</span>
 <span class="sd">            alpha (float): The weight regularization loss coefficient.</span>
 <span class="sd">            verbose (bool): If true, the model will print a number of status statements during fitting.</span>
 <span class="sd">            user_batch_size (int or None): The maximum number of users per batch, or None for all users.</span>
 <span class="sd">            n_sampled_items (int or None): The number of items to sample per user for use in loss functions.</span>
-<span class="sd">            Must be non-None if self.loss_graph_factory.is_sample_based is True.</span>
+<span class="sd">                Must be non-None if self.loss_graph_factory.is_sample_based is True.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">session</span> <span class="o">=</span> <span class="n">get_session</span><span class="p">()</span>
@@ -776,11 +782,14 @@
 <span class="sd">        Args:</span>
 <span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user</span>
 <span class="sd">                features of shape ``[n_users, n_user_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
 <span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
 <span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
@@ -803,6 +812,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):</span>
 <span class="sd">                A matrix of item features of shape [n_items, n_item_features].</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
@@ -837,11 +847,14 @@
 <span class="sd">        Args:</span>
 <span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features</span>
 <span class="sd">                of shape ``[n_users, n_user_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
 <span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
 <span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
@@ -861,11 +874,13 @@
 <div class="viewcode-block" id="TensorRec.predict_user_representation"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_user_representation">[docs]</a>    <span class="k">def</span> <span class="nf">predict_user_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_features</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Predict latent representation vectors for the given users.</span>
 
-<span class="sd">        user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):</span>
-<span class="sd">            A matrix of user features of shape ``[n_users, n_user_features]``.</span>
-<span class="sd">            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
-<span class="sd">            * If a str, the string must be the path to a TFRecord file.</span>
-<span class="sd">            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):</span>
+<span class="sd">                A matrix of user features of shape ``[n_users, n_user_features]``.</span>
+
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">             np.ndarray: The latent user representations in an ndarray of shape ``[n_users, n_components]``.</span>
@@ -886,11 +901,13 @@
 <div class="viewcode-block" id="TensorRec.predict_user_attention_representation"><a class="viewcode-back" href="../../tensorrec.html#tensorrec.tensorrec.TensorRec.predict_user_attention_representation">[docs]</a>    <span class="k">def</span> <span class="nf">predict_user_attention_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_features</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Predict latent attention representation vectors for the given users.</span>
 
-<span class="sd">        user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features</span>
-<span class="sd">            of shape ``[n_users, n_user_features]``.</span>
-<span class="sd">            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
-<span class="sd">            * If a str, the string must be the path to a TFRecord file.</span>
-<span class="sd">            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features</span>
+<span class="sd">                of shape ``[n_users, n_user_features]``.</span>
+
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">             np.ndarray: The latent user attention representations in an ndarray of shape ``[n_users, n_components]``</span>
@@ -918,6 +935,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
 <span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
@@ -938,6 +956,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):</span>
 <span class="sd">                A matrix of user features of shape ``[n_users, n_user_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
@@ -959,11 +978,12 @@
         <span class="sd">&quot;&quot;&quot;Predict bias values for the given items.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">        item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
-<span class="sd">            of shape ``[n_items, n_item_features]``.</span>
-<span class="sd">            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
-<span class="sd">            * If a str, the string must be the path to a TFRecord file.</span>
-<span class="sd">            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+<span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
+<span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+
+<span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
+<span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
+<span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">             np.ndarray: The item biases in an ndarray of shape [n_items]</span>
