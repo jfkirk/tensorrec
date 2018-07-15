@@ -17,4 +17,6 @@ lightfm==1.13
 
 # For tests/datasets.py
 requests
+
+# For documentation
 sphinx
