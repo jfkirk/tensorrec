@@ -1,0 +1,1983 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>API Documentation &mdash; TensorRec 0.25.5 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="TensorRec" href="index.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> TensorRec
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.25.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#eval">Eval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#input-utils">Input Utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loss-graphs">Loss Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prediction-graphs">Prediction Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recommendation-graphs">Recommendation Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#representation-graphs">Representation Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#session-management">Session Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tensorrec-recommendation-model">TensorRec Recommendation Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#utils">Utils</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">TensorRec</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>API Documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tensorrec.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tensorrec">
+<span id="api-documentation"></span><h1>API Documentation<a class="headerlink" href="#module-tensorrec" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-tensorrec.eval"></span><div class="section" id="eval">
+<h2>Eval<a class="headerlink" href="#eval" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="tensorrec.eval.eval_random_ranks_on_dataset">
+<code class="descclassname">tensorrec.eval.</code><code class="descname">eval_random_ranks_on_dataset</code><span class="sig-paren">(</span><em>interactions</em>, <em>recall_k=30</em>, <em>precision_k=5</em>, <em>ndcg_k=30</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/eval.html#eval_random_ranks_on_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.eval.eval_random_ranks_on_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>interactions</strong> – </li>
+<li><strong>recall_k</strong> – </li>
+<li><strong>precision_k</strong> – </li>
+<li><strong>ndcg_k</strong> – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">tuple</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.eval.f1_score_at_k">
+<code class="descclassname">tensorrec.eval.</code><code class="descname">f1_score_at_k</code><span class="sig-paren">(</span><em>predicted_ranks</em>, <em>test_interactions</em>, <em>k=10</em>, <em>preserve_rows=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/eval.html#f1_score_at_k"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.eval.f1_score_at_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute f1 score at K.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>predicted_ranks</strong> (<em>numpy matrix</em>) – The results of model.predict_rank()</li>
+<li><strong>test_interactions</strong> (<em>scipy.sparse matrix</em>) – Test interactions matrix of shape <cite>[n_users, n_items]</cite></li>
+<li><strong>k</strong> (<em>int</em>) – The rank at which to stop evaluating NDCG.</li>
+<li><strong>preserve_rows</strong> (<em>bool</em>) – If True, a value of 0 will be returned for every user without test interactions.
+If False, only users with test interactions will be returned.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.eval.fit_and_eval">
+<code class="descclassname">tensorrec.eval.</code><code class="descname">fit_and_eval</code><span class="sig-paren">(</span><em>model</em>, <em>user_features</em>, <em>item_features</em>, <em>train_interactions</em>, <em>test_interactions</em>, <em>fit_kwargs</em>, <em>recall_k=30</em>, <em>precision_k=5</em>, <em>ndcg_k=30</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/eval.html#fit_and_eval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.eval.fit_and_eval" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> – </li>
+<li><strong>user_features</strong> – </li>
+<li><strong>item_features</strong> – </li>
+<li><strong>train_interactions</strong> – </li>
+<li><strong>test_interactions</strong> – </li>
+<li><strong>fit_kwargs</strong> – </li>
+<li><strong>recall_k</strong> – </li>
+<li><strong>precision_k</strong> – </li>
+<li><strong>ndcg_k</strong> – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">tuple</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.eval.grid_check_model_on_dataset">
+<code class="descclassname">tensorrec.eval.</code><code class="descname">grid_check_model_on_dataset</code><span class="sig-paren">(</span><em>train_interactions</em>, <em>test_interactions</em>, <em>user_features</em>, <em>item_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/eval.html#grid_check_model_on_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.eval.grid_check_model_on_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>train_interactions</strong> – </li>
+<li><strong>test_interactions</strong> – </li>
+<li><strong>user_features</strong> – </li>
+<li><strong>item_features</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.eval.ndcg_at_k">
+<code class="descclassname">tensorrec.eval.</code><code class="descname">ndcg_at_k</code><span class="sig-paren">(</span><em>predicted_ranks</em>, <em>test_interactions</em>, <em>k=10</em>, <em>preserve_rows=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/eval.html#ndcg_at_k"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.eval.ndcg_at_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate Normalized Discounted Cumulative Gain at K.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>predicted_ranks</strong> (<em>numpy matrix</em>) – The results of model.predict_rank()</li>
+<li><strong>test_interactions</strong> (<em>scipy.sparse matrix</em>) – Test interactions matrix of shape <cite>[n_users, n_items]</cite></li>
+<li><strong>k</strong> (<em>int</em>) – The rank at which to stop evaluating NDCG.</li>
+<li><strong>preserve_rows</strong> (<em>bool</em>) – If True, a value of 0 will be returned for every user without test interactions.
+If False, only users with test interactions will be returned.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.eval.precision_at_k">
+<code class="descclassname">tensorrec.eval.</code><code class="descname">precision_at_k</code><span class="sig-paren">(</span><em>predicted_ranks</em>, <em>test_interactions</em>, <em>k=10</em>, <em>preserve_rows=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/eval.html#precision_at_k"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.eval.precision_at_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the precision at K.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>predicted_ranks</strong> (<em>numpy matrix</em>) – The results of model.predict_rank()</li>
+<li><strong>test_interactions</strong> (<em>scipy.sparse matrix</em>) – Test interactions matrix of shape <cite>[n_users, n_items]</cite></li>
+<li><strong>k</strong> (<em>int</em>) – the rank at which to stop evaluating precision.</li>
+<li><strong>preserve_rows</strong> (<em>bool</em>) – If True, a value of 0 will be returned for every user without test interactions.
+If False, only users with test interactions will be returned.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Modified from LightFM.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.eval.recall_at_k">
+<code class="descclassname">tensorrec.eval.</code><code class="descname">recall_at_k</code><span class="sig-paren">(</span><em>predicted_ranks</em>, <em>test_interactions</em>, <em>k=10</em>, <em>preserve_rows=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/eval.html#recall_at_k"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.eval.recall_at_k" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute recall at K.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>predicted_ranks</strong> (<em>Numpy matrix</em>) – The results of <cite>model.predict_rank()</cite></li>
+<li><strong>test_interactions</strong> (<em>scipy.sparse matrix</em>) – Test interactions matrix of shape <cite>[n_users, n_items]</cite></li>
+<li><strong>k</strong> (<em>int</em>) – The rank at which to stop evaluating recall.</li>
+<li><strong>preserve_rows</strong> (<em>bool</em>) – If True, a value of 0 will be returned for every user without test interactions.
+If False, only users with test interactions will be returned.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Modified from LightFM.</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-tensorrec.input_utils"></span><div class="section" id="input-utils">
+<h2>Input Utils<a class="headerlink" href="#input-utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="tensorrec.input_utils.create_tensorrec_dataset_from_sparse_matrix">
+<code class="descclassname">tensorrec.input_utils.</code><code class="descname">create_tensorrec_dataset_from_sparse_matrix</code><span class="sig-paren">(</span><em>sparse_matrix</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/input_utils.html#create_tensorrec_dataset_from_sparse_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.input_utils.create_tensorrec_dataset_from_sparse_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a TensorFlow Dataset containing the data from
+the given sparse matrix.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sparse_matrix</strong> (<em>scipy.sparse matrix</em>) – The data to be contained in this Dataset.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tf.data.Dataset</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.input_utils.create_tensorrec_dataset_from_tfrecord">
+<code class="descclassname">tensorrec.input_utils.</code><code class="descname">create_tensorrec_dataset_from_tfrecord</code><span class="sig-paren">(</span><em>tfrecord_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/input_utils.html#create_tensorrec_dataset_from_tfrecord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.input_utils.create_tensorrec_dataset_from_tfrecord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads a TFRecord file and creates a Dataset with the contents.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tfrecord_path</strong> (<em>str</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tf.data.Dataset</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.input_utils.create_tensorrec_iterator">
+<code class="descclassname">tensorrec.input_utils.</code><code class="descname">create_tensorrec_iterator</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/input_utils.html#create_tensorrec_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.input_utils.create_tensorrec_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a TensorFlow Iterator that is ready
+for the standard TensorRec data format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) – The name for this Iterator.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tf.data.Iterator</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.input_utils.get_dimensions_from_tensorrec_dataset">
+<code class="descclassname">tensorrec.input_utils.</code><code class="descname">get_dimensions_from_tensorrec_dataset</code><span class="sig-paren">(</span><em>dataset</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/input_utils.html#get_dimensions_from_tensorrec_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.input_utils.get_dimensions_from_tensorrec_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a TensorFlow Dataset in the standard TensorRec format,
+returns the dimensions of the SparseTensor to be populated by the Dataset.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dataset</strong> (<em>tf.data.Dataset</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(int, int)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tuple</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.input_utils.write_tfrecord_from_sparse_matrix">
+<code class="descclassname">tensorrec.input_utils.</code><code class="descname">write_tfrecord_from_sparse_matrix</code><span class="sig-paren">(</span><em>tfrecord_path</em>, <em>sparse_matrix</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/input_utils.html#write_tfrecord_from_sparse_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.input_utils.write_tfrecord_from_sparse_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the contents of a sparse matrix to a TFRecord file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tfrecord_path</strong> (<em>str</em>) – </li>
+<li><strong>sparse_matrix</strong> (<em>scipy.sparse matrix</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The tfrecord path</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.input_utils.write_tfrecord_from_tensorrec_dataset">
+<code class="descclassname">tensorrec.input_utils.</code><code class="descname">write_tfrecord_from_tensorrec_dataset</code><span class="sig-paren">(</span><em>tfrecord_path</em>, <em>dataset</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/input_utils.html#write_tfrecord_from_tensorrec_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.input_utils.write_tfrecord_from_tensorrec_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the contents of a TensorRec Dataset to a TFRecord file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tfrecord_path</strong> (<em>str</em>) – </li>
+<li><strong>dataset</strong> (<em>tf.data.Dataset</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The tfrecord path</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<span class="target" id="module-tensorrec.loss_graphs"></span><div class="section" id="loss-graphs">
+<h2>Loss Graphs<a class="headerlink" href="#loss-graphs" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tensorrec.loss_graphs.AbstractLossGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.loss_graphs.</code><code class="descname">AbstractLossGraph</code><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#AbstractLossGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.AbstractLossGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="tensorrec.loss_graphs.AbstractLossGraph.connect_loss_graph">
+<code class="descname">connect_loss_graph</code><span class="sig-paren">(</span><em>tf_prediction_serial</em>, <em>tf_interactions_serial</em>, <em>tf_interactions</em>, <em>tf_n_users</em>, <em>tf_n_items</em>, <em>tf_prediction</em>, <em>tf_rankings</em>, <em>tf_sample_predictions</em>, <em>tf_n_sampled_items</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#AbstractLossGraph.connect_loss_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.AbstractLossGraph.connect_loss_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is responsible for consuming a number of
+possible nodes from the graph and calculating loss from those nodes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tf_prediction_serial</strong> (<em>tf.Tensor</em>) – The recommendation scores as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_samples,</span> <span class="pre">1]</span></code></li>
+<li><strong>tf_interactions_serial</strong> (<em>tf.Tensor</em>) – The sample interactions corresponding to tf_prediction_serial
+as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_samples,</span> <span class="pre">1]</span></code></li>
+<li><strong>tf_interactions</strong> (<em>tf.SparseTensor</em>) – The sample interactions as a SparseTensor
+of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></li>
+<li><strong>tf_n_users</strong> (<em>tf.placeholder</em>) – The number of users in tf_interactions</li>
+<li><strong>tf_n_items</strong> (<em>tf.placeholder</em>) – The number of items in tf_interactions</li>
+<li><strong>tf_prediction</strong> (<em>tf.Tensor</em>) – The recommendation scores as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></li>
+<li><strong>tf_rankings</strong> (<em>tf.Tensor</em>) – The item ranks as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></li>
+<li><strong>tf_sample_predictions</strong> (<em>tf.Tensor</em>) – The recommendation scores of a sample of items of
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_sampled_items]</span></code></li>
+<li><strong>tf_n_sampled_items</strong> (<em>tf.placeholder</em>) – The number of items per user in <code class="docutils literal notranslate"><span class="pre">tf_sample_predictions</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The loss value.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tf.Tensor</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li>The following parameters are always passed in:
+<code class="docutils literal notranslate"><span class="pre">tf_prediction_serial</span></code>, <code class="docutils literal notranslate"><span class="pre">tf_interactions_serial</span></code>,
+<code class="docutils literal notranslate"><span class="pre">tf_interactions</span></code>, <code class="docutils literal notranslate"><span class="pre">tf_n_users</span></code>, <code class="docutils literal notranslate"><span class="pre">tf_n_items</span></code>.</li>
+<li>The following parameters are passed in if is_dense is True:
+<code class="docutils literal notranslate"><span class="pre">tf_prediction</span></code>, <code class="docutils literal notranslate"><span class="pre">tf_rankings</span></code>.</li>
+<li>The following parameters are passed in if is_sample_based is True:
+<code class="docutils literal notranslate"><span class="pre">tf_sample_predictions</span></code>, <code class="docutils literal notranslate"><span class="pre">tf_n_sampled_items</span></code>.</li>
+</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.loss_graphs.AbstractLossGraph.is_dense">
+<code class="descname">is_dense</code><em class="property"> = False</em><a class="headerlink" href="#tensorrec.loss_graphs.AbstractLossGraph.is_dense" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.loss_graphs.AbstractLossGraph.is_sample_based">
+<code class="descname">is_sample_based</code><em class="property"> = False</em><a class="headerlink" href="#tensorrec.loss_graphs.AbstractLossGraph.is_sample_based" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.loss_graphs.AbstractLossGraph.is_sampled_with_replacement">
+<code class="descname">is_sampled_with_replacement</code><em class="property"> = False</em><a class="headerlink" href="#tensorrec.loss_graphs.AbstractLossGraph.is_sampled_with_replacement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.loss_graphs.BalancedWMRBLossGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.loss_graphs.</code><code class="descname">BalancedWMRBLossGraph</code><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#BalancedWMRBLossGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.BalancedWMRBLossGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.loss_graphs.WMRBLossGraph" title="tensorrec.loss_graphs.WMRBLossGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.loss_graphs.WMRBLossGraph</span></code></a></p>
+<p>This loss graph extends WMRB by making it sensitive
+to interaction magnitude and weighting the loss of each item by
+1 / sum(interactions) per item.
+Interactions can be any positive values. Negative interactions are ignored.</p>
+<dl class="method">
+<dt id="tensorrec.loss_graphs.BalancedWMRBLossGraph.weighted_margin_rank_batch">
+<code class="descname">weighted_margin_rank_batch</code><span class="sig-paren">(</span><em>tf_prediction_serial</em>, <em>tf_interactions</em>, <em>tf_sample_predictions</em>, <em>tf_n_items</em>, <em>tf_n_sampled_items</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#BalancedWMRBLossGraph.weighted_margin_rank_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.BalancedWMRBLossGraph.weighted_margin_rank_batch" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_prediction_serial</strong> – </li>
+<li><strong>tf_interactions</strong> – </li>
+<li><strong>tf_sample_predictions</strong> – </li>
+<li><strong>tf_n_items</strong> – </li>
+<li><strong>tf_n_sampled_items</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.loss_graphs.RMSEDenseLossGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.loss_graphs.</code><code class="descname">RMSEDenseLossGraph</code><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#RMSEDenseLossGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.RMSEDenseLossGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.loss_graphs.AbstractLossGraph" title="tensorrec.loss_graphs.AbstractLossGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.loss_graphs.AbstractLossGraph</span></code></a></p>
+<p>This loss function returns the root mean square error between
+the predictions and the true interactions, including all non-interacted values as 0s.
+Interactions can be any positive or negative values, and this loss
+function is sensitive to magnitude.</p>
+<dl class="method">
+<dt id="tensorrec.loss_graphs.RMSEDenseLossGraph.connect_loss_graph">
+<code class="descname">connect_loss_graph</code><span class="sig-paren">(</span><em>tf_interactions</em>, <em>tf_prediction</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#RMSEDenseLossGraph.connect_loss_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.RMSEDenseLossGraph.connect_loss_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_interactions</strong> – </li>
+<li><strong>tf_prediction</strong> – </li>
+<li><strong>**kwargs</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.loss_graphs.RMSEDenseLossGraph.is_dense">
+<code class="descname">is_dense</code><em class="property"> = True</em><a class="headerlink" href="#tensorrec.loss_graphs.RMSEDenseLossGraph.is_dense" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.loss_graphs.RMSELossGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.loss_graphs.</code><code class="descname">RMSELossGraph</code><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#RMSELossGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.RMSELossGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.loss_graphs.AbstractLossGraph" title="tensorrec.loss_graphs.AbstractLossGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.loss_graphs.AbstractLossGraph</span></code></a></p>
+<p>This loss function returns the root mean square error between
+the predictions and the true interactions. Interactions can be any
+positive or negative values, and this loss function is sensitive to magnitude.</p>
+<dl class="method">
+<dt id="tensorrec.loss_graphs.RMSELossGraph.connect_loss_graph">
+<code class="descname">connect_loss_graph</code><span class="sig-paren">(</span><em>tf_prediction_serial</em>, <em>tf_interactions_serial</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#RMSELossGraph.connect_loss_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.RMSELossGraph.connect_loss_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_prediction_serial</strong> – </li>
+<li><strong>tf_interactions_serial</strong> – </li>
+<li><strong>**kwargs</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.loss_graphs.SeparationDenseLossGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.loss_graphs.</code><code class="descname">SeparationDenseLossGraph</code><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#SeparationDenseLossGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.SeparationDenseLossGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.loss_graphs.AbstractLossGraph" title="tensorrec.loss_graphs.AbstractLossGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.loss_graphs.AbstractLossGraph</span></code></a></p>
+<p>This loss function models all positive and negative interaction
+predictions as normal distributions and returns the probability of overlap
+between the two distributions. This loss function includes non-interacted items
+as negative interactions. Interactions can be any positive or negative values,
+but this loss function ignores the magnitude of the interaction – interactions
+are grouped in to {i &lt;= 0} and {i &gt; 0}.</p>
+<dl class="method">
+<dt id="tensorrec.loss_graphs.SeparationDenseLossGraph.connect_loss_graph">
+<code class="descname">connect_loss_graph</code><span class="sig-paren">(</span><em>tf_prediction</em>, <em>tf_interactions</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#SeparationDenseLossGraph.connect_loss_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.SeparationDenseLossGraph.connect_loss_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_prediction</strong> – </li>
+<li><strong>tf_interactions</strong> – </li>
+<li><strong>**kwargs</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.loss_graphs.SeparationDenseLossGraph.is_dense">
+<code class="descname">is_dense</code><em class="property"> = True</em><a class="headerlink" href="#tensorrec.loss_graphs.SeparationDenseLossGraph.is_dense" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.loss_graphs.SeparationLossGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.loss_graphs.</code><code class="descname">SeparationLossGraph</code><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#SeparationLossGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.SeparationLossGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.loss_graphs.AbstractLossGraph" title="tensorrec.loss_graphs.AbstractLossGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.loss_graphs.AbstractLossGraph</span></code></a></p>
+<p>This loss function models the explicit positive and negative interaction
+predictions as normal distributions and returns the probability of overlap
+between the two distributions. Interactions can be any positive or negative values,
+but this loss function ignores the magnitude of the interaction – interactions are
+grouped in to {i &lt;= 0} and {i &gt; 0}.</p>
+<dl class="method">
+<dt id="tensorrec.loss_graphs.SeparationLossGraph.connect_loss_graph">
+<code class="descname">connect_loss_graph</code><span class="sig-paren">(</span><em>tf_prediction_serial</em>, <em>tf_interactions_serial</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#SeparationLossGraph.connect_loss_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.SeparationLossGraph.connect_loss_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_prediction_serial</strong> – </li>
+<li><strong>tf_interactions_serial</strong> – </li>
+<li><strong>**kwargs</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.loss_graphs.WMRBLossGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.loss_graphs.</code><code class="descname">WMRBLossGraph</code><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#WMRBLossGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.WMRBLossGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.loss_graphs.AbstractLossGraph" title="tensorrec.loss_graphs.AbstractLossGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.loss_graphs.AbstractLossGraph</span></code></a></p>
+<p>Approximation of <a class="reference external" href="http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf">http://ceur-ws.org/Vol-1905/recsys2017_poster3.pdf</a>
+Interactions can be any positive values, but magnitude is ignored.
+Negative interactions are ignored.</p>
+<dl class="method">
+<dt id="tensorrec.loss_graphs.WMRBLossGraph.connect_loss_graph">
+<code class="descname">connect_loss_graph</code><span class="sig-paren">(</span><em>tf_prediction_serial</em>, <em>tf_interactions</em>, <em>tf_sample_predictions</em>, <em>tf_n_items</em>, <em>tf_n_sampled_items</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#WMRBLossGraph.connect_loss_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.WMRBLossGraph.connect_loss_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_prediction_serial</strong> – </li>
+<li><strong>tf_interactions</strong> – </li>
+<li><strong>tf_sample_predictions</strong> – </li>
+<li><strong>tf_n_items</strong> – </li>
+<li><strong>tf_n_sampled_items</strong> – </li>
+<li><strong>**kwargs</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.loss_graphs.WMRBLossGraph.is_sample_based">
+<code class="descname">is_sample_based</code><em class="property"> = True</em><a class="headerlink" href="#tensorrec.loss_graphs.WMRBLossGraph.is_sample_based" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.loss_graphs.WMRBLossGraph.weighted_margin_rank_batch">
+<code class="descname">weighted_margin_rank_batch</code><span class="sig-paren">(</span><em>tf_prediction_serial</em>, <em>tf_interactions</em>, <em>tf_sample_predictions</em>, <em>tf_n_items</em>, <em>tf_n_sampled_items</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/loss_graphs.html#WMRBLossGraph.weighted_margin_rank_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.loss_graphs.WMRBLossGraph.weighted_margin_rank_batch" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_prediction_serial</strong> – </li>
+<li><strong>tf_interactions</strong> – </li>
+<li><strong>tf_sample_predictions</strong> – </li>
+<li><strong>tf_n_items</strong> – </li>
+<li><strong>tf_n_sampled_items</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-tensorrec.prediction_graphs"></span><div class="section" id="prediction-graphs">
+<h2>Prediction Graphs<a class="headerlink" href="#prediction-graphs" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tensorrec.prediction_graphs.AbstractPredictionGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.prediction_graphs.</code><code class="descname">AbstractPredictionGraph</code><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#AbstractPredictionGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.AbstractPredictionGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="tensorrec.prediction_graphs.AbstractPredictionGraph.connect_dense_prediction_graph">
+<code class="descname">connect_dense_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#AbstractPredictionGraph.connect_dense_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.AbstractPredictionGraph.connect_dense_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is responsible for consuming user and item representations
+and calculating prediction scores for all
+possible user-item pairs based on these representations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tf_user_representation</strong> – tf.Tensor</li>
+<li><strong>user representations as a Tensor of shape</strong><strong> [</strong><strong>n_users</strong><strong>, </strong><strong>n_components</strong><strong>]</strong> (<em>The</em>) – </li>
+<li><strong>tf_item_representation</strong> – tf.Tensor</li>
+<li><strong>item representations as a Tensor of shape</strong><strong> [</strong><strong>n_items</strong><strong>, </strong><strong>n_components</strong><strong>]</strong> (<em>The</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The predictions as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tf.Tensor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.prediction_graphs.AbstractPredictionGraph.connect_serial_prediction_graph">
+<code class="descname">connect_serial_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em>, <em>tf_x_user</em>, <em>tf_x_item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#AbstractPredictionGraph.connect_serial_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.AbstractPredictionGraph.connect_serial_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is responsible for consuming user and item
+representations and indices and calculating prediction
+scores for particular user-item pairs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tf_user_representation</strong> (<em>tf.Tensor</em>) – The user representations as a Tensor of
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code></li>
+<li><strong>tf_item_representation</strong> (<em>tf.Tensor</em>) – The item representations as a Tensor of shape
+<code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_components]</span></code></li>
+<li><strong>tf_x_user</strong> (<em>tf.Tensor</em>) – The users for whom to predict as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_interactions]</span></code></li>
+<li><strong>tf_x_item</strong> (<em>tf.Tensor</em>) – The items for which to predict as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_interactions]</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The predictions as a Tensor of shape [n_interactions]</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tf.Tensor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.prediction_graphs.CosineSimilarityPredictionGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.prediction_graphs.</code><code class="descname">CosineSimilarityPredictionGraph</code><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#CosineSimilarityPredictionGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.CosineSimilarityPredictionGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.prediction_graphs.AbstractPredictionGraph" title="tensorrec.prediction_graphs.AbstractPredictionGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.prediction_graphs.AbstractPredictionGraph</span></code></a></p>
+<p>This prediction function calculates the prediction as the cosine
+between the user and item representations. Prediction = cos(user_repr, item_repr)</p>
+<dl class="method">
+<dt id="tensorrec.prediction_graphs.CosineSimilarityPredictionGraph.connect_dense_prediction_graph">
+<code class="descname">connect_dense_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#CosineSimilarityPredictionGraph.connect_dense_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.CosineSimilarityPredictionGraph.connect_dense_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_user_representation</strong> – </li>
+<li><strong>tf_item_representation</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.prediction_graphs.CosineSimilarityPredictionGraph.connect_serial_prediction_graph">
+<code class="descname">connect_serial_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em>, <em>tf_x_user</em>, <em>tf_x_item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#CosineSimilarityPredictionGraph.connect_serial_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.CosineSimilarityPredictionGraph.connect_serial_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_user_representation</strong> – </li>
+<li><strong>tf_item_representation</strong> – </li>
+<li><strong>tf_x_user</strong> – </li>
+<li><strong>tf_x_item</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.prediction_graphs.DotProductPredictionGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.prediction_graphs.</code><code class="descname">DotProductPredictionGraph</code><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#DotProductPredictionGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.DotProductPredictionGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.prediction_graphs.AbstractPredictionGraph" title="tensorrec.prediction_graphs.AbstractPredictionGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.prediction_graphs.AbstractPredictionGraph</span></code></a></p>
+<p>This prediction function calculates the prediction as the dot
+product between the user and item representations.
+Prediction = user_repr * item_repr</p>
+<dl class="method">
+<dt id="tensorrec.prediction_graphs.DotProductPredictionGraph.connect_dense_prediction_graph">
+<code class="descname">connect_dense_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#DotProductPredictionGraph.connect_dense_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.DotProductPredictionGraph.connect_dense_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_user_representation</strong> – </li>
+<li><strong>tf_item_representation</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.prediction_graphs.DotProductPredictionGraph.connect_serial_prediction_graph">
+<code class="descname">connect_serial_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em>, <em>tf_x_user</em>, <em>tf_x_item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#DotProductPredictionGraph.connect_serial_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.DotProductPredictionGraph.connect_serial_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_user_representation</strong> – </li>
+<li><strong>tf_item_representation</strong> – </li>
+<li><strong>tf_x_user</strong> – </li>
+<li><strong>tf_x_item</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.prediction_graphs.</code><code class="descname">EuclideanSimilarityPredictionGraph</code><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclideanSimilarityPredictionGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.prediction_graphs.AbstractPredictionGraph" title="tensorrec.prediction_graphs.AbstractPredictionGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.prediction_graphs.AbstractPredictionGraph</span></code></a></p>
+<p>This prediction function calculates the prediction as the negative
+Euclidean distance between the user and item representations.
+Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))</p>
+<dl class="method">
+<dt id="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_dense_prediction_graph">
+<code class="descname">connect_dense_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclideanSimilarityPredictionGraph.connect_dense_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_dense_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_user_representation</strong> – </li>
+<li><strong>tf_item_representation</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_serial_prediction_graph">
+<code class="descname">connect_serial_prediction_graph</code><span class="sig-paren">(</span><em>tf_user_representation</em>, <em>tf_item_representation</em>, <em>tf_x_user</em>, <em>tf_x_item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/prediction_graphs.html#EuclideanSimilarityPredictionGraph.connect_serial_prediction_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.connect_serial_prediction_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_user_representation</strong> – </li>
+<li><strong>tf_item_representation</strong> – </li>
+<li><strong>tf_x_user</strong> – </li>
+<li><strong>tf_x_item</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.epsilon">
+<code class="descname">epsilon</code><em class="property"> = 1e-16</em><a class="headerlink" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph.epsilon" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph">
+<code class="descclassname">tensorrec.prediction_graphs.</code><code class="descname">EuclidianSimilarityPredictionGraph</code><a class="headerlink" href="#tensorrec.prediction_graphs.EuclidianSimilarityPredictionGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph" title="tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.prediction_graphs.EuclideanSimilarityPredictionGraph</span></code></a></p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-tensorrec.recommendation_graphs"></span><div class="section" id="recommendation-graphs">
+<h2>Recommendation Graphs<a class="headerlink" href="#recommendation-graphs" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.bias_prediction_dense">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">bias_prediction_dense</code><span class="sig-paren">(</span><em>tf_prediction</em>, <em>tf_projected_user_biases</em>, <em>tf_projected_item_biases</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#bias_prediction_dense"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.bias_prediction_dense" title="Permalink to this definition">¶</a></dt>
+<dd><p>Broadcasts user and item biases across their
+respective axes of the dense predictions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_prediction</strong> – </li>
+<li><strong>tf_projected_user_biases</strong> – </li>
+<li><strong>tf_projected_item_biases</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.bias_prediction_serial">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">bias_prediction_serial</code><span class="sig-paren">(</span><em>tf_prediction_serial</em>, <em>tf_projected_user_biases</em>, <em>tf_projected_item_biases</em>, <em>tf_x_user</em>, <em>tf_x_item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#bias_prediction_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.bias_prediction_serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the bias per user/item pair and adds it to the serial predictions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_prediction_serial</strong> – </li>
+<li><strong>tf_projected_user_biases</strong> – </li>
+<li><strong>tf_projected_item_biases</strong> – </li>
+<li><strong>tf_x_user</strong> – </li>
+<li><strong>tf_x_item</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.collapse_mixture_of_tastes">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">collapse_mixture_of_tastes</code><span class="sig-paren">(</span><em>tastes_predictions</em>, <em>tastes_attentions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#collapse_mixture_of_tastes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.collapse_mixture_of_tastes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collapses a list of prediction nodes in to a single prediction node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tastes_predictions</strong> – </li>
+<li><strong>tastes_attentions</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.densify_sampled_item_predictions">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">densify_sampled_item_predictions</code><span class="sig-paren">(</span><em>tf_sample_predictions_serial</em>, <em>tf_n_sampled_items</em>, <em>tf_n_users</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#densify_sampled_item_predictions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.densify_sampled_item_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns the serial predictions of the sample items in to
+a dense matrix of shape [ n_users, n_sampled_items ]</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_sample_predictions_serial</strong> – </li>
+<li><strong>tf_n_sampled_items</strong> – </li>
+<li><strong>tf_n_users</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.predict_similar_items">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">predict_similar_items</code><span class="sig-paren">(</span><em>prediction_graph_factory</em>, <em>tf_item_representation</em>, <em>tf_similar_items_ids</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#predict_similar_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.predict_similar_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the similarity between the given item ids and all
+other items using the prediction graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>prediction_graph_factory</strong> – </li>
+<li><strong>tf_item_representation</strong> – </li>
+<li><strong>tf_similar_items_ids</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.project_biases">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">project_biases</code><span class="sig-paren">(</span><em>tf_features</em>, <em>n_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#project_biases"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.project_biases" title="Permalink to this definition">¶</a></dt>
+<dd><p>Projects the biases from the feature space to calculate bias per actor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_features</strong> – </li>
+<li><strong>n_features</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.rank_predictions">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">rank_predictions</code><span class="sig-paren">(</span><em>tf_prediction</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#rank_predictions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.rank_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Double-sortation serves as a ranking process
+The +1 is so the top-ranked has a non-zero rank</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tf_prediction</strong> – </td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.relative_cosine">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">relative_cosine</code><span class="sig-paren">(</span><em>tf_tensor_1</em>, <em>tf_tensor_2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#relative_cosine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.relative_cosine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the cosine of every row in tensor_1 against every row in tensor_2.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_tensor_1</strong> – </li>
+<li><strong>tf_tensor_2</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.recommendation_graphs.split_sparse_tensor_indices">
+<code class="descclassname">tensorrec.recommendation_graphs.</code><code class="descname">split_sparse_tensor_indices</code><span class="sig-paren">(</span><em>tf_sparse_tensor</em>, <em>n_dimensions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/recommendation_graphs.html#split_sparse_tensor_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.recommendation_graphs.split_sparse_tensor_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Separates the each dimension of a sparse tensor’s indices
+into independent tensors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_sparse_tensor</strong> – </li>
+<li><strong>n_dimensions</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-tensorrec.representation_graphs"></span><div class="section" id="representation-graphs">
+<h2>Representation Graphs<a class="headerlink" href="#representation-graphs" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tensorrec.representation_graphs.AbstractKerasRepresentationGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.representation_graphs.</code><code class="descname">AbstractKerasRepresentationGraph</code><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#AbstractKerasRepresentationGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.AbstractKerasRepresentationGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.representation_graphs.AbstractRepresentationGraph</span></code></a></p>
+<p>This abstract RepresentationGraph allows you to use Keras
+layers as a representation function by overriding the
+<code class="docutils literal notranslate"><span class="pre">create_layers()</span></code> method.</p>
+<dl class="method">
+<dt id="tensorrec.representation_graphs.AbstractKerasRepresentationGraph.connect_representation_graph">
+<code class="descname">connect_representation_graph</code><span class="sig-paren">(</span><em>tf_features</em>, <em>n_components</em>, <em>n_features</em>, <em>node_name_ending</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#AbstractKerasRepresentationGraph.connect_representation_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.AbstractKerasRepresentationGraph.connect_representation_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_features</strong> – </li>
+<li><strong>n_components</strong> – </li>
+<li><strong>n_features</strong> – </li>
+<li><strong>node_name_ending</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.representation_graphs.AbstractKerasRepresentationGraph.create_layers">
+<code class="descname">create_layers</code><span class="sig-paren">(</span><em>n_features</em>, <em>n_components</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#AbstractKerasRepresentationGraph.create_layers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.AbstractKerasRepresentationGraph.create_layers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of Keras layers.</p>
+<p>n_features (int): The input size of the first Keras layer.
+n_components (int): The output size of the final Keras layer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A list of Keras layers.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.representation_graphs.AbstractRepresentationGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.representation_graphs.</code><code class="descname">AbstractRepresentationGraph</code><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#AbstractRepresentationGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="tensorrec.representation_graphs.AbstractRepresentationGraph.connect_representation_graph">
+<code class="descname">connect_representation_graph</code><span class="sig-paren">(</span><em>tf_features</em>, <em>n_components</em>, <em>n_features</em>, <em>node_name_ending</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#AbstractRepresentationGraph.connect_representation_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.AbstractRepresentationGraph.connect_representation_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is responsible for connecting the user/item
+features to their respective latent representations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tf_features</strong> (<em>tf.SparseTensor</em>) – The user/item features as a SparseTensor of shape <code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">n_users,</span> <span class="pre">n_features</span> <span class="pre">]</span></code></li>
+<li><strong>n_components</strong> (<em>int</em>) – The size of the latent representation per user/item.</li>
+<li><strong>n_features</strong> (<em>int</em>) – The size of the input features per user/item.</li>
+<li><strong>node_name_ending</strong> (<em>str</em>) – A string, either ‘user’ or ‘item’, which can be added to</li>
+<li><strong>node names for clarity.</strong> (<em>TensorFlow</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The user/item representation as a Tensor of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tf.Tensor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.representation_graphs.</code><code class="descname">FeaturePassThroughRepresentationGraph</code><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#FeaturePassThroughRepresentationGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.representation_graphs.AbstractRepresentationGraph</span></code></a></p>
+<p>Uses the features as the representation. This representation
+graph does no transformation to the features.</p>
+<dl class="method">
+<dt id="tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph.connect_representation_graph">
+<code class="descname">connect_representation_graph</code><span class="sig-paren">(</span><em>tf_features</em>, <em>n_components</em>, <em>n_features</em>, <em>node_name_ending</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#FeaturePassThroughRepresentationGraph.connect_representation_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph.connect_representation_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_features</strong> – </li>
+<li><strong>n_components</strong> – </li>
+<li><strong>n_features</strong> – </li>
+<li><strong>node_name_ending</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.representation_graphs.LinearRepresentationGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.representation_graphs.</code><code class="descname">LinearRepresentationGraph</code><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#LinearRepresentationGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.LinearRepresentationGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.representation_graphs.AbstractRepresentationGraph</span></code></a></p>
+<p>Calculates the representation by passing the features through a linear embedding.
+Rough approximation of <a class="reference external" href="http://ceur-ws.org/Vol-1448/paper4.pdf">http://ceur-ws.org/Vol-1448/paper4.pdf</a></p>
+<dl class="method">
+<dt id="tensorrec.representation_graphs.LinearRepresentationGraph.connect_representation_graph">
+<code class="descname">connect_representation_graph</code><span class="sig-paren">(</span><em>tf_features</em>, <em>n_components</em>, <em>n_features</em>, <em>node_name_ending</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#LinearRepresentationGraph.connect_representation_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.LinearRepresentationGraph.connect_representation_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_features</strong> – </li>
+<li><strong>n_components</strong> – </li>
+<li><strong>n_features</strong> – </li>
+<li><strong>node_name_ending</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.representation_graphs.NormalizedLinearRepresentationGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.representation_graphs.</code><code class="descname">NormalizedLinearRepresentationGraph</code><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#NormalizedLinearRepresentationGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.NormalizedLinearRepresentationGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.representation_graphs.LinearRepresentationGraph" title="tensorrec.representation_graphs.LinearRepresentationGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.representation_graphs.LinearRepresentationGraph</span></code></a></p>
+<p>Calculates the representation by passing the features through a linear embedding.
+Embeddings are L2 normalized, meaning all embeddings have equal magnitude. This can be useful
+as a user representation in mixture-of-tastes models, preventing one taste from having a much
+larger magnitude than others and dominating the recommendations.</p>
+<dl class="method">
+<dt id="tensorrec.representation_graphs.NormalizedLinearRepresentationGraph.connect_representation_graph">
+<code class="descname">connect_representation_graph</code><span class="sig-paren">(</span><em>tf_features</em>, <em>n_components</em>, <em>n_features</em>, <em>node_name_ending</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#NormalizedLinearRepresentationGraph.connect_representation_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.NormalizedLinearRepresentationGraph.connect_representation_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_features</strong> – </li>
+<li><strong>n_components</strong> – </li>
+<li><strong>n_features</strong> – </li>
+<li><strong>node_name_ending</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.representation_graphs.ReLURepresentationGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.representation_graphs.</code><code class="descname">ReLURepresentationGraph</code><span class="sig-paren">(</span><em>relu_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#ReLURepresentationGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.ReLURepresentationGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.representation_graphs.AbstractRepresentationGraph</span></code></a></p>
+<p>Calculates the representations by passing the features through
+a single-layer ReLU neural network.</p>
+<p>relu_size (int or None): The number of nodes in the ReLU layer.
+If None, the layer will be of size <cite>4 * n_components</cite>.</p>
+<dl class="method">
+<dt id="tensorrec.representation_graphs.ReLURepresentationGraph.connect_representation_graph">
+<code class="descname">connect_representation_graph</code><span class="sig-paren">(</span><em>tf_features</em>, <em>n_components</em>, <em>n_features</em>, <em>node_name_ending</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#ReLURepresentationGraph.connect_representation_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.ReLURepresentationGraph.connect_representation_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_features</strong> – </li>
+<li><strong>n_components</strong> – </li>
+<li><strong>n_features</strong> – </li>
+<li><strong>node_name_ending</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tensorrec.representation_graphs.WeightedFeaturePassThroughRepresentationGraph">
+<em class="property">class </em><code class="descclassname">tensorrec.representation_graphs.</code><code class="descname">WeightedFeaturePassThroughRepresentationGraph</code><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#WeightedFeaturePassThroughRepresentationGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.WeightedFeaturePassThroughRepresentationGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph" title="tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorrec.representation_graphs.FeaturePassThroughRepresentationGraph</span></code></a></p>
+<p>Uses the features as the representation. This representation
+graph learns weights for each feature.</p>
+<dl class="method">
+<dt id="tensorrec.representation_graphs.WeightedFeaturePassThroughRepresentationGraph.connect_representation_graph">
+<code class="descname">connect_representation_graph</code><span class="sig-paren">(</span><em>tf_features</em>, <em>n_components</em>, <em>n_features</em>, <em>node_name_ending</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/representation_graphs.html#WeightedFeaturePassThroughRepresentationGraph.connect_representation_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.representation_graphs.WeightedFeaturePassThroughRepresentationGraph.connect_representation_graph" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tf_features</strong> – </li>
+<li><strong>n_components</strong> – </li>
+<li><strong>n_features</strong> – </li>
+<li><strong>node_name_ending</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-tensorrec.session_management"></span><div class="section" id="session-management">
+<h2>Session Management<a class="headerlink" href="#session-management" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="tensorrec.session_management.get_session">
+<code class="descclassname">tensorrec.session_management.</code><code class="descname">get_session</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/session_management.html#get_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.session_management.get_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.session_management.set_session">
+<code class="descclassname">tensorrec.session_management.</code><code class="descname">set_session</code><span class="sig-paren">(</span><em>session</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/session_management.html#set_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.session_management.set_session" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>session</strong> – </td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-tensorrec.tensorrec"></span><div class="section" id="tensorrec-recommendation-model">
+<h2>TensorRec Recommendation Model<a class="headerlink" href="#tensorrec-recommendation-model" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="tensorrec.tensorrec.TensorRec">
+<em class="property">class </em><code class="descclassname">tensorrec.tensorrec.</code><code class="descname">TensorRec</code><span class="sig-paren">(</span><em>n_components=100</em>, <em>n_tastes=1</em>, <em>user_repr_graph=&lt;tensorrec.representation_graphs.LinearRepresentationGraph object&gt;</em>, <em>item_repr_graph=&lt;tensorrec.representation_graphs.LinearRepresentationGraph object&gt;</em>, <em>attention_graph=None</em>, <em>prediction_graph=&lt;tensorrec.prediction_graphs.DotProductPredictionGraph object&gt;</em>, <em>loss_graph=&lt;tensorrec.loss_graphs.RMSELossGraph object&gt;</em>, <em>biased=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A TensorRec recommendation model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n_components</strong> (<em>int</em>) – The dimension of a single output of the representation function. Must be &gt;= 1.</li>
+<li><strong>n_tastes</strong> (<em>int</em>) – The number of tastes/reprs to be calculated for each user. Must be &gt;= 1.</li>
+<li><strong>user_repr_graph</strong> (<a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><em>AbstractRepresentationGraph</em></a>) – An object which inherits <code class="docutils literal notranslate"><span class="pre">AbstractRepresentationGraph</span></code>
+that contains a method to calculate user representations. See tensorrec.representation_graphs for examples.</li>
+<li><strong>item_repr_graph</strong> (<a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><em>AbstractRepresentationGraph</em></a>) – An object which inherits <code class="docutils literal notranslate"><span class="pre">AbstractRepresentationGraph</span></code> that
+contains a method to calculate item representations. See tensorrec.representation_graphs for examples.</li>
+<li><strong>attention_graph</strong> (<a class="reference internal" href="#tensorrec.representation_graphs.AbstractRepresentationGraph" title="tensorrec.representation_graphs.AbstractRepresentationGraph"><em>AbstractRepresentationGraph</em></a><em> or </em><em>None</em>) – Optional. An object which inherits
+<code class="docutils literal notranslate"><span class="pre">AbstractRepresentationGraph</span></code> that contains a method to calculate user attention. Any valid <cite>repr_graph</cite>
+is also a valid attention graph. If None, no attention process will be applied.</li>
+<li><strong>prediction_graph</strong> (<a class="reference internal" href="#tensorrec.prediction_graphs.AbstractPredictionGraph" title="tensorrec.prediction_graphs.AbstractPredictionGraph"><em>AbstractPredictionGraph</em></a>) – An object which inherits <code class="docutils literal notranslate"><span class="pre">AbstractPredictionGraph</span></code>
+that contains a method to calculate predictions from a pair of user/item reprs.
+See tensorrec.prediction_graphs for examples.</li>
+<li><strong>loss_graph</strong> (<a class="reference internal" href="#tensorrec.loss_graphs.AbstractLossGraph" title="tensorrec.loss_graphs.AbstractLossGraph"><em>AbstractLossGraph</em></a>) – An object which inherits AbstractLossGraph that contains
+a method to calculate the loss function. See tensorrec.loss_graphs for examples.</li>
+<li><strong>biased</strong> (<em>bool</em>) – If True, a bias value will be calculated for every user feature and item feature.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>interactions</em>, <em>user_features</em>, <em>item_features</em>, <em>epochs=100</em>, <em>learning_rate=0.1</em>, <em>alpha=1e-05</em>, <em>verbose=False</em>, <em>user_batch_size=None</em>, <em>n_sampled_items=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs the TensorRec graph and fits the model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>interactions</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of interactions of
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in <cite>tensorrec.input_utils</cite>.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features of
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>epochs</strong> (<em>int</em>) – The number of epochs to fit the model.</li>
+<li><strong>learning_rate</strong> (<em>float</em>) – The learning rate of the model.</li>
+<li><strong>alpha</strong> (<em>float</em>) – The weight regularization loss coefficient.</li>
+<li><strong>verbose</strong> (<em>bool</em>) – If true, the model will print a number of status statements during fitting.</li>
+<li><strong>user_batch_size</strong> (<em>int</em><em> or </em><em>None</em>) – The maximum number of users per batch, or None for all users.</li>
+<li><strong>n_sampled_items</strong> (<em>int</em><em> or </em><em>None</em>) – The number of items to sample per user for use in loss functions.
+Must be non-None if self.loss_graph_factory.is_sample_based is True.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.fit_partial">
+<code class="descname">fit_partial</code><span class="sig-paren">(</span><em>interactions</em>, <em>user_features</em>, <em>item_features</em>, <em>epochs=1</em>, <em>learning_rate=0.1</em>, <em>alpha=1e-05</em>, <em>verbose=False</em>, <em>user_batch_size=None</em>, <em>n_sampled_items=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.fit_partial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.fit_partial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs the TensorRec graph and fits the model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>interactions</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of interactions
+of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user
+features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>epochs</strong> (<em>int</em>) – The number of epochs to fit the model.</li>
+<li><strong>learning_rate</strong> (<em>float</em>) – The learning rate of the model.</li>
+<li><strong>alpha</strong> (<em>float</em>) – The weight regularization loss coefficient.</li>
+<li><strong>verbose</strong> (<em>bool</em>) – If true, the model will print a number of status statements during fitting.</li>
+<li><strong>user_batch_size</strong> (<em>int</em><em> or </em><em>None</em>) – The maximum number of users per batch, or None for all users.</li>
+<li><strong>n_sampled_items</strong> (<em>int</em><em> or </em><em>None</em>) – The number of items to sample per user for use in loss functions.
+Must be non-None if self.loss_graph_factory.is_sample_based is True.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="tensorrec.tensorrec.TensorRec.load_model">
+<em class="property">classmethod </em><code class="descname">load_model</code><span class="sig-paren">(</span><em>directory_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the TensorRec model and TensorFlow session saved in the given directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>directory_path</strong> (<em>str</em>) – The path to the directory containing the saved model.</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>user_features</em>, <em>item_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict recommendation scores for the given users and items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user
+features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The predictions in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.predict_item_bias">
+<code class="descname">predict_item_bias</code><span class="sig-paren">(</span><em>item_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_item_bias"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_item_bias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict bias values for the given items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The item biases in an ndarray of shape [n_items]</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.predict_item_representation">
+<code class="descname">predict_item_representation</code><span class="sig-paren">(</span><em>item_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_item_representation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_item_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict representation vectors for the given items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The latent item representations in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_components]</span></code></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.predict_rank">
+<code class="descname">predict_rank</code><span class="sig-paren">(</span><em>user_features</em>, <em>item_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_rank"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict recommendation ranks for the given users and items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The ranks in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.predict_similar_items">
+<code class="descname">predict_similar_items</code><span class="sig-paren">(</span><em>item_features</em>, <em>item_ids</em>, <em>n_similar</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_similar_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_similar_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts the most similar items to the given item_ids.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features of shape [n_items, n_item_features].</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_ids</strong> (<em>list</em><em> or </em><em>np.array</em>) – The ids of the items of interest.
+E.g. [4, 8, 12] to get sims for items 4, 8, and 12.</li>
+<li><strong>n_similar</strong> (<em>int</em>) – The number of similar items to get per item of interest.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The first level list corresponds to input arg item_ids. The second level
+list is of length n_similar and contains tuples of <code class="docutils literal notranslate"><span class="pre">(item_id,</span> <span class="pre">score)</span></code> for each similar item.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of lists of tuples</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.predict_user_attention_representation">
+<code class="descname">predict_user_attention_representation</code><span class="sig-paren">(</span><em>user_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_user_attention_representation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_user_attention_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict latent attention representation vectors for the given users.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The latent user attention representations in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.predict_user_bias">
+<code class="descname">predict_user_bias</code><span class="sig-paren">(</span><em>user_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_user_bias"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_user_bias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict bias values for the given users.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The user biases in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users]</span></code></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.predict_user_representation">
+<code class="descname">predict_user_representation</code><span class="sig-paren">(</span><em>user_features</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.predict_user_representation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.predict_user_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict latent representation vectors for the given users.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul class="simple">
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The latent user representations in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_components]</span></code>.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tensorrec.tensorrec.TensorRec.save_model">
+<code class="descname">save_model</code><span class="sig-paren">(</span><em>directory_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/tensorrec.html#TensorRec.save_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.tensorrec.TensorRec.save_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the model to files in the given directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>directory_path</strong> (<em>str</em>) – The path to the directory in which to save the model.</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-tensorrec.util"></span><div class="section" id="utils">
+<h2>Utils<a class="headerlink" href="#utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="tensorrec.util.append_to_string_at_point">
+<code class="descclassname">tensorrec.util.</code><code class="descname">append_to_string_at_point</code><span class="sig-paren">(</span><em>string</em>, <em>value</em>, <em>point</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/util.html#append_to_string_at_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.util.append_to_string_at_point" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>string</strong> – </li>
+<li><strong>value</strong> – </li>
+<li><strong>point</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.util.calculate_batched_alpha">
+<code class="descclassname">tensorrec.util.</code><code class="descname">calculate_batched_alpha</code><span class="sig-paren">(</span><em>num_batches</em>, <em>alpha</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/util.html#calculate_batched_alpha"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.util.calculate_batched_alpha" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>num_batches</strong> – </li>
+<li><strong>alpha</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.util.datasets_from_raw_input">
+<code class="descclassname">tensorrec.util.</code><code class="descname">datasets_from_raw_input</code><span class="sig-paren">(</span><em>raw_input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/util.html#datasets_from_raw_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.util.datasets_from_raw_input" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>raw_input</strong> – </td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.util.generate_dummy_data">
+<code class="descclassname">tensorrec.util.</code><code class="descname">generate_dummy_data</code><span class="sig-paren">(</span><em>num_users=15000</em>, <em>num_items=30000</em>, <em>interaction_density=0.00045</em>, <em>num_user_features=200</em>, <em>num_item_features=200</em>, <em>n_features_per_user=20</em>, <em>n_features_per_item=20</em>, <em>pos_int_ratio=0.5</em>, <em>return_datasets=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/util.html#generate_dummy_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.util.generate_dummy_data" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>num_users</strong> – </li>
+<li><strong>num_items</strong> – </li>
+<li><strong>interaction_density</strong> – </li>
+<li><strong>num_user_features</strong> – </li>
+<li><strong>num_item_features</strong> – </li>
+<li><strong>n_features_per_user</strong> – </li>
+<li><strong>n_features_per_item</strong> – </li>
+<li><strong>pos_int_ratio</strong> – </li>
+<li><strong>return_datasets</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.util.generate_dummy_data_with_indicator">
+<code class="descclassname">tensorrec.util.</code><code class="descname">generate_dummy_data_with_indicator</code><span class="sig-paren">(</span><em>num_users=15000</em>, <em>num_items=30000</em>, <em>interaction_density=0.00045</em>, <em>pos_int_ratio=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/util.html#generate_dummy_data_with_indicator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.util.generate_dummy_data_with_indicator" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>num_users</strong> – </li>
+<li><strong>num_items</strong> – </li>
+<li><strong>interaction_density</strong> – </li>
+<li><strong>pos_int_ratio</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.util.sample_items">
+<code class="descclassname">tensorrec.util.</code><code class="descname">sample_items</code><span class="sig-paren">(</span><em>n_items</em>, <em>n_users</em>, <em>n_sampled_items</em>, <em>replace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/util.html#sample_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.util.sample_items" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n_items</strong> – </li>
+<li><strong>n_users</strong> – </li>
+<li><strong>n_sampled_items</strong> – </li>
+<li><strong>replace</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tensorrec.util.simple_tf_print">
+<code class="descclassname">tensorrec.util.</code><code class="descname">simple_tf_print</code><span class="sig-paren">(</span><em>tensor</em>, <em>places=100</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorrec/util.html#simple_tf_print"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tensorrec.util.simple_tf_print" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tensor</strong> – </li>
+<li><strong>places</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="TensorRec" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, James Kirk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.25.5',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
