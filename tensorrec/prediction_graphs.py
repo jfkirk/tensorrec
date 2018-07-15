@@ -38,9 +38,9 @@ class AbstractPredictionGraph(object):
 
         Args:
             tf_user_representation (tf.Tensor): The user representations as a Tensor of
-            shape ``[n_users, n_components]``
+                shape ``[n_users, n_components]``
             tf_item_representation (tf.Tensor): The item representations as a Tensor of shape
-             ``[n_items, n_components]``
+                ``[n_items, n_components]``
             tf_x_user (tf.Tensor): The users for whom to predict as a Tensor of shape ``[n_interactions]``
             tf_x_item (tf.Tensor): The items for which to predict as a Tensor of shape ``[n_interactions]``
 

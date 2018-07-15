@@ -558,7 +558,7 @@ class TensorRec(object):
             verbose (bool): If true, the model will print a number of status statements during fitting.
             user_batch_size (int or None): The maximum number of users per batch, or None for all users.
             n_sampled_items (int or None): The number of items to sample per user for use in loss functions.
-            Must be non-None if self.loss_graph_factory.is_sample_based is True.
+                Must be non-None if self.loss_graph_factory.is_sample_based is True.
         """
 
         session = get_session()
@@ -812,11 +812,11 @@ class TensorRec(object):
         """Predict bias values for the given items.
 
         Args:
-        item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features
-            of shape ``[n_items, n_item_features]``.
-            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-            * If a str, the string must be the path to a TFRecord file.
-            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features
+                of shape ``[n_items, n_item_features]``.
+                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+                * If a str, the string must be the path to a TFRecord file.
+                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
 
         Returns:
              np.ndarray: The item biases in an ndarray of shape [n_items]
