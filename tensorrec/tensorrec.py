@@ -539,19 +539,25 @@ class TensorRec(object):
         Args:
             interactions (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of interactions
                 of shape ``[n_users, n_items]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+
             user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user
                 features of shape ``[n_users, n_user_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+
             item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features
                 of shape ``[n_items, n_item_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+
             epochs (int): The number of epochs to fit the model.
             learning_rate (float): The learning rate of the model.
             alpha (float): The weight regularization loss coefficient.
@@ -629,17 +635,20 @@ class TensorRec(object):
         Args:
             user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user
                 features of shape ``[n_users, n_user_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+
             item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features
                 of shape ``[n_items, n_item_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
 
         Returns:
-             np.ndarray: The predictions in an ndarray of shape [n_users, n_items]
+             np.ndarray: The predictions in an ndarray of shape ``[n_users, n_items]``
         """
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=user_features,
@@ -656,6 +665,7 @@ class TensorRec(object):
         Args:
             item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):
                 A matrix of item features of shape [n_items, n_item_features].
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
@@ -665,7 +675,7 @@ class TensorRec(object):
 
         Returns:
             list of lists of tuples : The first level list corresponds to input arg item_ids. The second level
-            list is of length n_similar and contains tuples of (item_id, score) for each similar item.
+            list is of length n_similar and contains tuples of ``(item_id, score)`` for each similar item.
         """
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=None,
@@ -690,17 +700,20 @@ class TensorRec(object):
         Args:
             user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features
                 of shape ``[n_users, n_user_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+
             item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features
                 of shape ``[n_items, n_item_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
 
         Returns:
-             np.ndarray : The ranks in an ndarray of shape [n_users, n_items]
+             np.ndarray : The ranks in an ndarray of shape ``[n_users, n_items]``
         """
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=user_features,
@@ -714,11 +727,13 @@ class TensorRec(object):
     def predict_user_representation(self, user_features):
         """Predict latent representation vectors for the given users.
 
-        user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):
-            A matrix of user features of shape ``[n_users, n_user_features]``.
-            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-            * If a str, the string must be the path to a TFRecord file.
-            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+        Args:
+            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):
+                A matrix of user features of shape ``[n_users, n_user_features]``.
+
+                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+                * If a str, the string must be the path to a TFRecord file.
+                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
 
         Returns:
              np.ndarray: The latent user representations in an ndarray of shape ``[n_users, n_components]``.
@@ -739,11 +754,13 @@ class TensorRec(object):
     def predict_user_attention_representation(self, user_features):
         """Predict latent attention representation vectors for the given users.
 
-        user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features
-            of shape ``[n_users, n_user_features]``.
-            * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-            * If a str, the string must be the path to a TFRecord file.
-            * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
+        Args:
+            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features
+                of shape ``[n_users, n_user_features]``.
+
+                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
+                * If a str, the string must be the path to a TFRecord file.
+                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
 
         Returns:
              np.ndarray: The latent user attention representations in an ndarray of shape ``[n_users, n_components]``
@@ -771,6 +788,7 @@ class TensorRec(object):
         Args:
             item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features
                 of shape ``[n_items, n_item_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
@@ -791,6 +809,7 @@ class TensorRec(object):
         Args:
             user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list):
                 A matrix of user features of shape ``[n_users, n_user_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
@@ -814,6 +833,7 @@ class TensorRec(object):
         Args:
             item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features
                 of shape ``[n_items, n_item_features]``.
+
                 * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
