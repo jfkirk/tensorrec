@@ -646,19 +646,25 @@
 <span class="sd">        Args:</span>
 <span class="sd">            interactions (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of interactions of</span>
 <span class="sd">                shape ``[n_users, n_items]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in `tensorrec.input_utils`.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
 <span class="sd">            user_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of user features of</span>
 <span class="sd">                shape ``[n_users, n_user_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
 <span class="sd">            item_features (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of item features</span>
 <span class="sd">                of shape ``[n_items, n_item_features]``.</span>
+
 <span class="sd">                * If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</span>
 <span class="sd">                * If a str, the string must be the path to a TFRecord file.</span>
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
+
 <span class="sd">            epochs (int): The number of epochs to fit the model.</span>
 <span class="sd">            learning_rate (float): The learning rate of the model.</span>
 <span class="sd">            alpha (float): The weight regularization loss coefficient.</span>
@@ -795,7 +801,7 @@
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">             np.ndarray: The predictions in an ndarray of shape [n_users, n_items]</span>
+<span class="sd">             np.ndarray: The predictions in an ndarray of shape ``[n_users, n_items]``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                                  <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>
@@ -822,7 +828,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            list of lists of tuples : The first level list corresponds to input arg item_ids. The second level</span>
-<span class="sd">            list is of length n_similar and contains tuples of (item_id, score) for each similar item.</span>
+<span class="sd">            list is of length n_similar and contains tuples of ``(item_id, score)`` for each similar item.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                                  <span class="n">user_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -860,7 +866,7 @@
 <span class="sd">                * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">             np.ndarray : The ranks in an ndarray of shape [n_users, n_items]</span>
+<span class="sd">             np.ndarray : The ranks in an ndarray of shape ``[n_users, n_items]``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">initializers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_datasets_and_initializers</span><span class="p">(</span><span class="n">interactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                                  <span class="n">user_features</span><span class="o">=</span><span class="n">user_features</span><span class="p">,</span>

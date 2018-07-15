@@ -1427,21 +1427,30 @@ a method to calculate the loss function. See tensorrec.loss_graphs for examples.
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>interactions</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of interactions of
-shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code>.
-* If a Dataset, the Dataset must follow the format used in <cite>tensorrec.input_utils</cite>.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
-<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of user features of
-shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
-<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – A matrix of item features
-of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.
-* If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-* If a str, the string must be the path to a TFRecord file.
-* If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+<li><strong>interactions</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of interactions of
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in <cite>tensorrec.input_utils</cite>.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>user_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of user features of
+shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_user_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
+<li><strong>item_features</strong> (<em>scipy.sparse matrix</em><em>, </em><em>tensorflow.data.Dataset</em><em>, </em><em>str</em><em>, </em><em>list</em>) – <p>A matrix of item features
+of shape <code class="docutils literal notranslate"><span class="pre">[n_items,</span> <span class="pre">n_item_features]</span></code>.</p>
+<ul>
+<li>If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.</li>
+<li>If a str, the string must be the path to a TFRecord file.</li>
+<li>If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.</li>
+</ul>
+</li>
 <li><strong>epochs</strong> (<em>int</em>) – The number of epochs to fit the model.</li>
 <li><strong>learning_rate</strong> (<em>float</em>) – The learning rate of the model.</li>
 <li><strong>alpha</strong> (<em>float</em>) – The weight regularization loss coefficient.</li>
@@ -1546,7 +1555,7 @@ of shape <code class="docutils literal notranslate"><span class="pre">[n_items,<
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The predictions in an ndarray of shape [n_users, n_items]</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The predictions in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
@@ -1634,7 +1643,7 @@ of shape <code class="docutils literal notranslate"><span class="pre">[n_items,<
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The ranks in an ndarray of shape [n_users, n_items]</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The ranks in an ndarray of shape <code class="docutils literal notranslate"><span class="pre">[n_users,</span> <span class="pre">n_items]</span></code></p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
@@ -1667,7 +1676,7 @@ E.g. [4, 8, 12] to get sims for items 4, 8, and 12.</li>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The first level list corresponds to input arg item_ids. The second level
-list is of length n_similar and contains tuples of (item_id, score) for each similar item.</p>
+list is of length n_similar and contains tuples of <code class="docutils literal notranslate"><span class="pre">(item_id,</span> <span class="pre">score)</span></code> for each similar item.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of lists of tuples</p>
