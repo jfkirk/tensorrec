@@ -498,7 +498,7 @@ class TensorRec(object):
 
         Args:
             interactions (scipy.sparse matrix, tensorflow.data.Dataset, str, list): A matrix of interactions of
-            shape ``[n_users, n_items]``.
+                shape ``[n_users, n_items]``.
                 * If a Dataset, the Dataset must follow the format used in `tensorrec.input_utils`.
                 * If a str, the string must be the path to a TFRecord file.
                 * If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
