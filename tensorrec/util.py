@@ -4,6 +4,7 @@ import random
 import scipy.sparse as sp
 import six
 import tensorflow as tf
+from weakref import WeakKeyDictionary
 
 from .input_utils import create_tensorrec_dataset_from_sparse_matrix, create_tensorrec_dataset_from_tfrecord
 
@@ -125,3 +126,30 @@ def append_to_string_at_point(string, value, point):
 
 def simple_tf_print(tensor, places=100):
     return tf.Print(tensor, [tensor, tf.shape(tensor)], summarize=places)
+
+
+class lazyval(object):
+    """
+    Decorator that marks that an attribute of an instance should not be
+    computed until needed, and that the value should be memoized.
+
+    Lifted from quantopian/trading_calendars
+    """
+    def __init__(self, get):
+        self._get = get
+        self._cache = WeakKeyDictionary()
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        try:
+            return self._cache[instance]
+        except KeyError:
+            self._cache[instance] = val = self._get(instance)
+            return val
+
+    def __set__(self, instance, value):
+        raise AttributeError("Can't set read-only attribute.")
+
+    def __delitem__(self, instance):
+        del self._cache[instance]
