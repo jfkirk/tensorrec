@@ -8,8 +8,7 @@ import tensorflow as tf
 
 from tensorrec import TensorRec
 from tensorrec.errors import (
-    ModelNotBiasedException, ModelNotFitException, ModelWithoutAttentionException, BatchNonSparseInputException,
-    TfVersionException
+    ModelNotBiasedException, ModelNotFitException, ModelWithoutAttentionException, BatchNonSparseInputException
 )
 from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix, write_tfrecord_from_sparse_matrix
 from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
@@ -70,6 +69,28 @@ class TensorRecTestCase(TestCase):
     def test_init_fail_bad_attention_graph(self):
         with self.assertRaises(ValueError):
             TensorRec(attention_graph=np.mean)
+
+    def test_predict_fail_unfit(self):
+        model = TensorRec()
+        with self.assertRaises(ModelNotFitException):
+            model.predict(self.user_features, self.item_features)
+        with self.assertRaises(ModelNotFitException):
+            model.predict_rank(self.user_features, self.item_features)
+
+        with self.assertRaises(ModelNotFitException):
+            model.predict_user_representation(self.user_features)
+        with self.assertRaises(ModelNotFitException):
+            model.predict_item_representation(self.item_features)
+        with self.assertRaises(ModelNotFitException):
+            model.predict_user_attention_representation(self.user_features)
+
+        with self.assertRaises(ModelNotFitException):
+            model.predict_similar_items(self.item_features, item_ids=[1], n_similar=5)
+
+        with self.assertRaises(ModelNotFitException):
+            model.predict_item_bias(self.item_features)
+        with self.assertRaises(ModelNotFitException):
+            model.predict_user_bias(self.user_features)
 
     def test_fit_verbose(self):
         model = TensorRec(n_components=10)

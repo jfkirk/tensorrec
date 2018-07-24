@@ -26,6 +26,61 @@ class PredictionGraphsTestCase(TestCase):
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
 
+class DotProductTestCase(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.session = get_session()
+
+    def test_dense_prediction(self):
+        graph = DotProductPredictionGraph()
+        array_1 = np.array([
+            [1.0, 1.0],
+            [10.0, 10.0],
+            [-1.0, 1.0],
+        ])
+        array_2 = np.array([
+            [1.0, 1.0],
+            [-1.0, -1.0],
+            [-1.0, 1.0],
+        ])
+        result = graph.connect_dense_prediction_graph(tf_user_representation=array_1,
+                                                      tf_item_representation=array_2).eval(session=self.session)
+
+        expected_result = np.array([
+            [2.0, -2.0, 0.0],
+            [20.0, -20.0, 0.0],
+            [0.0, 0.0, 2.0]
+        ])
+        self.assertTrue(np.allclose(result, expected_result))
+
+    def test_serial_prediction(self):
+        graph = DotProductPredictionGraph()
+        array_1 = np.array([
+            [1.0, 1.0],
+            [10.0, 10.0],
+            [-1.0, 1.0],
+        ])
+        array_2 = np.array([
+            [1.0, 1.0],
+            [-1.0, -1.0],
+            [-1.0, 1.0],
+        ])
+
+        x_user = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
+        x_item = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2])
+
+        result = graph.connect_serial_prediction_graph(tf_user_representation=array_1,
+                                                       tf_item_representation=array_2,
+                                                       tf_x_user=x_user,
+                                                       tf_x_item=x_item,).eval(session=self.session)
+
+        expected_result = np.array([2.0, -2.0, 0.0,
+                                    20.0, -20.0, 0.0,
+                                    0.0, 0.0, 2.0])
+        self.assertTrue(np.allclose(result, expected_result))
+
+
 class CosineSimilarityTestCase(TestCase):
 
     @classmethod
