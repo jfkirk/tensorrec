@@ -7,6 +7,10 @@ import pickle
 from scipy import sparse as sp
 import tensorflow as tf
 
+from .errors import (
+    ModelNotBiasedException, ModelNotFitException, ModelWithoutAttentionException, BatchNonSparseInputException,
+    TfVersionException
+)
 from .input_utils import create_tensorrec_iterator, get_dimensions_from_tensorrec_dataset
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
 from .prediction_graphs import AbstractPredictionGraph, DotProductPredictionGraph
@@ -59,8 +63,7 @@ class TensorRec(object):
         # Check TensorFlow version
         major, minor, patch = tf.__version__.split(".")
         if int(major) < 1 or int(major) == 1 and int(minor) < 7:
-            raise RuntimeError("""You need to have at least TensorFlow version 1.7 installed in order to use
-                               TensorRec properly. You have currently installed TensorFlow: """ + tf.__version__)
+            raise TfVersionException(tf_version=tf.__version__)
 
         # Arg Check
         if (n_components is None) or (n_tastes is None) or (user_repr_graph is None) or (item_repr_graph is None) \
@@ -185,8 +188,7 @@ class TensorRec(object):
 
             # Raise exception if interactions and user_features aren't sparse matrices
             if (not sp.issparse(interactions)) or (not sp.issparse(user_features)):
-                raise ValueError('In order to support user batching at fit time, interactions and user_features must '
-                                 'both be scipy.sparse matrices.')
+                raise BatchNonSparseInputException()
 
             # Coerce to CSR for fast batching
             if not isinstance(interactions, sp.csr_matrix):
@@ -651,6 +653,11 @@ class TensorRec(object):
         :return: np.ndarray
         The predictions in an ndarray of shape [n_users, n_items]
         """
+
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='predict')
+
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=user_features,
                                                                  item_features=item_features)
@@ -677,6 +684,11 @@ class TensorRec(object):
         The first level list corresponds to input arg item_ids.
         The second level list is of length n_similar and contains tuples of (item_id, score) for each similar item.
         """
+
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='predict_similar_items')
+
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=None,
                                                                  item_features=item_features)
@@ -710,6 +722,11 @@ class TensorRec(object):
         :return: np.ndarray
         The ranks in an ndarray of shape [n_users, n_items]
         """
+
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='predict_rank')
+
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=user_features,
                                                                  item_features=item_features)
@@ -730,6 +747,11 @@ class TensorRec(object):
         :return: np.ndarray
         The latent user representations in an ndarray of shape [n_users, n_components]
         """
+
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='predict_user_representation')
+
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=user_features,
                                                                  item_features=None)
@@ -755,9 +777,12 @@ class TensorRec(object):
         The latent user attention representations in an ndarray of shape [n_users, n_components]
         """
 
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='predict_user_attention_representation')
+
         if self.attention_graph_factory is None:
-            raise ValueError("This TensorRec model does not use attention. Try re-building TensorRec with a valid "
-                             "'attention_graph' arg.")
+            raise ModelWithoutAttentionException()
 
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=user_features,
@@ -782,6 +807,11 @@ class TensorRec(object):
         :return: np.ndarray
         The latent item representations in an ndarray of shape [n_items, n_components]
         """
+
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='predict_item_representation')
+
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=None,
                                                                  item_features=item_features)
@@ -800,8 +830,13 @@ class TensorRec(object):
         :return: np.ndarray
         The user biases in an ndarray of shape [n_users]
         """
+
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='predict_user_bias')
+
         if not self.biased:
-            raise NotImplementedError('Cannot predict user bias for unbiased model')
+            raise ModelNotBiasedException(actor='user')
 
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=user_features,
@@ -821,8 +856,13 @@ class TensorRec(object):
         :return: np.ndarray
         The item biases in an ndarray of shape [n_items]
         """
+
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='predict_item_bias')
+
         if not self.biased:
-            raise NotImplementedError('Cannot predict item bias for unbiased model')
+            raise ModelNotBiasedException(actor='item')
 
         _, initializers = self._create_datasets_and_initializers(interactions=None,
                                                                  user_features=None,
@@ -838,6 +878,10 @@ class TensorRec(object):
         The path to the directory in which to save the model.
         :return:
         """
+
+        # Ensure that the model has been fit
+        if self.tf_prediction is None:
+            raise ModelNotFitException(method='save_model')
 
         if not os.path.exists(directory_path):
             os.makedirs(directory_path)

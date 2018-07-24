@@ -7,6 +7,10 @@ from unittest import TestCase
 import tensorflow as tf
 
 from tensorrec import TensorRec
+from tensorrec.errors import (
+    ModelNotBiasedException, ModelNotFitException, ModelWithoutAttentionException, BatchNonSparseInputException,
+    TfVersionException
+)
 from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix, write_tfrecord_from_sparse_matrix
 from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
 from tensorrec.session_management import set_session
@@ -116,7 +120,7 @@ class TensorRecTestCase(TestCase):
         model = TensorRec(n_components=10)
 
         interactions_as_dataset = create_tensorrec_dataset_from_sparse_matrix(self.interactions)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(BatchNonSparseInputException):
             model.fit(interactions_as_dataset, self.user_features, self.item_features, epochs=10, user_batch_size=2)
 
     def test_fit_user_feature_as_dataset(self):
@@ -212,19 +216,19 @@ class TensorRecAPITestCase(TestCase):
 
     def test_predict_user_bias_unbiased_model(self):
         self.assertRaises(
-            NotImplementedError,
+            ModelNotBiasedException,
             self.unbiased_model.predict_user_bias,
             self.user_features)
 
     def test_predict_item_bias_unbiased_model(self):
         self.assertRaises(
-            NotImplementedError,
+            ModelNotBiasedException,
             self.unbiased_model.predict_item_bias,
             self.item_features)
 
     def test_predict_user_attn_repr(self):
         # This test will be overwritten by the tests that have attention
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ModelWithoutAttentionException):
             self.unbiased_model.predict_user_attention_representation(self.user_features)
 
 
