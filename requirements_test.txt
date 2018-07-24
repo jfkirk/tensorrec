@@ -4,5 +4,6 @@ nose-cprof==0.2.1
 nose-timer==0.7.1
 nose-parameterized==0.6.0
 
-# For movielens dataset
+# For datasets
 lightfm==1.13
+requests==2.19.1
