@@ -7,3 +7,4 @@ nose-parameterized==0.6.0
 # For datasets
 lightfm==1.13
 requests==2.19.1
+scikit-learn==0.19.1
