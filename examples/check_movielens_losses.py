@@ -5,7 +5,7 @@ from tensorrec.representation_graphs import (
 )
 from tensorrec.loss_graphs import WMRBLossGraph, BalancedWMRBLossGraph
 from tensorrec.prediction_graphs import (
-    DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclidianSimilarityPredictionGraph
+    DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclideanSimilarityPredictionGraph
 )
 from tensorrec.util import append_to_string_at_point
 
@@ -44,7 +44,7 @@ res_strings.append(header)
 # Iterate through many possibilities for model configuration
 for loss_graph in (WMRBLossGraph, BalancedWMRBLossGraph):
     for pred_graph in (DotProductPredictionGraph, CosineSimilarityPredictionGraph,
-                       EuclidianSimilarityPredictionGraph):
+                       EuclideanSimilarityPredictionGraph):
         for repr_graph in (LinearRepresentationGraph, ReLURepresentationGraph):
             for n_tastes in (1, 3):
 
