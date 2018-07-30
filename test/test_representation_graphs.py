@@ -1,12 +1,24 @@
 from nose_parameterized import parameterized
 from unittest import TestCase
 
+import keras as ks
+
 from tensorrec import TensorRec
 from tensorrec.representation_graphs import (
     LinearRepresentationGraph, NormalizedLinearRepresentationGraph, FeaturePassThroughRepresentationGraph,
-    WeightedFeaturePassThroughRepresentationGraph, ReLURepresentationGraph
+    WeightedFeaturePassThroughRepresentationGraph, ReLURepresentationGraph, AbstractKerasRepresentationGraph
 )
 from tensorrec.util import generate_dummy_data
+
+
+class KerasExampleRepresentationGraph(AbstractKerasRepresentationGraph):
+    def create_layers(self, n_features, n_components):
+        return [
+            ks.layers.Dense(n_components * 16, activation='relu'),
+            ks.layers.Dense(n_components * 8, activation='relu'),
+            ks.layers.Dense(n_components * 2, activation='relu'),
+            ks.layers.Dense(n_components, activation='tanh'),
+        ]
 
 
 class RepresentationGraphTestCase(TestCase):
@@ -20,6 +32,7 @@ class RepresentationGraphTestCase(TestCase):
         ["weighted_fpt", WeightedFeaturePassThroughRepresentationGraph, WeightedFeaturePassThroughRepresentationGraph,
          50, 50, 50],
         ["relu", ReLURepresentationGraph, ReLURepresentationGraph, 50, 60, 20],
+        ["keras", KerasExampleRepresentationGraph, KerasExampleRepresentationGraph, 50, 60, 20],
     ])
     def test_fit(self, name, user_repr, item_repr, n_user_features, n_item_features, n_components):
         interactions, user_features, item_features = generate_dummy_data(
