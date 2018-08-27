@@ -14,7 +14,7 @@ For an overview of TensorRec and its usage, please see the [wiki.](https://githu
 
 For more information, and for an outline of this project, please read [this blog post.](https://medium.com/@jameskirk1/tensorrec-a-recommendation-engine-framework-in-tensorflow-d85e4f0874e8)
 
-For an introduction to building recommender systems, please see [these slides.](https://docs.google.com/presentation/d/1g638Vr5_Z8mw2X6Fu2Oni1xylUm7e1V3CJkmG3lP5C4/edit?usp=sharing)
+For an introduction to building recommender systems, please see [these slides.](https://www.slideshare.net/JamesKirk58/boston-ml-architecting-recommender-systems)
 
 ![TensorRec System Diagram](https://raw.githubusercontent.com/jfkirk/tensorrec/master/examples/system_diagram.png)
 
