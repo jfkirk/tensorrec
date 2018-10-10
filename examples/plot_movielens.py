@@ -46,6 +46,7 @@ user_features_ds = create_tensorrec_dataset_from_sparse_matrix(user_features)
 item_features_ds = create_tensorrec_dataset_from_sparse_matrix(item_features)
 
 # Iterate through 1000 epochs, outputting a JPG plot each epoch
+_, ax = plt.subplots()
 for epoch in range(epochs):
     model.fit_partial(interactions=train_interactions_ds,
                       user_features=user_features_ds,
@@ -61,7 +62,6 @@ for epoch in range(epochs):
     if model.n_tastes > 1:
         user_positions = user_positions[0]
 
-    _, ax = plt.subplots()
     ax.grid(b=True, which='both')
     ax.axhline(y=0, color='k')
     ax.axvline(x=0, color='k')
@@ -77,6 +77,7 @@ for epoch in range(epochs):
 
     file = '/tmp/tensorrec/movielens/epoch_{}.jpg'.format(epoch)
     plt.savefig(file)
+    plt.cla()
 
     logging.info("Finished epoch {}".format(epoch))
 
