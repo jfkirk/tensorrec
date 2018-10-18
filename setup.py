@@ -14,12 +14,17 @@ install_reqs = parse_requirements('requirements.txt')
 setup(
   name='tensorrec',
   packages=['tensorrec'],
-  version='0.25.7',
+  version='0.25.8',
   description='A TensorFlow recommendation algorithm and framework in Python.',
   author='James Kirk',
   author_email='james.f.kirk@gmail.com',
   url='https://github.com/jfkirk/tensorrec',
   keywords=['machine-learning', 'tensorflow', 'recommendation-system', 'python', 'recommender-system'],
   classifiers=[],
-  install_requires=install_reqs,
+  install_requires=[
+      "numpy==1.14.1",
+      "scipy==0.19.1",
+      "six==1.11.0",
+      "tensorflow==1.7.0",
+  ],
 )
