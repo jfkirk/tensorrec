@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from tensorrec import TensorRec
 from tensorrec.prediction_graphs import (
-    DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclidianSimilarityPredictionGraph
+    DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclideanSimilarityPredictionGraph
 )
 from tensorrec.session_management import get_session
 from tensorrec.util import generate_dummy_data_with_indicator
@@ -136,14 +136,14 @@ class CosineSimilarityTestCase(TestCase):
         self.assertTrue(np.allclose(result, expected_result))
 
 
-class EuclidianSimilarityTestCase(TestCase):
+class EuclideanSimilarityTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.session = get_session()
 
     def test_dense_prediction(self):
-        graph = EuclidianSimilarityPredictionGraph()
+        graph = EuclideanSimilarityPredictionGraph()
         array_1 = np.array([
             [1.0, 1.0],
             [2.0, 2.0],
@@ -166,7 +166,7 @@ class EuclidianSimilarityTestCase(TestCase):
         self.assertTrue(np.allclose(result, expected_result))
 
     def test_serial_prediction(self):
-        graph = EuclidianSimilarityPredictionGraph()
+        graph = EuclideanSimilarityPredictionGraph()
         array_1 = np.array([
             [1.0, 1.0],
             [2.0, 2.0],

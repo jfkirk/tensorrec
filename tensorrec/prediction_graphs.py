@@ -72,9 +72,9 @@ class CosineSimilarityPredictionGraph(AbstractPredictionGraph):
         return tf.reduce_sum(tf.multiply(gathered_user_reprs, gathered_item_reprs), axis=1)
 
 
-class EuclidianSimilarityPredictionGraph(AbstractPredictionGraph):
+class EuclideanSimilarityPredictionGraph(AbstractPredictionGraph):
     """
-    This prediction function calculates the prediction as the negative euclidian distance between the user and
+    This prediction function calculates the prediction as the negative euclidean distance between the user and
     item representations.
     Prediction = -1 * sqrt(sum((user_repr - item_repr)^2))
     """
