@@ -7,7 +7,7 @@ from . import prediction_graphs
 from . import session_management
 from . import util
 
-__version__ = '0.1'
+__version__ = '0.26.0'
 
 __all__ = [
     TensorRec, eval, util, loss_graphs, representation_graphs, prediction_graphs, session_management, input_utils
