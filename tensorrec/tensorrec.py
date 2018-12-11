@@ -198,10 +198,6 @@ class TensorRec(object):
 
             n_users = user_features.shape[0]
 
-            # Infer the batch size, if necessary
-            if user_batch_size is None:
-                user_batch_size = n_users
-
             interactions_batched = []
             user_features_batched = []
 
