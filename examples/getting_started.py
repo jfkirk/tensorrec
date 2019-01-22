@@ -69,7 +69,7 @@ sparse_train_ratings_4plus = sparse_train_ratings.multiply(sparse_train_ratings 
 sparse_test_ratings_4plus = sparse_test_ratings.multiply(sparse_test_ratings >= 4.0)
 
 
-# This method predicts item ranks for each user and prints out recall@10 train/test metrics
+# This method consumes item ranks for each user and prints out recall@10 train/test metrics
 def check_results(ranks):
     train_recall_at_10 = tensorrec.eval.recall_at_k(
         test_interactions=sparse_train_ratings_4plus,
