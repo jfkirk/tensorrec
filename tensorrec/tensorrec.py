@@ -175,9 +175,9 @@ class TensorRec(object):
         for graph_iterator_hook_attr_name in self.graph_iterator_hook_attr_names:
             hook = self.__getattribute__(graph_iterator_hook_attr_name)
             iterator_resource_name = hook._iterator_resource.name
-            output_types = hook._output_types
-            output_shapes = hook._output_shapes
-            output_classes = hook._output_classes
+            output_types = hook.output_types
+            output_shapes = hook.output_shapes
+            output_classes = hook.output_classes
             self.graph_iterator_hook_node_names[graph_iterator_hook_attr_name] = (
                 iterator_resource_name, output_types, output_shapes, output_classes
             )
