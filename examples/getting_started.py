@@ -12,6 +12,8 @@ logging.getLogger().setLevel(logging.INFO)
 
 # Open and read in the ratings file
 # NOTE: This expects the ratings.csv file to be in the same folder as this Python file
+# You can download the MovieLens dataset, including ratings.csv, here:
+# https://grouplens.org/datasets/movielens/
 print('Loading ratings')
 with open('ratings.csv', 'r') as ratings_file:
     ratings_file_reader = csv.reader(ratings_file)
