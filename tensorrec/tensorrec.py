@@ -19,7 +19,6 @@ from .recommendation_graphs import (
     densify_sampled_item_predictions, collapse_mixture_of_tastes, predict_similar_items
 )
 from .representation_graphs import AbstractRepresentationGraph, LinearRepresentationGraph
-from .session_management import get_session
 from .util import sample_items, calculate_batched_alpha, datasets_from_raw_input
 
 

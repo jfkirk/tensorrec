@@ -2,8 +2,6 @@ import numpy as np
 from scipy import sparse as sp
 import tensorflow as tf
 
-from .session_management import get_session
-
 
 def create_tensorrec_iterator(name):
     """

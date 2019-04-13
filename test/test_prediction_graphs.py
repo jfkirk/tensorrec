@@ -6,7 +6,6 @@ from tensorrec import TensorRec
 from tensorrec.prediction_graphs import (
     DotProductPredictionGraph, CosineSimilarityPredictionGraph, EuclideanSimilarityPredictionGraph
 )
-from tensorrec.session_management import get_session
 from tensorrec.util import generate_dummy_data_with_indicator
 
 

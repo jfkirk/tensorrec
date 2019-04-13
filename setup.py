@@ -7,7 +7,7 @@ here = path.abspath(path.dirname(__file__))
 setup(
   name='tensorrec',
   packages=['tensorrec'],
-  version='0.26.2',
+  version='0.27.0',
   description='A TensorFlow recommendation algorithm and framework in Python.',
   author='James Kirk',
   author_email='james.f.kirk@gmail.com',
@@ -18,6 +18,6 @@ setup(
       "numpy>=1.14.1",
       "scipy>=0.19.1",
       "six==1.11.0",
-      "tensorflow>=1.7.0",
+      "tensorflow>=2.0.0a0",
   ],
 )

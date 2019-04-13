@@ -8,14 +8,9 @@ from tensorrec.recommendation_graphs import (
     project_biases, split_sparse_tensor_indices, bias_prediction_dense, bias_prediction_serial,
     densify_sampled_item_predictions, rank_predictions, collapse_mixture_of_tastes, predict_similar_items
 )
-from tensorrec.session_management import get_session
 
 
 class RecommendationGraphsTestCase(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.session = get_session()
 
     def test_project_biases(self):
         features = sp.coo_matrix([
