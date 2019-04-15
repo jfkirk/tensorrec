@@ -27,10 +27,6 @@ class ModelNotFitException(TensorRecException):
     msg = "{method}() has been called before model fitting. Call fit() or fit_partial() before calling {method}()."
 
 
-class ModelWithoutAttentionException(TensorRecException):
-    msg = "This TensorRec model does not use attention. Try re-building TensorRec with a valid 'attention_graph' arg."
-
-
 class BatchNonSparseInputException(TensorRecException):
     msg = 'In order to support user batching at fit time, interactions and user_features must both be scipy.sparse ' \
           'matrices.'

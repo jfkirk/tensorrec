@@ -8,13 +8,13 @@ from scipy import sparse as sp
 import tensorflow as tf
 
 from .errors import (
-    ModelNotBiasedException, ModelNotFitException, ModelWithoutAttentionException, BatchNonSparseInputException,
+    ModelNotBiasedException, ModelNotFitException, BatchNonSparseInputException,
     TfVersionException
 )
 from .input_utils import create_tensorrec_iterator, get_dimensions_from_tensorrec_dataset
 from .loss_graphs import AbstractLossGraph, RMSELossGraph
 from .prediction_graphs import AbstractPredictionGraph, DotProductPredictionGraph
-from .recommendation_graphs import (
+from .recommendation_model import (
     project_biases, split_sparse_tensor_indices, bias_prediction_dense, bias_prediction_serial, rank_predictions,
     densify_sampled_item_predictions, collapse_mixture_of_tastes, predict_similar_items
 )
@@ -29,7 +29,6 @@ class TensorRec(object):
                  n_tastes=1,
                  user_repr_graph=LinearRepresentationGraph(),
                  item_repr_graph=LinearRepresentationGraph(),
-                 attention_graph=None,
                  prediction_graph=DotProductPredictionGraph(),
                  loss_graph=RMSELossGraph(),
                  biased=True,):
@@ -45,9 +44,6 @@ class TensorRec(object):
         :param item_repr_graph: AbstractRepresentationGraph
         An object which inherits AbstractRepresentationGraph that contains a method to calculate item representations.
         See tensorrec.representation_graphs for examples.
-        :param attention_graph: AbstractRepresentationGraph or None
-        Optional. An object which inherits AbstractRepresentationGraph that contains a method to calculate user
-        attention. Any valid repr_graph is also a valid attention graph. If None, no attention process will be applied.
         :param prediction_graph: AbstractPredictionGraph
         An object which inherits AbstractPredictionGraph that contains a method to calculate predictions from a pair of
         user/item reprs.
@@ -80,17 +76,11 @@ class TensorRec(object):
             raise ValueError("prediction_graph must inherit AbstractPredictionGraph")
         if not isinstance(loss_graph, AbstractLossGraph):
             raise ValueError("loss_graph must inherit AbstractLossGraph")
-        if attention_graph is not None:
-            if not isinstance(attention_graph, AbstractRepresentationGraph):
-                raise ValueError("attention_graph must be None or inherit AbstractRepresentationGraph")
-            if n_tastes == 1:
-                raise ValueError("attention_graph must be None if n_tastes == 1")
 
         self.n_components = n_components
         self.n_tastes = n_tastes
         self.user_repr_graph_factory = user_repr_graph
         self.item_repr_graph_factory = item_repr_graph
-        self.attention_graph_factory = attention_graph
         self.prediction_graph_factory = prediction_graph
         self.loss_graph_factory = loss_graph
         self.biased = biased
@@ -110,8 +100,6 @@ class TensorRec(object):
         ]
         if self.biased:
             self.graph_tensor_hook_attr_names += ['tf_projected_user_biases', 'tf_projected_item_biases']
-        if self.attention_graph_factory is not None:
-            self.graph_tensor_hook_attr_names += ['tf_user_attention_representation']
 
         self.graph_operation_hook_attr_names = [
             # AdamOptimizer
@@ -322,18 +310,6 @@ class TensorRec(object):
         tastes_tf_prediction_serials = []
         tastes_tf_sample_prediction_serials = []
 
-        # If this model does not use attention, Nones are used as sentinels in place of the attentions
-        if self.attention_graph_factory is not None:
-            tastes_tf_attentions = []
-            tastes_tf_attention_serials = []
-            tastes_tf_sample_attention_serials = []
-            tastes_tf_attention_representations = []
-        else:
-            tastes_tf_attentions = None
-            tastes_tf_attention_serials = None
-            tastes_tf_sample_attention_serials = None
-            tastes_tf_attention_representations = None
-
         # Build n_tastes user representations and predictions
         for taste in range(self.n_tastes):
             tf_user_representation, user_weights = \
@@ -343,37 +319,6 @@ class TensorRec(object):
                                                                           node_name_ending='user_{}'.format(taste))
             tastes_tf_user_representations.append(tf_user_representation)
             tf_weights.extend(user_weights)
-
-            # Connect attention, if applicable
-            if self.attention_graph_factory is not None:
-                tf_attention_representation, attention_weights = \
-                    self.attention_graph_factory.connect_representation_graph(tf_features=tf_user_features,
-                                                                              n_components=self.n_components,
-                                                                              n_features=n_user_features,
-                                                                              node_name_ending='attn_{}'.format(taste))
-                tf_weights.extend(attention_weights)
-
-                tf_attention = self.prediction_graph_factory.connect_dense_prediction_graph(
-                    tf_user_representation=tf_attention_representation,
-                    tf_item_representation=self.tf_item_representation
-                )
-                tf_attention_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
-                    tf_user_representation=tf_attention_representation,
-                    tf_item_representation=self.tf_item_representation,
-                    tf_x_user=tf_x_user,
-                    tf_x_item=tf_x_item,
-                )
-                tf_sample_attention_serial = self.prediction_graph_factory.connect_serial_prediction_graph(
-                    tf_user_representation=tf_user_representation,
-                    tf_item_representation=self.tf_item_representation,
-                    tf_x_user=tf_x_user_sample,
-                    tf_x_item=tf_x_item_sample,
-                )
-
-                tastes_tf_attentions.append(tf_attention)
-                tastes_tf_attention_serials.append(tf_attention_serial)
-                tastes_tf_sample_attention_serials.append(tf_sample_attention_serial)
-                tastes_tf_attention_representations.append(tf_attention_representation)
 
             # Connect the configurable prediction graphs for each taste
             tf_prediction = self.prediction_graph_factory.connect_dense_prediction_graph(
@@ -398,22 +343,15 @@ class TensorRec(object):
             tastes_tf_prediction_serials.append(tf_prediction_serial)
             tastes_tf_sample_prediction_serials.append(tf_sample_predictions_serial)
 
-        # If attention is in the graph, build the API node
-        if self.attention_graph_factory is not None:
-            self.tf_user_attention_representation = tf.stack(tastes_tf_attention_representations)
-
         self.tf_user_representation = tf.stack(tastes_tf_user_representations)
         self.tf_prediction = collapse_mixture_of_tastes(
-            tastes_predictions=tastes_tf_predictions,
-            tastes_attentions=tastes_tf_attentions
+            tastes_predictions=tastes_tf_predictions
         )
         self.tf_prediction_serial = collapse_mixture_of_tastes(
-            tastes_predictions=tastes_tf_prediction_serials,
-            tastes_attentions=tastes_tf_attention_serials
+            tastes_predictions=tastes_tf_prediction_serials
         )
         tf_sample_predictions_serial = collapse_mixture_of_tastes(
-            tastes_predictions=tastes_tf_sample_prediction_serials,
-            tastes_attentions=tastes_tf_sample_attention_serials
+            tastes_predictions=tastes_tf_sample_prediction_serials
         )
 
         # Add biases, if this is a biased estimator
@@ -759,37 +697,6 @@ class TensorRec(object):
             user_repr = np.sum(user_repr, axis=0)
 
         return user_repr
-
-    def predict_user_attention_representation(self, user_features):
-        """
-        Predict latent attention representation vectors for the given users.
-        :param user_features: scipy.sparse matrix, tensorflow.data.Dataset, str, or list
-        A matrix of user features of shape [n_users, n_user_features].
-        If a Dataset, the Dataset must follow the format used in tensorrec.input_utils.
-        If a str, the string must be the path to a TFRecord file.
-        If a list, the list must contain scipy.sparse matrices, tensorflow.data.Datasets, or strs.
-        :return: np.ndarray
-        The latent user attention representations in an ndarray of shape [n_users, n_components]
-        """
-
-        # Ensure that the model has been fit
-        if self.tf_prediction is None:
-            raise ModelNotFitException(method='predict_user_attention_representation')
-
-        if self.attention_graph_factory is None:
-            raise ModelWithoutAttentionException()
-
-        _, initializers = self._create_datasets_and_initializers(interactions=None,
-                                                                 user_features=user_features,
-                                                                 item_features=None)
-        get_session().run(initializers)
-        user_attn_repr = self.tf_user_attention_representation.eval(session=get_session())
-
-        # If there is only one user attn repr per user, collapse from rank 3 to rank 2
-        if self.n_tastes == 1:
-            user_attn_repr = np.sum(user_attn_repr, axis=0)
-
-        return user_attn_repr
 
     def predict_item_representation(self, item_features):
         """

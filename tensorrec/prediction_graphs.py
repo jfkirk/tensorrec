@@ -1,7 +1,7 @@
 import abc
 import tensorflow as tf
 
-from .recommendation_graphs import relative_cosine
+from .recommendation_model import relative_cosine
 
 
 class AbstractPredictionGraph(object):
@@ -84,10 +84,10 @@ class EuclideanSimilarityPredictionGraph(AbstractPredictionGraph):
     def connect_dense_prediction_graph(self, tf_user_representation, tf_item_representation):
 
         # [ n_users, 1 ]
-        r_user = tf.reduce_sum(tf_user_representation ** 2, 1, keep_dims=True)
+        r_user = tf.reduce_sum(tf_user_representation ** 2, 1, keepdims=True)
 
         # [ n_items, 1 ]
-        r_item = tf.reduce_sum(tf_item_representation ** 2, 1, keep_dims=True)
+        r_item = tf.reduce_sum(tf_item_representation ** 2, 1, keepdims=True)
 
         # [ n_users, n_items ]
         distance = (r_user

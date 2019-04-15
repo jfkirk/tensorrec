@@ -82,31 +82,14 @@ def rank_predictions(tf_prediction):
     return tf.nn.top_k(-tf_indices_of_ranks, k=tf_prediction_item_size)[1] + 1
 
 
-def collapse_mixture_of_tastes(tastes_predictions, tastes_attentions):
+def collapse_mixture_of_tastes(tastes_predictions):
     """
     Collapses a list of prediction nodes in to a single prediction node.
     :param tastes_predictions:
-    :param tastes_attentions:
     :return:
     """
     stacked_predictions = tf.stack(tastes_predictions)
-
-    # If there is attention, the attentions are used to weight each prediction
-    if tastes_attentions is not None:
-
-        # Stack the attentions and perform softmax across the tastes
-        stacked_attentions = tf.stack(tastes_attentions)
-        softmax_attentions = tf.nn.softmax(stacked_attentions, axis=0)
-
-        # The softmax'd attentions serve as weights for the taste predictiones
-        weighted_predictions = tf.multiply(stacked_predictions, softmax_attentions)
-        result_prediction = tf.reduce_sum(weighted_predictions, axis=0)
-
-    # If there is no attention, the max prediction is returned
-    else:
-        result_prediction = tf.reduce_max(stacked_predictions, axis=0)
-
-    return result_prediction
+    return tf.reduce_max(stacked_predictions, axis=0)
 
 
 def relative_cosine(tf_tensor_1, tf_tensor_2):
@@ -135,3 +118,8 @@ def predict_similar_items(prediction_graph_factory, tf_item_representation, tf_s
         tf_item_representation=tf_item_representation
     )
     return sims
+
+
+class TensorRecModel(tf.keras.Model):
+
+    def build(self):

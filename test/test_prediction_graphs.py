@@ -24,12 +24,12 @@ class PredictionGraphsTestCase(TestCase):
         model = TensorRec(prediction_graph=CosineSimilarityPredictionGraph())
         model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
 
+    def test_euclidean_distance(self):
+        model = TensorRec(prediction_graph=EuclideanSimilarityPredictionGraph())
+        model.fit(self.interactions, self.user_features, self.item_features, epochs=5)
+
 
 class DotProductTestCase(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.session = get_session()
 
     def test_dense_prediction(self):
         graph = DotProductPredictionGraph()
@@ -44,7 +44,7 @@ class DotProductTestCase(TestCase):
             [-1.0, 1.0],
         ])
         result = graph.connect_dense_prediction_graph(tf_user_representation=array_1,
-                                                      tf_item_representation=array_2).eval(session=self.session)
+                                                      tf_item_representation=array_2)
 
         expected_result = np.array([
             [2.0, -2.0, 0.0],
@@ -72,7 +72,7 @@ class DotProductTestCase(TestCase):
         result = graph.connect_serial_prediction_graph(tf_user_representation=array_1,
                                                        tf_item_representation=array_2,
                                                        tf_x_user=x_user,
-                                                       tf_x_item=x_item,).eval(session=self.session)
+                                                       tf_x_item=x_item,)
 
         expected_result = np.array([2.0, -2.0, 0.0,
                                     20.0, -20.0, 0.0,
@@ -81,10 +81,6 @@ class DotProductTestCase(TestCase):
 
 
 class CosineSimilarityTestCase(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.session = get_session()
 
     def test_dense_prediction(self):
         graph = CosineSimilarityPredictionGraph()
@@ -99,7 +95,7 @@ class CosineSimilarityTestCase(TestCase):
             [-1.0, 1.0],
         ])
         result = graph.connect_dense_prediction_graph(tf_user_representation=array_1,
-                                                      tf_item_representation=array_2).eval(session=self.session)
+                                                      tf_item_representation=array_2)
 
         expected_result = np.array([
             [1.0, -1.0, 0.0],
@@ -127,7 +123,7 @@ class CosineSimilarityTestCase(TestCase):
         result = graph.connect_serial_prediction_graph(tf_user_representation=array_1,
                                                        tf_item_representation=array_2,
                                                        tf_x_user=x_user,
-                                                       tf_x_item=x_item,).eval(session=self.session)
+                                                       tf_x_item=x_item,)
 
         expected_result = np.array([1.0, -1.0, 0.0,
                                     1.0, -1.0, 0.0,
@@ -136,10 +132,6 @@ class CosineSimilarityTestCase(TestCase):
 
 
 class EuclideanSimilarityTestCase(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.session = get_session()
 
     def test_dense_prediction(self):
         graph = EuclideanSimilarityPredictionGraph()
@@ -155,7 +147,7 @@ class EuclideanSimilarityTestCase(TestCase):
         ])
 
         result = graph.connect_dense_prediction_graph(tf_user_representation=array_1,
-                                                      tf_item_representation=array_2).eval(session=self.session)
+                                                      tf_item_representation=array_2)
 
         expected_result = np.array([
             [0.0, -math.sqrt(8.0), -2.0],
@@ -183,7 +175,7 @@ class EuclideanSimilarityTestCase(TestCase):
         result = graph.connect_serial_prediction_graph(tf_user_representation=array_1,
                                                        tf_item_representation=array_2,
                                                        tf_x_user=x_user,
-                                                       tf_x_item=x_item,).eval(session=self.session)
+                                                       tf_x_item=x_item,)
 
         expected_result = np.array([0.0, -math.sqrt(8.0), -2.0,
                                     -math.sqrt(2.0), -math.sqrt(18.0), -math.sqrt(10.0),

@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from tensorrec import TensorRec
 from tensorrec.errors import (
-    ModelNotBiasedException, ModelNotFitException, ModelWithoutAttentionException, BatchNonSparseInputException
+    ModelNotBiasedException, ModelNotFitException, BatchNonSparseInputException
 )
 from tensorrec.input_utils import create_tensorrec_dataset_from_sparse_matrix, write_tfrecord_from_sparse_matrix
 from tensorrec.representation_graphs import NormalizedLinearRepresentationGraph, LinearRepresentationGraph
@@ -62,14 +62,6 @@ class TensorRecTestCase(TestCase):
         with self.assertRaises(ValueError):
             TensorRec(loss_graph=np.mean)
 
-    def test_init_fail_attention_with_1_taste(self):
-        with self.assertRaises(ValueError):
-            TensorRec(n_tastes=1, attention_graph=LinearRepresentationGraph())
-
-    def test_init_fail_bad_attention_graph(self):
-        with self.assertRaises(ValueError):
-            TensorRec(attention_graph=np.mean)
-
     def test_predict_fail_unfit(self):
         model = TensorRec()
         with self.assertRaises(ModelNotFitException):
@@ -81,8 +73,6 @@ class TensorRecTestCase(TestCase):
             model.predict_user_representation(self.user_features)
         with self.assertRaises(ModelNotFitException):
             model.predict_item_representation(self.item_features)
-        with self.assertRaises(ModelNotFitException):
-            model.predict_user_attention_representation(self.user_features)
 
         with self.assertRaises(ModelNotFitException):
             model.predict_similar_items(self.item_features, item_ids=[1], n_similar=5)
@@ -247,11 +237,6 @@ class TensorRecAPITestCase(TestCase):
             self.unbiased_model.predict_item_bias,
             self.item_features)
 
-    def test_predict_user_attn_repr(self):
-        # This test will be overwritten by the tests that have attention
-        with self.assertRaises(ModelWithoutAttentionException):
-            self.unbiased_model.predict_user_attention_representation(self.user_features)
-
 
 class TensorRecBiasedPrediction(TestCase):
     # TODO: Collapse these into TensorRecTestCase once the fit bug is fixed
@@ -304,39 +289,6 @@ class TensorRecAPINTastesTestCase(TensorRecAPITestCase):
 
         # 3 tastes, shape[0] users, 10 components
         self.assertEqual(user_repr.shape, (3, self.user_features.shape[0], 10))
-
-
-class TensorRecAPIAttentionTestCase(TensorRecAPINTastesTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-
-        cls.n_users = 15
-        cls.n_items = 30
-
-        cls.interactions, cls.user_features, cls.item_features = generate_dummy_data(
-            num_users=cls.n_users, num_items=cls.n_items, interaction_density=.5, num_user_features=200,
-            num_item_features=200, n_features_per_user=20, n_features_per_item=20, pos_int_ratio=.5
-        )
-
-        cls.standard_model = TensorRec(n_components=10,
-                                       n_tastes=3,
-                                       user_repr_graph=NormalizedLinearRepresentationGraph(),
-                                       attention_graph=LinearRepresentationGraph())
-        cls.standard_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
-
-        cls.unbiased_model = TensorRec(n_components=10,
-                                       n_tastes=3,
-                                       biased=False,
-                                       user_repr_graph=NormalizedLinearRepresentationGraph(),
-                                       attention_graph=LinearRepresentationGraph())
-        cls.unbiased_model.fit(cls.interactions, cls.user_features, cls.item_features, epochs=10)
-
-    def test_predict_user_attn_repr(self):
-        user_attn_repr = self.unbiased_model.predict_user_attention_representation(self.user_features)
-
-        # attn repr should have shape [n_tastes, n_users, n_components]
-        self.assertEqual(user_attn_repr.shape, (3, self.user_features.shape[0], 10))
 
 
 class TensorRecAPIDatasetInputTestCase(TensorRecAPITestCase):
