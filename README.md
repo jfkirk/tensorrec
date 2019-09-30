@@ -3,6 +3,22 @@ A TensorFlow recommendation algorithm and framework in Python.
 
 [![PyPI version](https://badge.fury.io/py/tensorrec.svg)](https://badge.fury.io/py/tensorrec) [![Build Status](https://travis-ci.org/jfkirk/tensorrec.svg?branch=master)](https://travis-ci.org/jfkirk/tensorrec) [![Gitter chat](https://badges.gitter.im/tensorrec/gitter.png)](https://gitter.im/tensorrec)
 
+## NOTE: TensorRec is not under active development
+
+TensorRec will not be receiving any more planned updates. Please feel free to open pull requests -- I am happy to review them.
+
+Thank you for your contributions, support, and usage of TensorRec!
+
+-James Kirk, @jfkirk
+
+For similar tools, check out:
+
+[TensorFlow Ranking](https://github.com/tensorflow/ranking/)
+
+[Spotlight](https://github.com/maciejkula/spotlight)
+
+[LightFM](https://github.com/lyst/lightfm)
+
 ## What is TensorRec?
 TensorRec is a Python recommendation system that allows you to quickly develop recommendation algorithms and customize them using TensorFlow.
 
