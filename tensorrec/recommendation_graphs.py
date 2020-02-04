@@ -98,7 +98,7 @@ def collapse_mixture_of_tastes(tastes_predictions, tastes_attentions):
         stacked_attentions = tf.stack(tastes_attentions)
         softmax_attentions = tf.nn.softmax(stacked_attentions, axis=0)
 
-        # The softmax'd attentions serve as weights for the taste predictiones
+        # The softmax'd attentions serve as weights for the taste predictions
         weighted_predictions = tf.multiply(stacked_predictions, softmax_attentions)
         result_prediction = tf.reduce_sum(weighted_predictions, axis=0)
 
