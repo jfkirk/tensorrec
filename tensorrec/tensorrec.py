@@ -487,6 +487,13 @@ class TensorRec(object):
         self.tf_weight_reg_loss = sum(tf.nn.l2_loss(weights) for weights in tf_weights)
         self.tf_loss = self.tf_basic_loss + (self.tf_alpha * self.tf_weight_reg_loss)
         self.tf_optimizer = tf.train.AdamOptimizer(learning_rate=self.tf_learning_rate).minimize(self.tf_loss)
+        
+        # Summary epoch stats and visualize on Tensorboard
+        tf.summary.scalar('total_loss', tf.reduce_mean(self.tf_loss))
+        tf.summary.scalar('basic_loss', tf.reduce_mean(self.tf_basic_loss))
+        tf.summary.scalar('weight_reg_loss', tf.reduce_mean(self.tf_alpha * self.tf_weight_reg_loss))
+        tf.summary.scalar('mean_pred', tf.reduce_mean(self.tf_prediction_serial))
+        self.merged = tf.summary.merge_all()
 
         # Record the new node names
         self._record_graph_hook_names()
@@ -613,6 +620,11 @@ class TensorRec(object):
 
         if verbose:
             logging.info('Beginning fitting')
+            
+            # Tensorboard logs
+            log_dir = os.path.abspath(os.path.join("logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
+            logging.info("Logging folder: {}".format(log_dir))
+            summary_writer = tf.summary.FileWriter(logdir=log_dir, flush_secs=1, graph=session.graph)
 
         for epoch in range(epochs):
             for batch, initializers in enumerate(initializer_sets):
@@ -622,8 +634,8 @@ class TensorRec(object):
                     session.run(self.tf_optimizer, feed_dict=feed_dict)
 
                 else:
-                    _, loss, serial_predictions, wr_loss = session.run(
-                        [self.tf_optimizer, self.tf_basic_loss, self.tf_prediction_serial, self.tf_weight_reg_loss],
+                    _, loss, serial_predictions, wr_loss, summary = session.run(
+                        [self.tf_optimizer, self.tf_basic_loss, self.tf_prediction_serial, self.tf_weight_reg_loss, self.merged],
                         feed_dict=feed_dict
                     )
                     mean_loss = np.mean(loss)
@@ -632,6 +644,11 @@ class TensorRec(object):
                     logging.info('EPOCH {} BATCH {} loss = {}, weight_reg_l2_loss = {}, mean_pred = {}'.format(
                         epoch, batch, mean_loss, weight_reg_l2_loss, mean_pred
                     ))
+                    
+                    summary_writer.add_summary(summary, epoch)
+        
+        if verbose:
+            summary_writer.close()
 
     def predict(self, user_features, item_features):
         """
