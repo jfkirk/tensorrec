@@ -18,6 +18,6 @@ setup(
       "numpy>=1.14.1",
       "scipy>=0.19.1",
       "six==1.11.0",
-      "tensorflow>=1.7.0",
+      "tensorflow<=1.15.0",
   ],
 )
