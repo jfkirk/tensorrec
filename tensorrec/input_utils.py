@@ -123,5 +123,5 @@ def create_tensorrec_dataset_from_tfrecord(tfrecord_path):
         return (parsed_features['row_index'], parsed_features['col_index'], parsed_features['values'],
                 parsed_features['d0'], parsed_features['d1'])
 
-    dataset = tf.data.TFRecordDataset(tfrecord_path).map(parse_tensorrec_tfrecord)
+    dataset = tf.data.TFRecordDataset(tfrecord_path).map(parse_tensorrec_tfrecord,num_parallel_calls=tf.data.experimental.AUTOTUNE)
     return dataset
