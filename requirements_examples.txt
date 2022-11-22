@@ -1,7 +1,7 @@
 # For plotting
 matplotlib==2.1.2
 moviepy==0.2.3.2
-Pillow==5.0.0
+Pillow==9.3.0
 
 # For Keras example
 Keras==2.1.4
